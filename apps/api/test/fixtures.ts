@@ -36,6 +36,7 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
     ),
   );
   if (!branchA || !branchB) throw new Error("branch setup failed");
+  const branchIds = [branchA.id, branchB.id];
 
   async function person(key: string, role: Role, branchId: string | null): Promise<Person> {
     const id = `${key}-${tag}`;
@@ -95,7 +96,7 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
     await prisma.loan.deleteMany({ where: { id: { in: loanIds } } });
     await prisma.borrower.deleteMany({ where: { id: { in: loans.map((l) => l.borrowerId) } } });
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
-    await prisma.branch.deleteMany({ where: { id: { in: [branchA!.id, branchB!.id] } } });
+    await prisma.branch.deleteMany({ where: { id: { in: branchIds } } });
   }
 
   return {
