@@ -11,7 +11,9 @@
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
     "db:up": "docker compose up -d --wait postgres",
-    "db:migrate": "pnpm --filter @kisht/db migrate",
+    "db:migrate": "pnpm --filter @kisht/db migrate:deploy",
+    "db:migrate:dev": "pnpm --filter @kisht/db migrate",
+    "db:migrate:test": "pnpm --filter @kisht/db migrate:test",
     "db:seed": "pnpm --filter @kisht/db seed"
   },
   "devDependencies": {

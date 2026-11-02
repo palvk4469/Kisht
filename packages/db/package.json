@@ -10,6 +10,7 @@
     "generate": "prisma generate",
     "migrate": "prisma migrate dev",
     "migrate:deploy": "prisma migrate deploy",
+    "migrate:test": "PRISMA_TARGET=test prisma migrate deploy",
     "seed": "tsx src/seed/index.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run"

@@ -40,7 +40,7 @@ Requirements: Node 22, pnpm 12, Docker.
 cp .env.example .env
 pnpm install
 pnpm db:up        # Postgres 16 on host port 5433 (set POSTGRES_PORT to change)
-pnpm db:migrate
+pnpm db:migrate    # applies committed migrations (prisma migrate deploy)
 pnpm db:seed
 pnpm dev          # web on http://localhost:3000, API on http://localhost:4000
 ```
@@ -50,7 +50,9 @@ pnpm typecheck
 pnpm test
 ```
 
-Tests that touch the database use the separate `kisht_test` database, which docker-compose creates on first start.
+Tests that touch the database use the separate `kisht_test` database, which docker-compose creates on first start. Apply migrations to it with `pnpm db:migrate:test`.
+
+To change the schema, edit `packages/db/prisma/schema.prisma` and run `pnpm db:migrate:dev` in an interactive terminal.
 
 ### Troubleshooting
 
