@@ -1,12 +1,18 @@
+import { getPrisma } from "@kisht/db";
 import { buildApp } from "./app.js";
+import { loadEnv } from "./env.js";
 
-const host = process.env.API_HOST ?? "0.0.0.0";
-const port = Number(process.env.API_PORT ?? 4000);
+const env = loadEnv();
 
-const app = await buildApp({ logger: true });
+const app = await buildApp({
+  prisma: getPrisma(),
+  authSecret: env.BETTER_AUTH_SECRET,
+  baseURL: env.BETTER_AUTH_URL,
+  logger: true,
+});
 
 try {
-  await app.listen({ host, port });
+  await app.listen({ host: env.API_HOST, port: env.API_PORT });
 } catch (err) {
   app.log.error(err);
   process.exit(1);
@@ -14,6 +20,9 @@ try {
 
 for (const signal of ["SIGINT", "SIGTERM"] as const) {
   process.on(signal, () => {
-    void app.close().then(() => process.exit(0));
+    void app
+      .close()
+      .then(() => getPrisma().$disconnect())
+      .then(() => process.exit(0));
   });
 }
