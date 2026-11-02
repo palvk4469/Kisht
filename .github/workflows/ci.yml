@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: kisht
+          POSTGRES_PASSWORD: kisht
+          POSTGRES_DB: kisht_test
+          TZ: Asia/Kolkata
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kisht -d kisht_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # CI-only throwaway credentials for the service container above.
+      DATABASE_URL: postgresql://kisht:kisht@localhost:5432/kisht_test
+      TEST_DATABASE_URL: postgresql://kisht:kisht@localhost:5432/kisht_test
+      BETTER_AUTH_SECRET: ci-only-not-a-real-secret-0123456789abcdef
+      BETTER_AUTH_URL: http://localhost:3000
+      TZ: Asia/Kolkata
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Apply migrations
+        run: pnpm --filter @kisht/db migrate:deploy
+
+      - run: pnpm typecheck
+
+      - run: pnpm test
+
+      - name: Build web
+        run: pnpm --filter @kisht/web build
