@@ -1,10 +1,12 @@
 // Data model for the field collections app. Money is whole rupees (Int):
 // the loan system export carries no paise. Calendar days (as-of dates,
-// promise dates) are @db.Date and always mean an IST calendar day.
+// promise dates) are @db.Date and always mean an IST calendar day: write them
+// with toDbDate() from @kisht/shared, never a raw local-midnight Date.
 
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider        = "prisma-client"
+  output          = "../src/generated/prisma"
+  previewFeatures = ["partialIndexes"]
 }
 
 datasource db {
@@ -281,6 +283,8 @@ model Assignment {
   officer    User  @relation("AssignmentOfficer", fields: [officerId], references: [id])
   assignedBy User? @relation("AssignmentBy", fields: [assignedById], references: [id])
 
+  // A loan has at most one current officer.
+  @@unique([loanId], map: "assignment_one_current_per_loan", where: raw("\"endedAt\" IS NULL"))
   @@index([loanId, endedAt])
   @@index([officerId, endedAt])
   @@map("assignment")
@@ -401,6 +405,8 @@ model PromiseToPay {
   outcome   Outcome?   @relation(fields: [outcomeId], references: [id])
   reminders Reminder[]
 
+  // A new promise supersedes the old one, so only one can be pending per loan.
+  @@unique([loanId], map: "promise_one_pending_per_loan", where: raw("status = 'PENDING'"))
   @@index([loanId, status])
   @@index([dueDate, status])
   @@map("promise_to_pay")
