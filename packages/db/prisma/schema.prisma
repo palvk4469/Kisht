@@ -32,6 +32,8 @@ enum AssignmentSource {
 enum ImportStatus {
   PREVIEW
   COMMITTED
+  // Replaced by a later upload for the same day and scope (A2).
+  SUPERSEDED
   FAILED
 }
 
@@ -165,8 +167,9 @@ model Branch {
   name String
   city String
 
-  users User[]
-  loans Loan[]
+  users   User[]
+  loans   Loan[]
+  imports ImportBatch[]
 
   @@map("branch")
 }
@@ -234,18 +237,28 @@ model ImportBatch {
   asOfDate     DateTime     @db.Date
   fileName     String
   uploadedById String
+  // Branch the import applies to; null means all branches (head of collections).
+  branchId     String?
   rowCount     Int
   errorCount   Int
+  // Rows for other branches, ignored when a branch manager uploads the full export.
+  skippedCount Int          @default(0)
   // Per-row validation errors: [{ row, field, message }]
   errors       Json         @default("[]")
+  // Validated rows, held between preview and commit; cleared on commit.
+  payload      Json?
+  // Counts shown after commit: payments found, cured, assignment changes.
+  summary      Json?
   status       ImportStatus @default(PREVIEW)
   createdAt    DateTime     @default(now())
   committedAt  DateTime?
 
   uploadedBy User           @relation(fields: [uploadedById], references: [id])
+  branch     Branch?        @relation(fields: [branchId], references: [id])
   snapshots  LoanSnapshot[]
 
   @@index([asOfDate])
+  @@index([status, asOfDate])
   @@map("import_batch")
 }
 

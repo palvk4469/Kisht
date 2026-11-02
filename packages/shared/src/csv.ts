@@ -26,6 +26,8 @@ export const OVERDUE_COLUMNS = [
 export const MAX_IMPORT_ROWS = 20_000;
 
 export type OverdueRow = {
+  /** Row number as shown in Excel (header is row 1), for error messages. */
+  row: number;
   loanNo: string;
   borrowerName: string;
   businessType: string;
@@ -215,6 +217,7 @@ export function parseOverdueCsv(text: string, today: IsoDay): ParsedImport {
     }
     seen.set(r.loan_id, rowNo);
     rows.push({
+      row: rowNo,
       loanNo: r.loan_id,
       borrowerName: r.borrower_name,
       businessType: r.business_type,

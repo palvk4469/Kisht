@@ -13,6 +13,8 @@ export type Fixture = {
   tag: string;
   branchA: string;
   branchB: string;
+  branchACode: string;
+  branchBCode: string;
   officerA1: Person;
   officerA2: Person;
   managerA: Person;
@@ -32,7 +34,9 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
 
   const [branchA, branchB] = await Promise.all(
     ["A", "B"].map((b) =>
-      prisma.branch.create({ data: { code: `${b}-${tag}`, name: `Branch ${b}`, city: "Indore" } }),
+      prisma.branch.create({
+        data: { code: `${b}-${tag}`.toUpperCase(), name: `Branch ${b}`, city: "Indore" },
+      }),
     ),
   );
   if (!branchA || !branchB) throw new Error("branch setup failed");
@@ -73,7 +77,12 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
       },
     });
     const created = await prisma.loan.create({
-      data: { loanNo: `LN-${key}-${tag}`, borrowerId: borrower.id, branchId, emiAmount: 10000 },
+      data: {
+        loanNo: `LN-${key}-${tag}`.toUpperCase(),
+        borrowerId: borrower.id,
+        branchId,
+        emiAmount: 10000,
+      },
     });
     if (officerId) {
       await prisma.assignment.create({ data: { loanId: created.id, officerId, source: "AUTO" } });
@@ -85,16 +94,20 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
   const loanA2 = await loan("A2", branchA.id, officerA2.id);
   const loanB1 = await loan("B1", branchB.id, null);
 
+  // Removes everything in the fixture's branches, including rows tests create
+  // (imported loans, snapshots, payments, promises, import batches).
   async function cleanup() {
-    const loanIds = [loanA1, loanA2, loanB1];
     const userIds = [officerA1, officerA2, managerA, managerB, head].map((p) => p.id);
     const loans = await prisma.loan.findMany({
-      where: { id: { in: loanIds } },
+      where: { branchId: { in: branchIds } },
       select: { borrowerId: true },
     });
     await prisma.auditLog.deleteMany({ where: { actorId: { in: userIds } } });
-    await prisma.loan.deleteMany({ where: { id: { in: loanIds } } });
+    await prisma.loan.deleteMany({ where: { branchId: { in: branchIds } } });
     await prisma.borrower.deleteMany({ where: { id: { in: loans.map((l) => l.borrowerId) } } });
+    await prisma.importBatch.deleteMany({
+      where: { OR: [{ uploadedById: { in: userIds } }, { branchId: { in: branchIds } }] },
+    });
     await prisma.user.deleteMany({ where: { id: { in: userIds } } });
     await prisma.branch.deleteMany({ where: { id: { in: branchIds } } });
   }
@@ -103,6 +116,8 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
     tag,
     branchA: branchA.id,
     branchB: branchB.id,
+    branchACode: branchA.code,
+    branchBCode: branchB.code,
     officerA1,
     officerA2,
     managerA,

@@ -3,6 +3,7 @@ import type { OverdueRow } from "./csv.js";
 import { planImport } from "./importPlan.js";
 
 const row = (loanNo: string, over: Partial<OverdueRow> = {}): OverdueRow => ({
+  row: 2,
   loanNo,
   borrowerName: "Company X",
   businessType: "-",

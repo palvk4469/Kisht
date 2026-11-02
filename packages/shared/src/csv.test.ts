@@ -29,6 +29,7 @@ describe("parseOverdueCsv", () => {
     expect(r.errors).toEqual([]);
     expect(r.rows).toEqual([
       {
+        row: 2,
         loanNo: "LN-10293",
         borrowerName: "Company B (packaging unit)",
         businessType: "packaging unit",

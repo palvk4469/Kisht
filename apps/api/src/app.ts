@@ -5,6 +5,7 @@ import { createAuth } from "./auth/auth.js";
 import { makeOriginGuard } from "./auth/origin.js";
 import { HttpError, makeAuthenticate } from "./auth/session.js";
 import { registerAuthRoutes } from "./routes/auth.js";
+import { registerImportRoutes } from "./routes/imports.js";
 import { registerLoanRoutes } from "./routes/loans.js";
 import { registerMeRoutes } from "./routes/me.js";
 
@@ -14,6 +15,8 @@ export type BuildAppOptions = {
   /** Public web origin; Better Auth builds callback URLs and checks Origin against it. */
   baseURL: string;
   logger?: FastifyServerOptions["logger"];
+  /** Injectable clock: tests pin "now"; the demo clock (D13) plugs in here. */
+  now?: () => Date;
 };
 
 // Factory so tests can build the app and call it with app.inject(), no port needed.
@@ -49,6 +52,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   registerAuthRoutes(app, auth, opts.baseURL);
   registerMeRoutes(app, authenticate);
   registerLoanRoutes(app, opts.prisma, authenticate);
+  registerImportRoutes(app, opts.prisma, authenticate, opts.now ?? (() => new Date()));
 
   return app;
 }
