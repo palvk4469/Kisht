@@ -1,0 +1,479 @@
+// Data model for the field collections app. Money is whole rupees (Int):
+// the loan system export carries no paise. Calendar days (as-of dates,
+// promise dates) are @db.Date and always mean an IST calendar day.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OFFICER
+  BRANCH_MANAGER
+  HEAD
+}
+
+enum Locale {
+  hi
+  en
+}
+
+enum AssignmentSource {
+  AUTO
+  MANUAL
+}
+
+enum ImportStatus {
+  PREVIEW
+  COMMITTED
+  FAILED
+}
+
+enum ContactChannel {
+  CALL
+  VISIT
+}
+
+enum OutcomeType {
+  PAID
+  PROMISE
+  NOT_REACHABLE
+  DISPUTE
+}
+
+enum PromiseStatus {
+  PENDING
+  KEPT
+  PARTIAL
+  BROKEN
+}
+
+enum ReminderRecipient {
+  BORROWER
+  OFFICER
+}
+
+enum ReminderStatus {
+  QUEUED
+  SENT_MOCK
+  DEFERRED_WINDOW
+  CANCELLED
+}
+
+enum PaymentSource {
+  IMPORT
+}
+
+// ---------------------------------------------------------------------------
+// Better Auth core tables (user, session, account, verification), plus our
+// extra user fields. Checked against `npx auth generate` when auth is wired.
+// ---------------------------------------------------------------------------
+
+model User {
+  id            String   @id
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  role          Role    @default(OFFICER)
+  branchId      String?
+  locale        Locale  @default(hi)
+  phone         String?
+  dailyCapacity Int     @default(25)
+
+  branch   Branch?   @relation(fields: [branchId], references: [id])
+  sessions Session[]
+  accounts Account[]
+
+  pincodes        OfficerPincode[]
+  assignments     Assignment[]     @relation("AssignmentOfficer")
+  assignmentsMade Assignment[]     @relation("AssignmentBy")
+  contactAttempts ContactAttempt[]
+  outcomes        Outcome[]
+  listOverrides   ListOverride[]   @relation("OverrideOfficer")
+  overridesMade   ListOverride[]   @relation("OverrideManager")
+  imports         ImportBatch[]
+  auditLogs       AuditLog[]
+
+  @@index([branchId, role])
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+// ---------------------------------------------------------------------------
+// Organisation
+// ---------------------------------------------------------------------------
+
+model Branch {
+  id   String @id @default(cuid())
+  code String @unique
+  name String
+  city String
+
+  users User[]
+  loans Loan[]
+
+  @@map("branch")
+}
+
+// An officer's territory: the pincodes they cover (A3).
+model OfficerPincode {
+  officerId String
+  pincode   String
+  officer   User   @relation(fields: [officerId], references: [id], onDelete: Cascade)
+
+  @@id([officerId, pincode])
+  @@index([pincode])
+  @@map("officer_pincode")
+}
+
+// ---------------------------------------------------------------------------
+// Loans and the daily overdue import
+// ---------------------------------------------------------------------------
+
+model Borrower {
+  id            String @id @default(cuid())
+  name          String
+  businessType  String
+  phone         String
+  address       String
+  pincode       String
+  lat           Float?
+  lng           Float?
+  preferredLang Locale @default(hi)
+
+  loans Loan[]
+
+  @@index([pincode])
+  @@map("borrower")
+}
+
+model Loan {
+  id            String   @id @default(cuid())
+  loanNo        String   @unique
+  borrowerId    String
+  branchId      String
+  emiAmount     Int
+  // Set by a DISPUTE outcome; contact is blocked until a manager clears it (A12).
+  contactPaused Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  borrower        Borrower         @relation(fields: [borrowerId], references: [id])
+  branch          Branch           @relation(fields: [branchId], references: [id])
+  snapshots       LoanSnapshot[]
+  assignments     Assignment[]
+  scores          PriorityScore[]
+  overrides       ListOverride[]
+  contactAttempts ContactAttempt[]
+  outcomes        Outcome[]
+  promises        PromiseToPay[]
+  payments        Payment[]
+
+  @@index([branchId])
+  @@map("loan")
+}
+
+model ImportBatch {
+  id           String       @id @default(cuid())
+  asOfDate     DateTime     @db.Date
+  fileName     String
+  uploadedById String
+  rowCount     Int
+  errorCount   Int
+  // Per-row validation errors: [{ row, field, message }]
+  errors       Json         @default("[]")
+  status       ImportStatus @default(PREVIEW)
+  createdAt    DateTime     @default(now())
+  committedAt  DateTime?
+
+  uploadedBy User           @relation(fields: [uploadedById], references: [id])
+  snapshots  LoanSnapshot[]
+
+  @@index([asOfDate])
+  @@map("import_batch")
+}
+
+// One row per loan per import day. Roll rates are computed from these (D10).
+model LoanSnapshot {
+  id                String    @id @default(cuid())
+  loanId            String
+  asOfDate          DateTime  @db.Date
+  outstanding       Int
+  dpd               Int
+  lastPaymentDate   DateTime? @db.Date
+  lastPaymentAmount Int?
+  importBatchId     String?
+
+  loan        Loan         @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  importBatch ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+
+  @@unique([loanId, asOfDate])
+  @@index([asOfDate, dpd])
+  @@map("loan_snapshot")
+}
+
+// Assignment history; the current one has endedAt = null.
+model Assignment {
+  id           String           @id @default(cuid())
+  loanId       String
+  officerId    String
+  source       AssignmentSource
+  assignedById String?
+  reason       String?
+  startedAt    DateTime         @default(now())
+  endedAt      DateTime?
+
+  loan       Loan  @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  officer    User  @relation("AssignmentOfficer", fields: [officerId], references: [id])
+  assignedBy User? @relation("AssignmentBy", fields: [assignedById], references: [id])
+
+  @@index([loanId, endedAt])
+  @@index([officerId, endedAt])
+  @@map("assignment")
+}
+
+// ---------------------------------------------------------------------------
+// Prioritisation
+// ---------------------------------------------------------------------------
+
+model PriorityScore {
+  id             String   @id @default(cuid())
+  loanId         String
+  asOfDate       DateTime @db.Date
+  modelVersion   String
+  // P(loan rolls to 31+ DPD within 30 days)
+  probability    Float
+  // Expected rupee loss avoidable = probability × outstanding × NPA × LGD
+  expectedLoss   Int
+  // Top reasons: [{ feature, contribution, value }]
+  reasons        Json
+  limitedHistory Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([loanId, asOfDate, modelVersion])
+  @@index([asOfDate])
+  @@map("priority_score")
+}
+
+// A manager's manual reordering of an officer's list for one day (advisory AI).
+model ListOverride {
+  id        String   @id @default(cuid())
+  managerId String
+  officerId String
+  loanId    String
+  date      DateTime @db.Date
+  position  Int
+  reason    String
+  createdAt DateTime @default(now())
+
+  manager User @relation("OverrideManager", fields: [managerId], references: [id])
+  officer User @relation("OverrideOfficer", fields: [officerId], references: [id])
+  loan    Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([officerId, date, loanId])
+  @@map("list_override")
+}
+
+// ---------------------------------------------------------------------------
+// Field activity (append-only; written through the offline sync endpoint)
+// ---------------------------------------------------------------------------
+
+// Every Call/Visit tap, including ones the contact window blocked.
+model ContactAttempt {
+  id          String         @id @default(cuid())
+  // Client-generated UUID: the idempotency key for offline retries.
+  clientId    String         @unique
+  loanId      String
+  officerId   String
+  channel     ContactChannel
+  deviceAt    DateTime
+  correctedAt DateTime
+  receivedAt  DateTime       @default(now())
+  lat         Float?
+  lng         Float?
+  accuracyM   Float?
+  allowed     Boolean
+  blockReason String?
+
+  loan     Loan      @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  officer  User      @relation(fields: [officerId], references: [id])
+  outcomes Outcome[]
+
+  @@index([loanId, correctedAt])
+  @@index([officerId, correctedAt])
+  @@map("contact_attempt")
+}
+
+model Outcome {
+  id          String      @id @default(cuid())
+  clientId    String      @unique
+  loanId      String
+  officerId   String
+  attemptId   String?
+  type        OutcomeType
+  amount      Int?
+  note        String?
+  deviceAt    DateTime
+  correctedAt DateTime
+  receivedAt  DateTime    @default(now())
+  lat         Float?
+  lng         Float?
+  accuracyM   Float?
+
+  loan    Loan            @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  officer User            @relation(fields: [officerId], references: [id])
+  attempt ContactAttempt? @relation(fields: [attemptId], references: [id])
+  promise PromiseToPay?
+
+  @@index([loanId, correctedAt])
+  @@index([officerId, correctedAt])
+  @@map("outcome")
+}
+
+model PromiseToPay {
+  id         String        @id @default(cuid())
+  loanId     String
+  outcomeId  String?       @unique
+  dueDate    DateTime      @db.Date
+  amount     Int
+  status     PromiseStatus @default(PENDING)
+  paidAmount Int           @default(0)
+  resolvedAt DateTime?
+  createdAt  DateTime      @default(now())
+
+  loan      Loan       @relation(fields: [loanId], references: [id], onDelete: Cascade)
+  outcome   Outcome?   @relation(fields: [outcomeId], references: [id])
+  reminders Reminder[]
+
+  @@index([loanId, status])
+  @@index([dueDate, status])
+  @@map("promise_to_pay")
+}
+
+// Payments detected from the daily import (A8).
+model Payment {
+  id     String        @id @default(cuid())
+  loanId String
+  date   DateTime      @db.Date
+  amount Int
+  source PaymentSource @default(IMPORT)
+
+  loan Loan @relation(fields: [loanId], references: [id], onDelete: Cascade)
+
+  @@unique([loanId, date])
+  @@map("payment")
+}
+
+// ---------------------------------------------------------------------------
+// Messaging (mocked), audit and model monitoring
+// ---------------------------------------------------------------------------
+
+model Reminder {
+  id           String            @id @default(cuid())
+  promiseId    String
+  recipient    ReminderRecipient
+  scheduledFor DateTime
+  status       ReminderStatus    @default(QUEUED)
+  body         String
+  sentAt       DateTime?
+
+  promise PromiseToPay @relation(fields: [promiseId], references: [id], onDelete: Cascade)
+
+  @@index([status, scheduledFor])
+  @@map("reminder")
+}
+
+// Stand-in for the SMS/WhatsApp gateway: every "sent" message lands here.
+model MessageLog {
+  id         String   @id @default(cuid())
+  channel    String
+  to         String
+  body       String
+  reminderId String?
+  createdAt  DateTime @default(now())
+
+  @@map("message_log")
+}
+
+model AuditLog {
+  id       String   @id @default(cuid())
+  actorId  String?
+  action   String
+  entity   String
+  entityId String
+  meta     Json     @default("{}")
+  at       DateTime @default(now())
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entity, entityId])
+  @@index([actorId, at])
+  @@map("audit_log")
+}
+
+model BacktestRun {
+  id           String   @id @default(cuid())
+  weekStart    DateTime @db.Date
+  modelVersion String
+  metrics      Json
+  createdAt    DateTime @default(now())
+
+  @@unique([weekStart, modelVersion])
+  @@map("backtest_run")
+}

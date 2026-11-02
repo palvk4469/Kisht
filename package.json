@@ -6,6 +6,7 @@
     "node": ">=22.12"
   },
   "scripts": {
+    "postinstall": "pnpm --filter @kisht/db generate",
     "dev": "pnpm -r --parallel --if-present dev",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck",
