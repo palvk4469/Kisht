@@ -1,0 +1,21 @@
+node_modules/
+dist/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# generated
+packages/db/src/generated/
+
+# env
+.env
+.env.*
+!.env.example
+
+# os / editor
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
