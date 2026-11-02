@@ -14,7 +14,8 @@
     "migrate:test": "PRISMA_TARGET=test prisma migrate deploy",
     "seed": "tsx src/seed/index.ts",
     "typecheck": "tsc -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sim:stats": "tsx scripts/simStats.ts"
   },
   "devDependencies": {
     "@types/pg": "8.23.1",
@@ -24,9 +25,10 @@
     "vitest": "5.0.5"
   },
   "dependencies": {
+    "@kisht/shared": "workspace:*",
     "@prisma/adapter-pg": "7.10.1",
     "@prisma/client": "7.10.1",
-    "pg": "8.23.1",
-    "@kisht/shared": "workspace:*"
+    "better-auth": "1.7.15",
+    "pg": "8.23.1"
   }
 }
