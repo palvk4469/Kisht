@@ -5,7 +5,7 @@ import { defineConfig, env } from "prisma/config";
 config({ path: new URL("../../.env", import.meta.url).pathname, quiet: true });
 
 // PRISMA_TARGET=test points the CLI at the test database (see migrate:test).
-const urlVar = process.env["PRISMA_TARGET"] === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL";
+const urlVar = process.env.PRISMA_TARGET === "test" ? "TEST_DATABASE_URL" : "DATABASE_URL";
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

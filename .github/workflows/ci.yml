@@ -52,6 +52,8 @@ jobs:
       - name: Apply migrations
         run: pnpm --filter @kisht/db migrate:deploy
 
+      - run: pnpm lint
+
       - run: pnpm typecheck
 
       - run: pnpm test

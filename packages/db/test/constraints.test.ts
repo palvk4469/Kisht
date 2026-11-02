@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { toDbDate } from "@kisht/shared";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Prisma } from "../src/index.js";
 import { createTestPrisma } from "./testDb.js";
 
@@ -16,10 +16,21 @@ beforeAll(async () => {
     data: { code: `T-${tag}`, name: "Test branch", city: "Indore" },
   });
   const officer = await prisma.user.create({
-    data: { id: `u-${tag}`, name: "Test Officer", email: `officer-${tag}@test.local`, branchId: branch.id },
+    data: {
+      id: `u-${tag}`,
+      name: "Test Officer",
+      email: `officer-${tag}@test.local`,
+      branchId: branch.id,
+    },
   });
   const borrower = await prisma.borrower.create({
-    data: { name: "Company T", businessType: "test", phone: "9000000000", address: "-", pincode: "452001" },
+    data: {
+      name: "Company T",
+      businessType: "test",
+      phone: "9000000000",
+      address: "-",
+      pincode: "452001",
+    },
   });
   const loan = await prisma.loan.create({
     data: { loanNo: `LN-T-${tag}`, borrowerId: borrower.id, branchId: branch.id, emiAmount: 10000 },
@@ -64,12 +75,16 @@ describe("promise: one pending promise per loan", () => {
     });
 
     await expect(
-      prisma.promiseToPay.create({ data: { loanId, dueDate: toDbDate("2026-11-07"), amount: 20000 } }),
+      prisma.promiseToPay.create({
+        data: { loanId, dueDate: toDbDate("2026-11-07"), amount: 20000 },
+      }),
     ).rejects.toSatisfy(isUniqueViolation);
 
     await prisma.promiseToPay.update({ where: { id: first.id }, data: { status: "BROKEN" } });
     await expect(
-      prisma.promiseToPay.create({ data: { loanId, dueDate: toDbDate("2026-11-07"), amount: 20000 } }),
+      prisma.promiseToPay.create({
+        data: { loanId, dueDate: toDbDate("2026-11-07"), amount: 20000 },
+      }),
     ).resolves.toBeTruthy();
   });
 });

@@ -10,14 +10,14 @@ See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md) and [docs/DECISIONS.md](docs/DECI
 
 ## Stack
 
-| Layer | Choice |
-|---|---|
-| Web | Next.js 16 (App Router), a PWA. The officer UI is built for phones, the manager UI for desktop |
-| API | Fastify 5, zod-validated routes |
-| Database | PostgreSQL 16, Prisma 7 (pg driver adapter) |
-| Auth | Better Auth (email and password), roles `OFFICER`, `BRANCH_MANAGER` and `HEAD` |
-| Offline | Dexie (IndexedDB) outbox and a service worker |
-| Tests | Vitest; Playwright for the offline flow |
+| Layer    | Choice                                                                                         |
+| -------- | ---------------------------------------------------------------------------------------------- |
+| Web      | Next.js 16 (App Router), a PWA. The officer UI is built for phones, the manager UI for desktop |
+| API      | Fastify 5, zod-validated routes                                                                |
+| Database | PostgreSQL 16, Prisma 7 (pg driver adapter)                                                    |
+| Auth     | Better Auth (email and password), roles `OFFICER`, `BRANCH_MANAGER` and `HEAD`                 |
+| Offline  | Dexie (IndexedDB) outbox and a service worker                                                  |
+| Tests    | Vitest; Playwright for the offline flow                                                        |
 
 ## Repository layout
 
