@@ -6,7 +6,9 @@ A field collections app for an MSME lender (an RBI-registered NBFC in Indore). E
 - **Offline first.** Outcomes and contact attempts go to an on-device outbox and sync when there's signal. Each event carries an idempotency key, so retries never create duplicates.
 - **Contact window.** RBI recovery rules allow contact only between 8 am and 7 pm, so the app blocks calls and visits outside that window. The server checks again using the time the action happened (corrected for device clock skew), and every attempt is recorded, blocked ones included.
 
-See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
+> **Status:** in active development (a 7-day build, 2026-11-02 to 2026-11-08). Foundations are done; features land day by day. The [engineering log](docs/ENGINEERING-LOG.md) tracks what's built and why.
+
+See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md), [docs/DECISIONS.md](docs/DECISIONS.md) and [docs/ENGINEERING-LOG.md](docs/ENGINEERING-LOG.md).
 
 ## Stack
 
@@ -29,7 +31,7 @@ packages/
   db/        Prisma schema, migrations, client, seed
   shared/    Pure domain logic shared by web and API: contact window,
              scoring, assignment, roll rate, zod schemas
-docs/        Assumptions, decisions, TDD
+docs/        Assumptions, decisions, engineering log, TDD
 ```
 
 ## Run locally
