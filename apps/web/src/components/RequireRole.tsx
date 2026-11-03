@@ -1,13 +1,11 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { type ReactNode, useEffect } from "react";
-import { ApiError } from "@/lib/api";
-import { useDefaultLocale } from "@/lib/i18n";
-import { homeFor, type Me, type Role, useMe } from "@/lib/session";
+import type { Me, Role } from "@kisht/contracts";
+import type { ReactNode } from "react";
+import { useSessionRoute } from "@/features/session/useSessionRoute";
 import { ErrorState, Skeleton } from "./ui";
 
-/** Client-side guard. The API enforces access on every request; this only routes people. */
+/** Renders children only for the given roles; everyone else is routed home. */
 export function RequireRole({
   roles,
   children,
@@ -15,23 +13,12 @@ export function RequireRole({
   roles: Role[];
   children: (me: Me) => ReactNode;
 }) {
-  const router = useRouter();
-  const me = useMe();
-  useDefaultLocale(me.data?.locale);
-
-  const signedOut = me.error instanceof ApiError && me.error.status === 401;
-  const wrongRole = me.data && !roles.includes(me.data.role);
-
-  useEffect(() => {
-    if (signedOut) router.replace("/login");
-    else if (wrongRole && me.data) router.replace(homeFor(me.data.role));
-  }, [signedOut, wrongRole, me.data, router]);
-
-  if (me.data && !wrongRole) return <>{children(me.data)}</>;
-  if (me.error && !signedOut) {
+  const session = useSessionRoute(roles);
+  if (session.state === "ready") return <>{children(session.me)}</>;
+  if (session.state === "error") {
     return (
       <div className="mx-auto max-w-md p-6">
-        <ErrorState error={me.error} onRetry={() => void me.refetch()} />
+        <ErrorState error={session.error} onRetry={session.retry} />
       </div>
     );
   }

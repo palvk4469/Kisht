@@ -10,6 +10,7 @@
     "typecheck": "next typegen && tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@kisht/contracts": "workspace:*",
     "@kisht/domain": "workspace:*",
     "@next/env": "16.4.3",
     "@tanstack/react-query": "5.105.0",
@@ -17,7 +18,8 @@
     "lucide-react": "1.66.0",
     "next": "16.4.3",
     "react": "19.3.1",
-    "react-dom": "19.3.1"
+    "react-dom": "19.3.1",
+    "zod": "4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

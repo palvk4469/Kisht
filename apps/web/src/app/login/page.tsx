@@ -5,10 +5,9 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Button, cx } from "@/components/ui";
-import { api } from "@/lib/api";
+import { fetchMe, homeFor, sessionKeys } from "@/features/session/api";
 import { authClient } from "@/lib/auth-client";
 import { type MessageKey, useI18n } from "@/lib/i18n";
-import { homeFor, type Me } from "@/lib/session";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 const DEMO_PASSWORD = process.env.NEXT_PUBLIC_DEMO_PASSWORD ?? "";
@@ -55,8 +54,8 @@ export default function LoginPage() {
         return;
       }
       const me = await queryClient.fetchQuery({
-        queryKey: ["me"],
-        queryFn: () => api<Me>("/api/me"),
+        queryKey: sessionKeys.me(),
+        queryFn: fetchMe,
         staleTime: 0,
       });
       router.replace(homeFor(me.role));

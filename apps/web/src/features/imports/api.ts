@@ -1,0 +1,41 @@
+"use client";
+
+import {
+  ImportCommitted,
+  ImportHistory,
+  ImportPreview,
+  type ImportPreviewBody,
+} from "@kisht/contracts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { request } from "@/lib/api";
+
+export const importKeys = {
+  all: ["imports"] as const,
+  history: () => [...importKeys.all, "history"] as const,
+};
+
+export function useImportHistory() {
+  return useQuery({
+    queryKey: importKeys.history(),
+    queryFn: () => request("/api/imports", { schema: ImportHistory }),
+  });
+}
+
+export function usePreviewImport() {
+  return useMutation({
+    mutationFn: (body: ImportPreviewBody) =>
+      request("/api/imports", { method: "POST", body, schema: ImportPreview }),
+  });
+}
+
+export function useCommitImport() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) =>
+      request(`/api/imports/${encodeURIComponent(id)}/commit`, {
+        method: "POST",
+        schema: ImportCommitted,
+      }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: importKeys.all }),
+  });
+}

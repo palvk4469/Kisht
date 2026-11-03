@@ -16,7 +16,7 @@ loadEnvConfig(
 const apiUrl = process.env.API_URL ?? "http://localhost:4000";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@kisht/domain"],
+  transpilePackages: ["@kisht/domain", "@kisht/contracts"],
   // Inlined explicitly so values from the root .env reach the client bundle.
   env: {
     NEXT_PUBLIC_DEMO_MODE: process.env.NEXT_PUBLIC_DEMO_MODE ?? "false",

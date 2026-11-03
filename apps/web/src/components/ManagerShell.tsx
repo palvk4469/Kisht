@@ -1,11 +1,11 @@
 "use client";
 
+import type { Me } from "@kisht/contracts";
 import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { type MessageKey, useI18n } from "@/lib/i18n";
-import type { Me } from "@/lib/session";
 import { LanguageToggle } from "./LanguageToggle";
 import { cx } from "./ui";
 import { useSignOut } from "./useSignOut";
