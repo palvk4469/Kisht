@@ -1,0 +1,5 @@
+{
+  "extends": "../../tsconfig.base.json",
+  // Consumed as source by Next/Turbopack and tsx alike: see packages/domain.
+  "include": ["src"]
+}

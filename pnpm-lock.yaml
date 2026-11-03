@@ -244,6 +244,15 @@ importers:
         specifier: 4.3.3
         version: 4.3.3
 
+  packages/contracts:
+    dependencies:
+      '@kisht/domain':
+        specifier: workspace:*
+        version: link:../domain
+      zod:
+        specifier: 4.6.7
+        version: 4.6.7
+
   packages/db:
     dependencies:
       '@kisht/domain':

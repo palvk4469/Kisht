@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 // Calendar days in this app are IST days, written as "YYYY-MM-DD" strings.
 //
 // Postgres DATE columns (Prisma @db.Date) keep only the UTC date part of a JS
@@ -55,3 +57,6 @@ export function addDays(day: IsoDay, n: number): IsoDay {
 export function daysBetween(from: IsoDay, to: IsoDay): number {
   return Math.round((toDbDate(to).getTime() - toDbDate(from).getTime()) / DAY_MS);
 }
+
+/** Zod schema for an IST calendar day, for API inputs and contracts. */
+export const IsoDaySchema = z.string().refine(isIsoDay, "must be a real date as YYYY-MM-DD");

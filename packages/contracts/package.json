@@ -1,0 +1,16 @@
+{
+  "name": "@kisht/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@kisht/domain": "workspace:*",
+    "zod": "4.6.7"
+  }
+}
