@@ -1,6 +1,12 @@
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
 import type { PrismaClient } from "@kisht/db";
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
-import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import {
+  jsonSchemaTransform,
+  serializerCompiler,
+  validatorCompiler,
+} from "fastify-type-provider-zod";
 import type { AppConfig, AppContext, Clock } from "./context.js";
 import { errorHandler } from "./http/errors.js";
 import { makeAuthenticate } from "./http/guards.js";
@@ -42,6 +48,22 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   app.setErrorHandler(errorHandler);
   app.decorateRequest("user", null);
   app.addHook("onRequest", makeOriginGuard(config.baseURL));
+
+  if (config.docs) {
+    // OpenAPI generated from the same zod contracts the routes run on.
+    await app.register(swagger, {
+      openapi: {
+        info: {
+          title: "Kisht Collections API",
+          version: "1.0.0",
+          description:
+            "Field collections for MSME loans. Every route is scoped to the signed-in user (D6).",
+        },
+      },
+      transform: jsonSchemaTransform,
+    });
+    await app.register(swaggerUi, { routePrefix: "/api/docs" });
+  }
 
   for (const register of MODULES) register(app, ctx);
   return app;
