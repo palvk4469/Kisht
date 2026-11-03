@@ -37,5 +37,71 @@
     "parser": {
       "tailwindDirectives": true
     }
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/web/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@kisht/db": "The web app never touches the database directly: call the API (D3, D14).",
+                  "@prisma/client": "The web app never touches the database directly: call the API (D3, D14).",
+                  "fastify": "The web app never touches the database directly: call the API (D3, D14)."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/domain/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@kisht/db": "Domain rules stay pure (no I/O, no framework) so the phone and the server run the same code (D1).",
+                  "@kisht/contracts": "Domain rules stay pure (no I/O, no framework) so the phone and the server run the same code (D1).",
+                  "@prisma/client": "Domain rules stay pure (no I/O, no framework) so the phone and the server run the same code (D1).",
+                  "fastify": "Domain rules stay pure (no I/O, no framework) so the phone and the server run the same code (D1).",
+                  "next": "Domain rules stay pure (no I/O, no framework) so the phone and the server run the same code (D1).",
+                  "react": "Domain rules stay pure (no I/O, no framework) so the phone and the server run the same code (D1).",
+                  "better-auth": "Domain rules stay pure (no I/O, no framework) so the phone and the server run the same code (D1)."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/contracts/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "@kisht/db": "Contracts describe the wire format only; they must not depend on servers or the database.",
+                  "@prisma/client": "Contracts describe the wire format only; they must not depend on servers or the database.",
+                  "fastify": "Contracts describe the wire format only; they must not depend on servers or the database.",
+                  "next": "Contracts describe the wire format only; they must not depend on servers or the database.",
+                  "react": "Contracts describe the wire format only; they must not depend on servers or the database.",
+                  "better-auth": "Contracts describe the wire format only; they must not depend on servers or the database."
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
 }

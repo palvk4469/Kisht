@@ -60,3 +60,64 @@ jobs:
 
       - name: Build web
         run: pnpm --filter @kisht/web build
+
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: check
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: kisht
+          POSTGRES_PASSWORD: kisht
+          POSTGRES_DB: kisht
+          TZ: Asia/Kolkata
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U kisht -d kisht"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # CI-only throwaway values for the service container and demo data.
+      DATABASE_URL: postgresql://kisht:kisht@localhost:5432/kisht
+      BETTER_AUTH_SECRET: ci-only-not-a-real-secret-0123456789abcdef
+      BETTER_AUTH_URL: http://localhost:3000
+      API_URL: http://localhost:4000
+      DEMO_MODE: "true"
+      DEMO_PASSWORD: ci-demo-password
+      NEXT_PUBLIC_DEMO_MODE: "true"
+      NEXT_PUBLIC_DEMO_PASSWORD: ci-demo-password
+      TZ: Asia/Kolkata
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm exec playwright install --with-deps chromium
+
+      - name: Migrate and seed the demo world
+        run: pnpm db:migrate && pnpm db:seed
+
+      - run: pnpm --filter @kisht/web build
+
+      - run: pnpm e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7
