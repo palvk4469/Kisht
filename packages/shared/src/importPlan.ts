@@ -1,5 +1,5 @@
-import type { OverdueRow } from "./csv.js";
-import { addDays, type IsoDay } from "./dates.js";
+import type { OverdueRow } from "./csv.ts";
+import { addDays, type IsoDay } from "./dates.ts";
 
 // What a day's overdue list tells us, compared with the previous import (A8).
 //

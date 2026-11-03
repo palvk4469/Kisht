@@ -1,4 +1,4 @@
-import { addDays, istDayOf, istDayStart } from "./dates.js";
+import { addDays, istDayOf, istDayStart } from "./dates.ts";
 
 // RBI recovery rules: borrowers may be contacted only between 08:00 and 19:00
 // local time (A4). The window is half-open, [08:00, 19:00): 18:59:59 is

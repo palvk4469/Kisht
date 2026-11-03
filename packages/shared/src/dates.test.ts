@@ -7,7 +7,7 @@ import {
   istDayOf,
   istDayStart,
   toDbDate,
-} from "./dates.js";
+} from "./dates.ts";
 
 describe("istDayOf", () => {
   it("uses the IST day, not the UTC day, just after IST midnight", () => {

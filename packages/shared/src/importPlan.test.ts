@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { OverdueRow } from "./csv.js";
-import { planImport } from "./importPlan.js";
+import type { OverdueRow } from "./csv.ts";
+import { planImport } from "./importPlan.ts";
 
 const row = (loanNo: string, over: Partial<OverdueRow> = {}): OverdueRow => ({
   row: 2,

@@ -1,4 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
+  // Relative imports use explicit .ts specifiers: this package is consumed as
+  // source by Next/Turbopack (web) as well as tsx/vitest (api, db), and .ts is
+  // the one form all of them resolve.
   "include": ["src"]
 }

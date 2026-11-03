@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { maskPhone } from "./privacy.js";
+import { maskPhone } from "./privacy.ts";
 
 describe("maskPhone", () => {
   it("keeps only the last four digits", () => {

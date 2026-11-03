@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OVERDUE_COLUMNS, parseCsv, parseOverdueCsv } from "./csv.js";
+import { OVERDUE_COLUMNS, parseCsv, parseOverdueCsv } from "./csv.ts";
 
 const TODAY = "2026-11-02";
 const header = OVERDUE_COLUMNS.join(",");

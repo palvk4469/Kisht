@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { type IsoDay, isIsoDay } from "./dates.js";
+import { type IsoDay, isIsoDay } from "./dates.ts";
 
 // Parsing and validation of the loan system's daily overdue export (A1).
 //

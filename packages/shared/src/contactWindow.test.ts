@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isContactAllowed, istMinuteOfDay, nextAllowedAt } from "./contactWindow.js";
+import { isContactAllowed, istMinuteOfDay, nextAllowedAt } from "./contactWindow.ts";
 
 const ist = (t: string) => new Date(`${t}+05:30`);
 

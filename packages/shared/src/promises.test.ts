@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { resolvePromise } from "./promises.js";
+import { resolvePromise } from "./promises.ts";
 
 const promise = { madeOn: "2026-11-01", dueDate: "2026-11-05", amount: 20000 };
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { assignLoans, type OfficerTerritory } from "./assignment.js";
+import { assignLoans, type OfficerTerritory } from "./assignment.ts";
 
 const officers: OfficerTerritory[] = [
   { officerId: "rahul", pincodes: ["452001", "452002"] },

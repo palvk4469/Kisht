@@ -1,4 +1,4 @@
-import { addDays, type IsoDay } from "./dates.js";
+import { addDays, type IsoDay } from "./dates.ts";
 
 // Promise-to-pay resolution (A7).
 //
