@@ -48,9 +48,16 @@ pnpm dev          # web on http://localhost:3000, API on http://localhost:4000
 ```
 
 ```bash
+pnpm lint
 pnpm typecheck
-pnpm test
+pnpm test          # unit + API integration tests (uses the kisht_test database)
+pnpm e2e           # browser tests on phone and desktop; needs a seeded DB and a web build:
+                   # pnpm db:seed && pnpm --filter @kisht/web build && pnpm e2e
 ```
+
+### Demo mode
+
+With `DEMO_MODE=true` and `NEXT_PUBLIC_DEMO_MODE=true` (the defaults in `.env.example`), the sign-in page offers one-tap demo accounts, and the import screen offers **Download today's sample export**: the latest overdue list with a few realistic changes (three loans paid off, two part-payments, a new loan and one bad row), so an upload exercises every part of the preview. Every demo account uses the password in `DEMO_PASSWORD`.
 
 Tests that touch the database use the separate `kisht_test` database, which docker-compose creates on first start. Apply migrations to it with `pnpm db:migrate:test`.
 
@@ -59,4 +66,4 @@ To change the schema, edit `packages/db/prisma/schema.prisma` and run `pnpm db:m
 ### Troubleshooting
 
 - **Port 5432 already in use.** The compose file maps Postgres to host port 5433 by default. If you change `POSTGRES_PORT`, update the URLs in `.env` to match.
-- **`next dev` fails with "Too many open files (os error 24)".** Your machine has run out of inotify instances. Raise the limit with `sudo sysctl fs.inotify.max_user_instances=512`, or use `pnpm --filter @kisht/web build && pnpm --filter @kisht/web start` instead.
+- **`pnpm dev` fails with "Too many open files" (EMFILE / os error 24).** Your machine has run out of inotify instances (editors use many). Raise the limit with `sudo sysctl fs.inotify.max_user_instances=512`. Or run without file watchers: `pnpm --filter @kisht/api start` and `pnpm --filter @kisht/web build && pnpm --filter @kisht/web start`.
