@@ -25,6 +25,12 @@ export const OVERDUE_COLUMNS = [
 
 export const MAX_IMPORT_ROWS = 20_000;
 
+/** Example rows for the downloadable template: the brief's sample loans, in export format. */
+export const OVERDUE_TEMPLATE_ROWS: readonly string[] = [
+  'LN-10293,Company B (packaging unit),packaging unit,9000012345,"Plot 117, Siyaganj, Indore 452001",452001,640000,12,26700,2026-09-21,26700,IND',
+  'LN-11930,Company D (printing press),printing press,9000054321,"Plot 8, Sector 1, Pithampur 454775",454775,220000,19,9200,2026-09-14,9200,PTH',
+];
+
 export type OverdueRow = {
   /** Row number as shown in Excel (header is row 1), for error messages. */
   row: number;

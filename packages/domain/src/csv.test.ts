@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { OVERDUE_COLUMNS, parseCsv, parseOverdueCsv } from "./csv.ts";
+import { OVERDUE_COLUMNS, OVERDUE_TEMPLATE_ROWS, parseCsv, parseOverdueCsv } from "./csv.ts";
 
 const TODAY = "2026-11-02";
 const header = OVERDUE_COLUMNS.join(",");
@@ -118,5 +118,13 @@ describe("parseOverdueCsv", () => {
   it("rejects impossible dates", () => {
     const r = parseOverdueCsv(`${header}\n${good.replace("2026-09-21", "31/02/2026")}`, TODAY);
     expect(r.errors[0]?.field).toBe("last_payment_date");
+  });
+});
+
+describe("OVERDUE_TEMPLATE_ROWS", () => {
+  it("is a valid export, so the downloadable template imports cleanly", () => {
+    const r = parseOverdueCsv([header, ...OVERDUE_TEMPLATE_ROWS].join("\n"), TODAY);
+    expect(r.errors).toEqual([]);
+    expect(r.rows).toHaveLength(OVERDUE_TEMPLATE_ROWS.length);
   });
 });

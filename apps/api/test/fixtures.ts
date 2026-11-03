@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { PrismaClient, Role } from "@kisht/db";
+import { type PrismaClient, provisionUser, type Role } from "@kisht/db";
 import { hashPassword } from "better-auth/crypto";
 import type { FastifyInstance } from "fastify";
 
@@ -45,18 +45,7 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
   async function person(key: string, role: Role, branchId: string | null): Promise<Person> {
     const id = `${key}-${tag}`;
     const email = `${key}-${tag}@test.local`;
-    await prisma.user.create({
-      data: {
-        id,
-        name: key,
-        email,
-        role,
-        branchId,
-        accounts: {
-          create: { id: `acc-${id}`, accountId: id, providerId: "credential", password },
-        },
-      },
-    });
+    await provisionUser(prisma, { id, name: key, email, role, branchId }, password);
     return { id, email };
   }
 

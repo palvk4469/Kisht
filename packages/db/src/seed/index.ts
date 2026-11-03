@@ -9,13 +9,14 @@
 
 import { type IsoDay, isIsoDay, istDayOf, istDayStart, toDbDate } from "@kisht/domain";
 import { hashPassword } from "better-auth/crypto";
-import { config } from "dotenv";
 import { createPrismaClient } from "../client.js";
+import { loadRootEnv } from "../env.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
+import { provisionUser } from "../provision.js";
 import { BRANCHES, STAFF } from "./reference.js";
 import { simulate } from "./simulate.js";
 
-config({ path: new URL("../../../../.env", import.meta.url).pathname, quiet: true });
+loadRootEnv();
 
 const BATCH = 5000;
 
@@ -45,26 +46,19 @@ export async function seed(prisma: PrismaClient, today: IsoDay, demoPassword: st
 
   const password = await hashPassword(demoPassword);
   for (const s of STAFF) {
-    await prisma.user.create({
-      data: {
+    await provisionUser(
+      prisma,
+      {
         id: userId(s.key),
         name: s.name,
         email: s.email,
-        emailVerified: true,
         role: s.role,
         locale: s.locale,
         branchId: s.branch ? branchId(s.branch) : null,
-        accounts: {
-          create: {
-            id: `acc_${s.key}`,
-            accountId: userId(s.key),
-            providerId: "credential",
-            password,
-          },
-        },
-        pincodes: { create: (s.pincodes ?? []).map((pincode) => ({ pincode })) },
+        pincodes: s.pincodes ?? [],
       },
-    });
+      password,
+    );
   }
 
   await inBatches(sim.borrowers, (data) => prisma.borrower.createMany({ data }));

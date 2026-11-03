@@ -1,6 +1,6 @@
 "use client";
 
-import { istDayOf, OVERDUE_COLUMNS } from "@kisht/domain";
+import { istDayOf, OVERDUE_COLUMNS, OVERDUE_TEMPLATE_ROWS } from "@kisht/domain";
 import { type UseQueryResult, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, FileSpreadsheet, History, Info, Upload } from "lucide-react";
 import { type DragEvent, useId, useRef, useState } from "react";
@@ -45,11 +45,7 @@ type HistoryItem = {
 const MAX_BYTES = 8 * 1024 * 1024;
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 
-const TEMPLATE = [
-  OVERDUE_COLUMNS.join(","),
-  'LN-10293,Company B (packaging unit),packaging unit,9000012345,"Plot 117, Siyaganj, Indore 452001",452001,640000,12,26700,2026-09-21,26700,IND',
-  'LN-11930,Company D (printing press),printing press,9000054321,"Plot 8, Sector 1, Pithampur 454775",454775,220000,19,9200,2026-09-14,9200,PTH',
-].join("\n");
+const TEMPLATE = [OVERDUE_COLUMNS.join(","), ...OVERDUE_TEMPLATE_ROWS].join("\n");
 
 function downloadTemplate() {
   const url = URL.createObjectURL(new Blob([`${TEMPLATE}\n`], { type: "text/csv" }));

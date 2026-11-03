@@ -200,3 +200,6 @@ export const SAMPLE_LOANS: SampleLoan[] = [
     promise: { daysFromToday: -2, madeDaysAgo: 6 },
   },
 ];
+
+/** Loan numbers of the brief's sample rows; demo tooling leaves these untouched. */
+export const SAMPLE_LOAN_NOS: readonly string[] = SAMPLE_LOANS.map((s) => s.loanNo);

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@kisht/db";
+import { type PrismaClient, SAMPLE_LOAN_NOS } from "@kisht/db";
 import { addDays, fromDbDate, OVERDUE_COLUMNS } from "@kisht/domain";
 import { batchesAffecting, loanWhere, type ManagerScope } from "../auth/scope.js";
 
@@ -33,9 +33,7 @@ export async function buildDemoSample(
   });
 
   // The brief's sample loans stay untouched so the demo story holds.
-  const editable = snapshots.filter(
-    (s) => !["LN-10293", "LN-10871", "LN-11930"].includes(s.loan.loanNo),
-  );
+  const editable = snapshots.filter((s) => !SAMPLE_LOAN_NOS.includes(s.loan.loanNo));
   const cured = new Set(
     editable
       .filter((_, i) => i % 23 === 5)

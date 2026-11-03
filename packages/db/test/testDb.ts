@@ -1,7 +1,7 @@
-import { config } from "dotenv";
 import { createPrismaClient } from "../src/client.js";
+import { loadRootEnv } from "../src/env.js";
 
-config({ path: new URL("../../../.env", import.meta.url).pathname, quiet: true });
+loadRootEnv();
 
 // Tests write and delete rows, so never let them point at a non-test database.
 export function createTestPrisma() {
