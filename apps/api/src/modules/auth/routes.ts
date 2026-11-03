@@ -1,14 +1,17 @@
 import type { FastifyInstance } from "fastify";
-import type { Auth } from "../auth/auth.js";
+import type { AppContext } from "../../context.js";
 
 // Bridges Fastify to Better Auth's fetch-style handler.
-export function registerAuthRoutes(app: FastifyInstance, auth: Auth, baseURL: string): void {
+export function registerAuth(app: FastifyInstance, ctx: AppContext): void {
+  const { auth, config } = ctx;
   app.route({
     method: ["GET", "POST"],
     url: "/api/auth/*",
+    // Better Auth documents its own endpoints; keep them out of our OpenAPI.
+    schema: { hide: true },
     async handler(request, reply) {
       // Build the URL from the configured origin, not the Host header (spoofable).
-      const url = new URL(request.url, baseURL);
+      const url = new URL(request.url, config.baseURL);
       const headers = new Headers();
       for (const [key, value] of Object.entries(request.headers)) {
         if (value !== undefined)

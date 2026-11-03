@@ -10,10 +10,13 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@kisht/contracts": "workspace:*",
     "@kisht/db": "workspace:*",
     "@kisht/domain": "workspace:*",
     "better-auth": "1.7.15",
     "fastify": "5.12.7",
+    "fastify-type-provider-zod": "7.0.0",
+    "openapi-types": "12.1.3",
     "zod": "4.6.7"
   },
   "devDependencies": {

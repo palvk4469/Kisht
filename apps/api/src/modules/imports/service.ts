@@ -1,3 +1,12 @@
+import type {
+  ImportCommitted,
+  ImportDetail,
+  ImportHistoryItem,
+  ImportPreview,
+  ImportPreviewBody,
+  ImportSummary,
+  RowError,
+} from "@kisht/contracts";
 import { Prisma, type PrismaClient } from "@kisht/db";
 import {
   type AssignmentResult,
@@ -10,77 +19,67 @@ import {
   type PreviousState,
   parseOverdueCsv,
   planImport,
-  type RowError,
   resolvePromise,
   toDbDate,
 } from "@kisht/domain";
-import { type AuthUser, HttpError } from "../auth/session.js";
+import type { AppContext } from "../../context.js";
+import { HttpError, notFound } from "../../http/errors.js";
+import type { AuthUser } from "../../http/guards.js";
+import { audit } from "../audit/audit.js";
+import {
+  batchBranchOf,
+  batchesAffecting,
+  batchesOwnedBy,
+  coversBranch,
+  loanWhere,
+  type ManagerScope,
+  managerScope,
+  officerWhere,
+} from "../auth/scope.js";
 
 // Daily overdue import: preview (validate, plan, no loan data written) and
 // commit (apply the plan in one transaction). See A1, A2, A3, A7, A8.
 
 type Db = PrismaClient | Prisma.TransactionClient;
+type BranchCodes = ReadonlyMap<string, string>;
 
-export type ImportScope = { branchIds: string[] | null };
-
-export function importScopeFor(user: AuthUser): ImportScope {
-  if (user.role === "HEAD") return { branchIds: null };
-  if (user.role === "BRANCH_MANAGER" && user.branchId) return { branchIds: [user.branchId] };
-  throw new HttpError(403, "Only branch managers and the head of collections can import");
-}
-
-const inScope = (scope: ImportScope, branchId: string) =>
-  scope.branchIds === null || scope.branchIds.includes(branchId);
-
-function branchWhere(scope: ImportScope): Prisma.LoanWhereInput {
-  return scope.branchIds === null ? {} : { branchId: { in: scope.branchIds } };
-}
-
-/** Committed batches that overlap this scope (a head import covers every branch). */
-function overlappingBatches(scope: ImportScope): Prisma.ImportBatchWhereInput {
-  if (scope.branchIds === null) return {};
-  return { OR: [{ branchId: null }, { branchId: { in: scope.branchIds } }] };
-}
-
-export type ImportSummary = {
-  asOfDate: IsoDay;
-  rows: number;
-  errors: number;
-  skippedOtherBranches: number;
-  newLoans: number;
-  cured: number;
-  payments: number;
-  replacesExisting: boolean;
-  assignment: {
-    kept: number;
-    new: number;
-    moved: number;
-    unassigned: number;
-    byOfficer: { officerId: string; name: string; loans: number }[];
-  };
-  promises?: { kept: number; partial: number; broken: number };
-};
+const MAX_ERRORS_RETURNED = 200;
 
 type Prepared = {
   rows: OverdueRow[];
   plan: ImportPlan;
   assignment: AssignmentResult;
   officerNames: Map<string, string>;
-  branchIdByCode: Map<string, string>;
   replacesExisting: boolean;
   loanIdByNo: Map<string, string>;
 };
 
-async function assertNotOutOfOrder(db: Db, scope: ImportScope, asOfDate: IsoDay) {
-  const latest = await db.importBatch.findFirst({
-    where: { status: "COMMITTED", ...overlappingBatches(scope) },
+async function branchCodes(db: Db): Promise<BranchCodes> {
+  const branches = await db.branch.findMany({ select: { id: true, code: true } });
+  return new Map(branches.map((b) => [b.code, b.id]));
+}
+
+/** Imports must arrive in date order; an older day would rewind assignments and promises. */
+async function assertInDateOrder(
+  db: Db,
+  scope: ManagerScope,
+  asOfDate: IsoDay,
+  excludeId?: string,
+) {
+  const later = await db.importBatch.findFirst({
+    where: {
+      AND: [batchesAffecting(scope)],
+      status: "COMMITTED",
+      asOfDate: { gt: toDbDate(asOfDate) },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
     orderBy: { asOfDate: "desc" },
     select: { asOfDate: true },
   });
-  if (latest && fromDbDate(latest.asOfDate) > asOfDate) {
+  if (later) {
     throw new HttpError(
       409,
-      `An import for ${fromDbDate(latest.asOfDate)} already exists. Imports must be uploaded in date order.`,
+      `An import for ${fromDbDate(later.asOfDate)} already exists. Imports must be uploaded in date order.`,
     );
   }
 }
@@ -88,16 +87,12 @@ async function assertNotOutOfOrder(db: Db, scope: ImportScope, asOfDate: IsoDay)
 /** Builds the plan from the database as it is now. Used by preview and, again, inside commit. */
 async function prepare(
   db: Db,
-  scope: ImportScope,
+  scope: ManagerScope,
   asOfDate: IsoDay,
   rows: OverdueRow[],
 ): Promise<Prepared> {
-  const branches = await db.branch.findMany({ select: { id: true, code: true } });
-  const branchIdByCode = new Map(branches.map((b) => [b.code, b.id]));
-
-  const loanNos = rows.map((r) => r.loanNo);
   const known = await db.loan.findMany({
-    where: { loanNo: { in: loanNos } },
+    where: { loanNo: { in: rows.map((r) => r.loanNo) } },
     select: { id: true, loanNo: true },
   });
   const loanIdByNo = new Map(known.map((l) => [l.loanNo, l.id]));
@@ -124,20 +119,23 @@ async function prepare(
   // The previous day's list in this scope, to find cured loans.
   const prevBatch = await db.importBatch.findFirst({
     where: {
+      AND: [batchesAffecting(scope)],
       status: "COMMITTED",
       asOfDate: { lt: toDbDate(asOfDate) },
-      ...overlappingBatches(scope),
     },
     orderBy: { asOfDate: "desc" },
     select: { asOfDate: true },
   });
-  const previousListRows = prevBatch
-    ? await db.loanSnapshot.findMany({
-        where: { asOfDate: prevBatch.asOfDate, loan: branchWhere(scope) },
-        select: { loan: { select: { loanNo: true } } },
-      })
-    : [];
-  const previousList = new Set(previousListRows.map((r) => r.loan.loanNo));
+  const previousList = new Set(
+    prevBatch
+      ? (
+          await db.loanSnapshot.findMany({
+            where: { asOfDate: prevBatch.asOfDate, loan: loanWhere(scope) },
+            select: { loan: { select: { loanNo: true } } },
+          })
+        ).map((r) => r.loan.loanNo)
+      : [],
+  );
 
   const plan = planImport({
     asOfDate,
@@ -147,12 +145,9 @@ async function prepare(
     knownLoans: new Set(loanIdByNo.keys()),
   });
 
-  // Assignment, as it would run on commit.
+  // Assignment, exactly as commit will run it.
   const officers = await db.user.findMany({
-    where: {
-      role: "OFFICER",
-      ...(scope.branchIds === null ? {} : { branchId: { in: scope.branchIds } }),
-    },
+    where: officerWhere(scope),
     select: { id: true, name: true, pincodes: { select: { pincode: true } } },
   });
   const current = await db.assignment.findMany({
@@ -173,7 +168,7 @@ async function prepare(
 
   const replacesExisting =
     (await db.importBatch.count({
-      where: { status: "COMMITTED", asOfDate: toDbDate(asOfDate), ...overlappingBatches(scope) },
+      where: { AND: [batchesAffecting(scope)], status: "COMMITTED", asOfDate: toDbDate(asOfDate) },
     })) > 0;
 
   return {
@@ -181,7 +176,6 @@ async function prepare(
     plan,
     assignment,
     officerNames: new Map(officers.map((o) => [o.id, o.name])),
-    branchIdByCode,
     replacesExisting,
     loanIdByNo,
   };
@@ -215,52 +209,51 @@ function summarise(asOfDate: IsoDay, p: Prepared, errors: number, skipped: numbe
 }
 
 export async function previewImport(
-  prisma: PrismaClient,
+  ctx: AppContext,
   user: AuthUser,
-  input: { asOfDate: IsoDay; fileName: string; csv: string },
-  now: Date,
-) {
-  const scope = importScopeFor(user);
-  if (input.asOfDate > istDayOf(now))
+  input: ImportPreviewBody,
+): Promise<ImportPreview> {
+  const { prisma } = ctx;
+  const scope = managerScope(user);
+  if (input.asOfDate > istDayOf(ctx.clock())) {
     throw new HttpError(400, "The as-of date cannot be in the future");
-  await assertNotOutOfOrder(prisma, scope, input.asOfDate);
+  }
+  await assertInDateOrder(prisma, scope, input.asOfDate);
 
   const parsed = parseOverdueCsv(input.csv, input.asOfDate);
-  if (parsed.fileErrors.length > 0) {
-    throw new HttpError(422, parsed.fileErrors.join(" "));
-  }
+  if (parsed.fileErrors.length > 0) throw new HttpError(422, parsed.fileErrors.join(" "));
 
-  const branches = await prisma.branch.findMany({ select: { id: true, code: true } });
-  const branchIdByCode = new Map(branches.map((b) => [b.code, b.id]));
+  const codes = await branchCodes(prisma);
   const errors: RowError[] = [...parsed.errors];
   const rows: OverdueRow[] = [];
   let skipped = 0;
-  parsed.rows.forEach((row) => {
-    const branchId = branchIdByCode.get(row.branchCode);
+  for (const row of parsed.rows) {
+    const branchId = codes.get(row.branchCode);
     if (!branchId) {
       errors.push({
         row: row.row,
         field: "branch_code",
         message: `unknown branch "${row.branchCode}"`,
       });
-      return;
-    }
-    if (!inScope(scope, branchId)) {
+    } else if (!coversBranch(scope, branchId)) {
       skipped++;
-      return;
+    } else {
+      rows.push(row);
     }
-    rows.push(row);
-  });
+  }
 
-  const prepared = await prepare(prisma, scope, input.asOfDate, rows);
-  const summary = summarise(input.asOfDate, prepared, errors.length, skipped);
-
+  const summary = summarise(
+    input.asOfDate,
+    await prepare(prisma, scope, input.asOfDate, rows),
+    errors.length,
+    skipped,
+  );
   const batch = await prisma.importBatch.create({
     data: {
       asOfDate: toDbDate(input.asOfDate),
       fileName: input.fileName,
       uploadedById: user.id,
-      branchId: scope.branchIds?.[0] ?? null,
+      branchId: batchBranchOf(scope),
       rowCount: parsed.totalRows,
       errorCount: errors.length,
       skippedCount: skipped,
@@ -271,22 +264,24 @@ export async function previewImport(
     },
   });
 
-  return { id: batch.id, status: batch.status, summary, errors: errors.slice(0, 200) };
+  return { id: batch.id, status: "PREVIEW", summary, errors: errors.slice(0, MAX_ERRORS_RETURNED) };
 }
 
 export async function commitImport(
-  prisma: PrismaClient,
+  ctx: AppContext,
   user: AuthUser,
   batchId: string,
-  now: Date,
-) {
-  const scope = importScopeFor(user);
+): Promise<ImportCommitted> {
+  const { prisma } = ctx;
+  const now = ctx.clock();
+  const scope = managerScope(user);
   const batch = await prisma.importBatch.findFirst({
     where: { id: batchId, uploadedById: user.id },
   });
-  if (!batch) throw new HttpError(404, "Import not found");
-  if (batch.status !== "PREVIEW")
+  if (!batch) throw notFound("Import");
+  if (batch.status !== "PREVIEW") {
     throw new HttpError(409, `This import is already ${batch.status.toLowerCase()}`);
+  }
 
   const asOfDate = fromDbDate(batch.asOfDate);
   const rows = (batch.payload ?? []) as unknown as OverdueRow[];
@@ -301,7 +296,9 @@ export async function commitImport(
       if (claimed.count !== 1)
         throw new HttpError(409, "This import was committed by another request");
 
-      await assertNotOutOfOrderExcluding(tx, scope, asOfDate, batch.id);
+      // The database may have moved on since the preview: check and plan again.
+      await assertInDateOrder(tx, scope, asOfDate, batch.id);
+      const codes = await branchCodes(tx);
       const p = await prepare(tx, scope, asOfDate, rows);
 
       // 1. Loans and borrowers: create new ones, refresh details of known ones.
@@ -314,7 +311,7 @@ export async function commitImport(
         ).map((l) => [l.id, l]),
       );
       for (const row of rows) {
-        const branchId = p.branchIdByCode.get(row.branchCode);
+        const branchId = codes.get(row.branchCode);
         if (!branchId) continue;
         const borrowerData = {
           name: row.borrowerName,
@@ -323,11 +320,9 @@ export async function commitImport(
           address: row.address,
           pincode: row.pincode,
         };
-        const existingId = p.loanIdByNo.get(row.loanNo);
-        if (existingId) {
-          const loan = knownLoans.get(existingId);
-          if (!loan) continue;
-          const b = loan.borrower;
+        const existing = knownLoans.get(p.loanIdByNo.get(row.loanNo) ?? "");
+        if (existing) {
+          const b = existing.borrower;
           if (
             b.name !== row.borrowerName ||
             b.businessType !== row.businessType ||
@@ -337,9 +332,9 @@ export async function commitImport(
           ) {
             await tx.borrower.update({ where: { id: b.id }, data: borrowerData });
           }
-          if (loan.emiAmount !== row.emiAmount || loan.branchId !== branchId) {
+          if (existing.emiAmount !== row.emiAmount || existing.branchId !== branchId) {
             await tx.loan.update({
-              where: { id: loan.id },
+              where: { id: existing.id },
               data: { emiAmount: row.emiAmount, branchId },
             });
           }
@@ -360,14 +355,14 @@ export async function commitImport(
       // 2. Same-day re-upload replaces that day's snapshots in scope (A2).
       if (p.replacesExisting) {
         await tx.loanSnapshot.deleteMany({
-          where: { asOfDate: toDbDate(asOfDate), loan: branchWhere(scope) },
+          where: { asOfDate: toDbDate(asOfDate), loan: loanWhere(scope) },
         });
         await tx.importBatch.updateMany({
           where: {
+            AND: [batchesOwnedBy(scope)],
             id: { not: batch.id },
             status: "COMMITTED",
             asOfDate: toDbDate(asOfDate),
-            ...(scope.branchIds === null ? {} : { branchId: { in: scope.branchIds } }),
           },
           data: { status: "SUPERSEDED" },
         });
@@ -425,16 +420,19 @@ export async function commitImport(
       // 6. Promise resolution (A7). A cured loan has paid in full.
       const promiseCounts = { kept: 0, partial: 0, broken: 0 };
       const pending = await tx.promiseToPay.findMany({
-        where: { status: "PENDING", loan: branchWhere(scope) },
+        where: { status: "PENDING", loan: loanWhere(scope) },
         include: { loan: { select: { payments: { select: { date: true, amount: true } } } } },
       });
       const cured = new Set(curedIds);
       for (const promise of pending) {
-        const madeOn = istDayOf(promise.createdAt);
         const resolution = cured.has(promise.loanId)
-          ? { status: "KEPT" as const, paidAmount: promise.amount, resolvedOn: asOfDate }
+          ? { status: "KEPT" as const, paidAmount: promise.amount }
           : resolvePromise(
-              { madeOn, dueDate: fromDbDate(promise.dueDate), amount: promise.amount },
+              {
+                madeOn: istDayOf(promise.createdAt),
+                dueDate: fromDbDate(promise.dueDate),
+                amount: promise.amount,
+              },
               promise.loan.payments.map((x) => ({ date: fromDbDate(x.date), amount: x.amount })),
               asOfDate,
             );
@@ -456,14 +454,12 @@ export async function commitImport(
         where: { id: batch.id },
         data: { payload: Prisma.DbNull, summary: summary as unknown as Prisma.InputJsonValue },
       });
-      await tx.auditLog.create({
-        data: {
-          actorId: user.id,
-          action: "import.commit",
-          entity: "import_batch",
-          entityId: batch.id,
-          meta: { asOfDate, rows: rows.length } as Prisma.InputJsonValue,
-        },
+      await audit(tx, {
+        actorId: user.id,
+        action: "import.commit",
+        entity: "import_batch",
+        entityId: batch.id,
+        meta: { asOfDate, rows: rows.length },
       });
 
       return { id: batch.id, status: "COMMITTED" as const, summary };
@@ -472,25 +468,45 @@ export async function commitImport(
   );
 }
 
-async function assertNotOutOfOrderExcluding(
-  db: Db,
-  scope: ImportScope,
-  asOfDate: IsoDay,
-  batchId: string,
-) {
-  const later = await db.importBatch.findFirst({
-    where: {
-      id: { not: batchId },
-      status: "COMMITTED",
-      asOfDate: { gt: toDbDate(asOfDate) },
-      ...overlappingBatches(scope),
-    },
-    select: { asOfDate: true },
+const HISTORY_LIMIT = 30;
+
+export async function listImports(ctx: AppContext, user: AuthUser): Promise<ImportHistoryItem[]> {
+  const batches = await ctx.prisma.importBatch.findMany({
+    // Unconfirmed previews are scratch work, not history.
+    where: { AND: [batchesAffecting(managerScope(user))], status: { not: "PREVIEW" } },
+    orderBy: [{ asOfDate: "desc" }, { createdAt: "desc" }],
+    take: HISTORY_LIMIT,
+    include: { uploadedBy: { select: { name: true } } },
   });
-  if (later) {
-    throw new HttpError(
-      409,
-      `An import for ${fromDbDate(later.asOfDate)} was committed after this preview.`,
-    );
-  }
+  return batches.map((b) => ({
+    id: b.id,
+    asOfDate: fromDbDate(b.asOfDate),
+    fileName: b.fileName,
+    status: b.status,
+    rowCount: b.rowCount,
+    errorCount: b.errorCount,
+    uploadedBy: b.uploadedBy.name,
+    createdAt: b.createdAt.toISOString(),
+    committedAt: b.committedAt?.toISOString() ?? null,
+  }));
+}
+
+export async function getImport(
+  ctx: AppContext,
+  user: AuthUser,
+  id: string,
+): Promise<ImportDetail> {
+  const b = await ctx.prisma.importBatch.findFirst({
+    where: { AND: [batchesAffecting(managerScope(user))], id },
+  });
+  if (!b) throw notFound("Import");
+  return {
+    id: b.id,
+    asOfDate: fromDbDate(b.asOfDate),
+    fileName: b.fileName,
+    status: b.status,
+    summary: (b.summary as ImportSummary | null) ?? null,
+    errors: (b.errors as RowError[] | null) ?? [],
+    canCommit: b.status === "PREVIEW" && b.uploadedById === user.id && b.payload !== null,
+  };
 }

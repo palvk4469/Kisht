@@ -1,65 +1,48 @@
 import type { PrismaClient } from "@kisht/db";
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify";
-import { ZodError, z } from "zod";
-import { createAuth } from "./auth/auth.js";
-import { makeOriginGuard } from "./auth/origin.js";
-import { HttpError, makeAuthenticate } from "./auth/session.js";
-import { registerAuthRoutes } from "./routes/auth.js";
-import { registerImportRoutes } from "./routes/imports.js";
-import { registerLoanRoutes } from "./routes/loans.js";
-import { registerMeRoutes } from "./routes/me.js";
+import { serializerCompiler, validatorCompiler } from "fastify-type-provider-zod";
+import type { AppConfig, AppContext, Clock } from "./context.js";
+import { errorHandler } from "./http/errors.js";
+import { makeAuthenticate } from "./http/guards.js";
+import { makeOriginGuard } from "./http/origin.js";
+import { createAuth } from "./modules/auth/auth.js";
+import { registerAuth } from "./modules/auth/routes.js";
+import { registerHealth } from "./modules/health/routes.js";
+import { registerImports } from "./modules/imports/routes.js";
+import { registerLoans } from "./modules/loans/routes.js";
+import { registerMe } from "./modules/me/routes.js";
 
 export type BuildAppOptions = {
   prisma: PrismaClient;
   authSecret: string;
-  /** Public web origin; Better Auth builds callback URLs and checks Origin against it. */
-  baseURL: string;
+  config: Pick<AppConfig, "baseURL"> & Partial<AppConfig>;
+  clock?: Clock;
   logger?: FastifyServerOptions["logger"];
-  /** Injectable clock: tests pin "now"; the demo clock (D13) plugs in here. */
-  now?: () => Date;
-  demoMode?: boolean;
 };
 
-// Factory so tests can build the app and call it with app.inject(), no port needed.
+/** Every feature module, registered in one place. Each gets the same context. */
+const MODULES = [registerHealth, registerAuth, registerMe, registerLoans, registerImports];
+
+// Composition root. Tests call this and use app.inject(); no port, no globals.
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
+  const config: AppConfig = { demoMode: false, docs: false, ...opts.config };
+  const auth = createAuth(opts.prisma, { secret: opts.authSecret, baseURL: config.baseURL });
+  const ctx: AppContext = {
+    prisma: opts.prisma,
+    auth,
+    clock: opts.clock ?? (() => new Date()),
+    config,
+    authenticate: makeAuthenticate(auth),
+  };
+
   const app = Fastify({ logger: opts.logger ?? false });
-  const auth = createAuth(opts.prisma, { secret: opts.authSecret, baseURL: opts.baseURL });
-  const authenticate = makeAuthenticate(auth);
-
+  // Requests are validated and responses serialised by the zod contracts.
+  app.setValidatorCompiler(validatorCompiler);
+  app.setSerializerCompiler(serializerCompiler);
+  app.setErrorHandler(errorHandler);
   app.decorateRequest("user", null);
-  app.addHook("onRequest", makeOriginGuard(opts.baseURL));
+  app.addHook("onRequest", makeOriginGuard(config.baseURL));
 
-  app.setErrorHandler((error, request, reply) => {
-    if (error instanceof HttpError) {
-      return reply.status(error.statusCode).send({ error: error.message });
-    }
-    if (error instanceof ZodError) {
-      return reply.status(400).send({ error: "Invalid input", issues: z.flattenError(error) });
-    }
-    const status = (error as { statusCode?: number }).statusCode;
-    if (status && status >= 400 && status < 500) {
-      return reply.status(status).send({ error: (error as Error).message });
-    }
-    request.log.error(error);
-    return reply.status(500).send({ error: "Something went wrong" });
-  });
-
-  app.get("/health", async () => ({
-    status: "ok",
-    // Clients use this to measure device clock skew (see the sync design).
-    serverTime: new Date().toISOString(),
-  }));
-
-  registerAuthRoutes(app, auth, opts.baseURL);
-  registerMeRoutes(app, authenticate);
-  registerLoanRoutes(app, opts.prisma, authenticate);
-  registerImportRoutes(
-    app,
-    opts.prisma,
-    authenticate,
-    opts.now ?? (() => new Date()),
-    opts.demoMode ?? false,
-  );
-
+  for (const register of MODULES) register(app, ctx);
   return app;
 }

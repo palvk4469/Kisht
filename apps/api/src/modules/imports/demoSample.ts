@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@kisht/db";
 import { addDays, fromDbDate, OVERDUE_COLUMNS } from "@kisht/domain";
-import type { ImportScope } from "./service.js";
+import { batchesAffecting, loanWhere, type ManagerScope } from "../auth/scope.js";
 
 // Demo mode only (D13): an overdue export for the latest committed day, edited
 // so a reviewer's upload exercises every part of the preview: three loans
@@ -13,15 +13,10 @@ const quote = (v: string | number | null) => {
 
 export async function buildDemoSample(
   prisma: PrismaClient,
-  scope: ImportScope,
+  scope: ManagerScope,
 ): Promise<{ fileName: string; csv: string }> {
   const latest = await prisma.importBatch.findFirst({
-    where: {
-      status: "COMMITTED",
-      ...(scope.branchIds === null
-        ? {}
-        : { OR: [{ branchId: null }, { branchId: { in: scope.branchIds } }] }),
-    },
+    where: { AND: [batchesAffecting(scope)], status: "COMMITTED" },
     orderBy: { asOfDate: "desc" },
     select: { asOfDate: true },
   });
@@ -31,7 +26,7 @@ export async function buildDemoSample(
   const snapshots = await prisma.loanSnapshot.findMany({
     where: {
       asOfDate: latest.asOfDate,
-      ...(scope.branchIds === null ? {} : { loan: { branchId: { in: scope.branchIds } } }),
+      loan: loanWhere(scope),
     },
     include: { loan: { include: { borrower: true, branch: { select: { code: true } } } } },
     orderBy: { loan: { loanNo: "asc" } },

@@ -1,29 +1,15 @@
-import type { Locale, Role } from "@kisht/db";
+import type { Locale, Me, Role } from "@kisht/contracts";
 import { fromNodeHeaders } from "better-auth/node";
-import type { FastifyReply, FastifyRequest } from "fastify";
-import type { Auth } from "./auth.js";
+import type { FastifyRequest } from "fastify";
+import type { Auth } from "../modules/auth/auth.js";
+import { HttpError } from "./errors.js";
 
-export type AuthUser = {
-  id: string;
-  name: string;
-  email: string;
-  role: Role;
-  branchId: string | null;
-  locale: Locale;
-};
+/** The signed-in user, exactly as /api/me returns it. */
+export type AuthUser = Me;
 
 declare module "fastify" {
   interface FastifyRequest {
     user: AuthUser | null;
-  }
-}
-
-export class HttpError extends Error {
-  constructor(
-    readonly statusCode: number,
-    message: string,
-  ) {
-    super(message);
   }
 }
 
@@ -47,9 +33,9 @@ export function makeAuthenticate(auth: Auth) {
   };
 }
 
-/** Use after authenticate. Wrong role is 403; out-of-scope records are 404 (see loanScope). */
+/** Use after authenticate. Wrong role is 403; out-of-scope records are 404 (see scope.ts). */
 export function requireRole(...roles: Role[]) {
-  return async function checkRole(request: FastifyRequest, _reply: FastifyReply): Promise<void> {
+  return async function checkRole(request: FastifyRequest): Promise<void> {
     if (!request.user) throw new HttpError(401, "Not signed in");
     if (!roles.includes(request.user.role)) throw new HttpError(403, "Not allowed for this role");
   };

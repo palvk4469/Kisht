@@ -1,5 +1,5 @@
 import type { FastifyRequest } from "fastify";
-import { HttpError } from "./session.js";
+import { HttpError } from "./errors.js";
 
 const UNSAFE_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 

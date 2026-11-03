@@ -75,7 +75,12 @@ const officerOf = async (loanNo: string) =>
   )?.officerId ?? null;
 
 beforeAll(async () => {
-  app = await buildApp({ prisma, authSecret: TEST_SECRET, baseURL: TEST_ORIGIN, now: () => now });
+  app = await buildApp({
+    prisma,
+    authSecret: TEST_SECRET,
+    config: { baseURL: TEST_ORIGIN },
+    clock: () => now,
+  });
   fx = await createFixture(prisma);
   // Territories: A1 covers 452001, A2 covers 452002. 452099 is covered by nobody.
   await prisma.officerPincode.createMany({
