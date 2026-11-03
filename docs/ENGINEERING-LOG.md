@@ -50,7 +50,7 @@ After two days of shipping features, I stopped and removed the duplication befor
 
 | Before                                                                 | After                                                                                                                                   |
 | ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Access filters written by hand in 23 places across 4 files             | One `scope.ts` module; every `where` comes from it                                                                                      |
+| 9 access conditions written by hand (17 scope references) in 3 files   | One `scope.ts` module; every `where` comes from it                                                                                      |
 | 7 response types copied by hand into the web app                       | 0: both sides use `@kisht/contracts`, and the web parses every response with it                                                         |
 | Routes mixing HTTP and Prisma; `HttpError` defined in the session file | `modules/*/{routes,service}.ts`, `http/{errors,guards,origin}.ts`                                                                       |
 | A clock injected into imports only                                     | One `AppContext.clock`, ready for the contact window and the demo clock                                                                 |
