@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { toDbDate } from "@kisht/shared";
+import { toDbDate } from "@kisht/domain";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { Prisma } from "../src/index.js";
 import { createTestPrisma } from "./testDb.js";

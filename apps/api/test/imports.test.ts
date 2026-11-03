@@ -1,5 +1,5 @@
 import { createTestPrisma } from "@kisht/db/testing";
-import { OVERDUE_COLUMNS, toDbDate } from "@kisht/shared";
+import { OVERDUE_COLUMNS, toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";

@@ -7,7 +7,7 @@
 // Wipes all data first. Refuses to run with NODE_ENV=production unless
 // SEED_ALLOW_RESET=true is also set (for the hosted demo).
 
-import { type IsoDay, isIsoDay, istDayOf, istDayStart, toDbDate } from "@kisht/shared";
+import { type IsoDay, isIsoDay, istDayOf, istDayStart, toDbDate } from "@kisht/domain";
 import { hashPassword } from "better-auth/crypto";
 import { config } from "dotenv";
 import { createPrismaClient } from "../client.js";

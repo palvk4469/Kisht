@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@kisht/db";
-import { fromDbDate, isIsoDay } from "@kisht/shared";
+import { fromDbDate, isIsoDay } from "@kisht/domain";
 import type { FastifyInstance, preHandlerAsyncHookHandler } from "fastify";
 import { z } from "zod";
 import { currentUser, HttpError, requireRole } from "../auth/session.js";

@@ -29,7 +29,7 @@ apps/
   web/       Next.js app; /api/* is rewritten to the API
 packages/
   db/        Prisma schema, migrations, client, seed
-  shared/    Pure domain logic shared by web and API: contact window,
+  domain/    Pure business rules shared by web and API: contact window,
              scoring, assignment, roll rate, zod schemas
 docs/        Assumptions, decisions, engineering log, TDD
 ```

@@ -10,7 +10,7 @@
     "typecheck": "next typegen && tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@kisht/shared": "workspace:*",
+    "@kisht/domain": "workspace:*",
     "@next/env": "16.4.3",
     "@tanstack/react-query": "5.105.0",
     "better-auth": "1.7.15",

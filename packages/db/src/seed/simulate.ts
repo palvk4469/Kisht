@@ -19,7 +19,7 @@ import {
   istDayStart,
   type PaymentInput,
   resolvePromise,
-} from "@kisht/shared";
+} from "@kisht/domain";
 import {
   BUSINESS_TYPES,
   PINCODES,

@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@kisht/db";
-import { fromDbDate, maskPhone } from "@kisht/shared";
+import { fromDbDate, maskPhone } from "@kisht/domain";
 import type { FastifyInstance, preHandlerAsyncHookHandler } from "fastify";
 import { z } from "zod";
 import { loanScope } from "../auth/scope.js";

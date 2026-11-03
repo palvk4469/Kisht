@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@kisht/db": "workspace:*",
-    "@kisht/shared": "workspace:*",
+    "@kisht/domain": "workspace:*",
     "better-auth": "1.7.15",
     "fastify": "5.12.7",
     "zod": "4.6.7"

@@ -1,6 +1,6 @@
 // Prints calibration numbers for the seed simulation (quoted in the TDD).
 //   pnpm --filter @kisht/db sim:stats
-import { addDays, istDayOf } from "@kisht/shared";
+import { addDays, istDayOf } from "@kisht/domain";
 import { simulate } from "../src/seed/simulate.js";
 
 const today = process.env.SEED_TODAY ?? istDayOf(new Date());

@@ -1,6 +1,6 @@
 "use client";
 
-import { istDayOf, OVERDUE_COLUMNS } from "@kisht/shared";
+import { istDayOf, OVERDUE_COLUMNS } from "@kisht/domain";
 import { type UseQueryResult, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, Download, FileSpreadsheet, History, Info, Upload } from "lucide-react";
 import { type DragEvent, useId, useRef, useState } from "react";

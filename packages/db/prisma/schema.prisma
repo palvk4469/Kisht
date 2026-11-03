@@ -1,7 +1,7 @@
 // Data model for the field collections app. Money is whole rupees (Int):
 // the loan system export carries no paise. Calendar days (as-of dates,
 // promise dates) are @db.Date and always mean an IST calendar day: write them
-// with toDbDate() from @kisht/shared, never a raw local-midnight Date.
+// with toDbDate() from @kisht/domain, never a raw local-midnight Date.
 
 generator client {
   provider        = "prisma-client"

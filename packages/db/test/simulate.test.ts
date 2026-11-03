@@ -1,4 +1,4 @@
-import { addDays, isContactAllowed } from "@kisht/shared";
+import { addDays, isContactAllowed } from "@kisht/domain";
 import { beforeAll, describe, expect, it } from "vitest";
 import { type Simulation, simulate } from "../src/seed/simulate.js";
 

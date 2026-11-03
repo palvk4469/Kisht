@@ -1,5 +1,5 @@
 import type { PrismaClient } from "@kisht/db";
-import { addDays, fromDbDate, OVERDUE_COLUMNS } from "@kisht/shared";
+import { addDays, fromDbDate, OVERDUE_COLUMNS } from "@kisht/domain";
 import type { ImportScope } from "./service.js";
 
 // Demo mode only (D13): an overdue export for the latest committed day, edited

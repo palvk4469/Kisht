@@ -13,7 +13,7 @@ import {
   type RowError,
   resolvePromise,
   toDbDate,
-} from "@kisht/shared";
+} from "@kisht/domain";
 import { type AuthUser, HttpError } from "../auth/session.js";
 
 // Daily overdue import: preview (validate, plan, no loan data written) and
