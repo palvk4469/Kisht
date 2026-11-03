@@ -8,6 +8,11 @@ const EnvSchema = z.object({
   BETTER_AUTH_URL: z.url(),
   API_HOST: z.string().default("0.0.0.0"),
   API_PORT: z.coerce.number().int().positive().default(4000),
+  // Demo conveniences (D13): sample export download. Never set in a real deployment.
+  DEMO_MODE: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((v) => v === "true"),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

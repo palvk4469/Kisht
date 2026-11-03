@@ -3,6 +3,7 @@ import { fromDbDate, isIsoDay } from "@kisht/shared";
 import type { FastifyInstance, preHandlerAsyncHookHandler } from "fastify";
 import { z } from "zod";
 import { currentUser, HttpError, requireRole } from "../auth/session.js";
+import { buildDemoSample } from "../imports/demoSample.js";
 import { commitImport, importScopeFor, previewImport } from "../imports/service.js";
 
 const MAX_CSV_BYTES = 8 * 1024 * 1024;
@@ -19,6 +20,7 @@ export function registerImportRoutes(
   prisma: PrismaClient,
   authenticate: preHandlerAsyncHookHandler,
   now: () => Date,
+  demoMode: boolean,
 ) {
   const managers = { preHandler: [authenticate, requireRole("BRANCH_MANAGER", "HEAD")] };
 
@@ -32,6 +34,16 @@ export function registerImportRoutes(
     },
   );
 
+  if (demoMode) {
+    app.get("/api/imports/demo-sample", managers, async (request, reply) => {
+      const { fileName, csv } = await buildDemoSample(prisma, importScopeFor(currentUser(request)));
+      return reply
+        .header("content-type", "text/csv; charset=utf-8")
+        .header("content-disposition", `attachment; filename="${fileName}"`)
+        .send(csv);
+    });
+  }
+
   app.post("/api/imports/:id/commit", managers, async (request) => {
     const { id } = Params.parse(request.params);
     return commitImport(prisma, currentUser(request), id, now());
@@ -40,10 +52,13 @@ export function registerImportRoutes(
   app.get("/api/imports", managers, async (request) => {
     const scope = importScopeFor(currentUser(request));
     const batches = await prisma.importBatch.findMany({
-      where:
-        scope.branchIds === null
+      where: {
+        // Unconfirmed previews are scratch work, not history.
+        status: { not: "PREVIEW" },
+        ...(scope.branchIds === null
           ? {}
-          : { OR: [{ branchId: { in: scope.branchIds } }, { branchId: null }] },
+          : { OR: [{ branchId: { in: scope.branchIds } }, { branchId: null }] }),
+      },
       orderBy: [{ asOfDate: "desc" }, { createdAt: "desc" }],
       take: 30,
       include: { uploadedBy: { select: { name: true } } },

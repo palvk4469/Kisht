@@ -8,6 +8,7 @@ const app = await buildApp({
   prisma: getPrisma(),
   authSecret: env.BETTER_AUTH_SECRET,
   baseURL: env.BETTER_AUTH_URL,
+  demoMode: env.DEMO_MODE,
   logger: true,
 });
 
