@@ -43,3 +43,24 @@ A dated record of decisions, trade-offs and problems found along the way. Formal
   - `text-rendering: optimizeLegibility` was removed: it mis-spaces Noto at small sizes and costs layout time on low-end phones.
 - **Turbopack and NodeNext.** Next couldn't resolve `./dates.js`-style imports inside the shared package, which are correct for tsc's NodeNext mode. `@kisht/shared` now uses explicit `.ts` specifiers with `allowImportingTsExtensions`: the one form tsc, tsx, Vitest and Turbopack all accept.
 - **End-to-end tests (Playwright, phone and desktop):** signed-out redirect, officer routing, the full preview → commit flow on the sample export, and the wrong-password message. They run with one worker because the projects share a database, and two parallel imports did race in the first run.
+
+## Day 3 morning: architecture hardening (2026-11-03)
+
+After two days of shipping features, I stopped and removed the duplication before building more on top of it. Every later feature copies whatever pattern exists, so this was the cheapest moment to fix it. The rule was that behaviour must not change: the existing tests were not edited beyond how the app is built, and they all still pass.
+
+| Before                                                                 | After                                                                                                                                   |
+| ---------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Access filters written by hand in 23 places across 4 files             | One `scope.ts` module; every `where` comes from it                                                                                      |
+| 7 response types copied by hand into the web app                       | 0: both sides use `@kisht/contracts`, and the web parses every response with it                                                         |
+| Routes mixing HTTP and Prisma; `HttpError` defined in the session file | `modules/*/{routes,service}.ts`, `http/{errors,guards,origin}.ts`                                                                       |
+| A clock injected into imports only                                     | One `AppContext.clock`, ready for the contact window and the demo clock                                                                 |
+| Roll-rate maths in 2 places (the dashboard would have been a third)    | `domain/rollRate.ts`, unit tested; it gives the same 23.1% for the 2 Nov seed                                                           |
+| User provisioning and root-env loading each repeated                   | `provisionUser` and `loadRootEnv` in `@kisht/db`                                                                                        |
+| A 528-line import page                                                 | 19-line composition of `features/imports/*`                                                                                             |
+| Package boundaries by convention                                       | Lint-enforced (`noRestrictedImports`); domain coverage ≥ 90% (now 99.5%)                                                                |
+| Browser tests run only locally                                         | A CI job that migrates, seeds, builds and runs them                                                                                     |
+| 90 tests                                                               | 101 tests, including contract guarantees (unlisted fields stripped, broken responses become a logged 500) and the documented route list |
+
+Also renamed `@kisht/shared` to `@kisht/domain`: it holds business rules, and the name should say so. The API now serves OpenAPI docs at `/api/docs`, generated from the same schemas.
+
+Deliberately not done: splitting into services, or adding CQRS or a repository layer over Prisma. For a product this size they add indirection without a benefit a reviewer could point to.

@@ -15,7 +15,7 @@ See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md), [docs/DECISIONS.md](docs/DECISIO
 | Layer    | Choice                                                                                         |
 | -------- | ---------------------------------------------------------------------------------------------- |
 | Web      | Next.js 16 (App Router), a PWA. The officer UI is built for phones, the manager UI for desktop |
-| API      | Fastify 5, zod-validated routes                                                                |
+| API      | Fastify 5, routes typed by shared zod contracts                                                |
 | Database | PostgreSQL 16, Prisma 7 (pg driver adapter)                                                    |
 | Auth     | Better Auth (email and password), roles `OFFICER`, `BRANCH_MANAGER` and `HEAD`                 |
 | Offline  | Dexie (IndexedDB) outbox and a service worker                                                  |
@@ -25,14 +25,18 @@ See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md), [docs/DECISIONS.md](docs/DECISIO
 
 ```
 apps/
-  api/       Fastify API (buildApp() factory, tested with app.inject)
-  web/       Next.js app; /api/* is rewritten to the API
+  api/        Fastify API: modules/{auth,imports,loans,me,...}, each routes.ts + service.ts
+  web/        Next.js app: features/{session,imports}; /api/* is rewritten to the API
 packages/
-  db/        Prisma schema, migrations, client, seed
-  domain/    Pure business rules shared by web and API: contact window,
-             scoring, assignment, roll rate, zod schemas
-docs/        Assumptions, decisions, engineering log, TDD
+  domain/     Pure business rules (IST dates, contact window, promises, assignment,
+              CSV parsing, import planning, roll rate). No I/O, shared by web and API.
+  contracts/  Zod schemas for every API request and response (one wire format)
+  db/         Prisma schema, migrations, client, provisioning, deterministic seed
+docs/         Architecture, assumptions, decisions, engineering log, TDD
+e2e/          Playwright tests (phone and desktop)
 ```
+
+See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for diagrams and the dependency rule. With the API running, the OpenAPI docs are at <http://localhost:3000/api/docs>.
 
 ## Run locally
 
