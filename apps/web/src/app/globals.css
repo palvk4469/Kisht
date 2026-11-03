@@ -1,0 +1,47 @@
+@import "tailwindcss";
+
+/* Design tokens. One accent (ink indigo); red/amber/green are reserved for
+   meaning (risk, warning, done), never decoration. */
+@theme {
+  --font-sans: var(--font-noto-sans), var(--font-noto-devanagari), system-ui, sans-serif;
+
+  --color-ink: #16181d;
+  --color-muted: #5f6470;
+  --color-faint: #8b909a;
+  --color-line: #e7e7e4;
+  --color-surface: #f7f7f5;
+  --color-canvas: #ffffff;
+
+  --color-accent: #2f3a8f;
+  --color-accent-strong: #232c70;
+  --color-accent-soft: #eef0fa;
+
+  --color-risk: #b42318;
+  --color-risk-soft: #fef3f2;
+  --color-warn: #b54708;
+  --color-warn-soft: #fffaeb;
+  --color-ok: #067647;
+  --color-ok-soft: #ecfdf3;
+
+  --radius-card: 14px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    /* No text-rendering: optimizeLegibility: it mis-spaces Noto at small sizes
+       and costs layout time on low-end phones. */
+  }
+  body {
+    @apply bg-canvas text-ink antialiased;
+    font-feature-settings: "tnum" 0;
+  }
+  /* Money and counts line up in columns. */
+  .num {
+    font-variant-numeric: tabular-nums;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
