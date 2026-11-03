@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import { LanguageToggle } from "./LanguageToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { cx } from "./ui";
 import { useSignOut } from "./useSignOut";
 
@@ -24,7 +25,7 @@ export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) 
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 backdrop-blur">
         <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
           <Link href="/" className="flex items-center gap-2 font-semibold">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-sm text-white">
+            <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-sm text-on-accent">
               क
             </span>
             <span className="hidden sm:inline">{t("app.name")}</span>
@@ -52,6 +53,7 @@ export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) 
               <div className="text-muted">{t(`role.${me.role}`)}</div>
             </div>
             <LanguageToggle />
+            <ThemeToggle />
             <button
               type="button"
               onClick={() => void signOut()}

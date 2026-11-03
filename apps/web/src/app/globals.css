@@ -13,6 +13,8 @@
   --color-canvas: #ffffff;
 
   --color-accent: #2f3a8f;
+  /* Text and icons drawn on an accent or status fill. */
+  --color-on-accent: #ffffff;
   --color-accent-strong: #232c70;
   --color-accent-soft: #eef0fa;
 
@@ -24,6 +26,38 @@
   --color-ok-soft: #ecfdf3;
 
   --radius-card: 14px;
+}
+
+/* Dark theme: same roles, values tuned for contrast on near-black. Every
+   component uses these tokens, so the switch needs no component changes. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root.dark {
+  --color-ink: #e9eaee;
+  --color-muted: #a3a8b3;
+  --color-faint: #737985;
+  --color-line: #2a2d34;
+  --color-surface: #17191e;
+  --color-canvas: #0e1013;
+
+  --color-accent: #9aa3f5;
+  --color-accent-strong: #b6bdf8;
+  --color-accent-soft: #1f2340;
+  --color-on-accent: #0e1013;
+
+  --color-risk: #f97970;
+  --color-risk-soft: #2c1513;
+  --color-warn: #f5b546;
+  --color-warn-soft: #2a1f0b;
+  --color-ok: #4fd18b;
+  --color-ok-soft: #0d2618;
+}
+
+:root {
+  color-scheme: light;
+}
+:root.dark {
+  color-scheme: dark;
 }
 
 @layer base {

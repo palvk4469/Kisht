@@ -35,11 +35,11 @@ export function Button({
         "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:cursor-not-allowed",
         size === "lg" ? "h-12 px-5 text-base" : "h-10 px-4 text-sm",
         variant === "primary" &&
-          "bg-accent text-white hover:bg-accent-strong disabled:bg-accent/40 disabled:hover:bg-accent/40",
+          "bg-accent text-on-accent hover:bg-accent-strong disabled:bg-accent/40 disabled:hover:bg-accent/40",
         variant === "secondary" &&
           "border border-line bg-canvas text-ink hover:bg-surface disabled:text-faint disabled:hover:bg-canvas",
         variant === "ghost" && "text-muted hover:bg-surface hover:text-ink disabled:text-faint",
-        variant === "danger" && "bg-risk text-white hover:opacity-90 disabled:bg-risk/40",
+        variant === "danger" && "bg-risk text-on-accent hover:opacity-90 disabled:bg-risk/40",
         className,
       )}
     >

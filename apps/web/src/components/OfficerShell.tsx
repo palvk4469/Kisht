@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react";
 import type { ReactNode } from "react";
 import { useI18n } from "@/lib/i18n";
 import { LanguageToggle } from "./LanguageToggle";
+import { ThemeToggle } from "./ThemeToggle";
 import { useSignOut } from "./useSignOut";
 
 // Phone-first frame for every officer screen: one column, big targets,
@@ -21,6 +22,7 @@ export function OfficerShell({ me, children }: { me: Me; children: ReactNode }) 
         </div>
         <div className="flex">
           <LanguageToggle />
+          <ThemeToggle />
           <button
             type="button"
             onClick={() => void signOut()}

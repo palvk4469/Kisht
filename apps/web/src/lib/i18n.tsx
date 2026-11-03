@@ -17,6 +17,10 @@ import {
 const en = {
   "app.name": "Kisht Collections",
   "lang.toggle": "हिंदी",
+  "theme.label": "Theme",
+  "theme.light": "Light",
+  "theme.dark": "Dark",
+  "theme.system": "Same as device",
   "common.loading": "Loading…",
   "common.retry": "Try again",
   "common.cancel": "Cancel",
@@ -107,6 +111,10 @@ type Dictionary = Record<MessageKey, string>;
 const hi: Dictionary = {
   "app.name": "किश्त कलेक्शन",
   "lang.toggle": "English",
+  "theme.label": "थीम",
+  "theme.light": "लाइट",
+  "theme.dark": "डार्क",
+  "theme.system": "डिवाइस जैसा",
   "common.loading": "लोड हो रहा है…",
   "common.retry": "फिर से कोशिश करें",
   "common.cancel": "रद्द करें",

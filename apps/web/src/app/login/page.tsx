@@ -4,6 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button, cx } from "@/components/ui";
 import { fetchMe, homeFor, sessionKeys } from "@/features/session/api";
 import { authClient } from "@/lib/auth-client";
@@ -73,13 +74,14 @@ export default function LoginPage() {
 
   return (
     <main className="flex min-h-dvh flex-col bg-surface">
-      <header className="flex justify-end p-3">
+      <header className="flex justify-end gap-1 p-3">
+        <ThemeToggle />
         <LanguageToggle />
       </header>
       <div className="flex flex-1 items-start justify-center px-4 pb-12 sm:items-center">
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-accent text-lg font-semibold text-white">
+            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-accent text-lg font-semibold text-on-accent">
               क
             </div>
             <h1 className="text-2xl font-semibold">{t("app.name")}</h1>
