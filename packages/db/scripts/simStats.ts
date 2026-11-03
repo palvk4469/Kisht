@@ -1,6 +1,6 @@
 // Prints calibration numbers for the seed simulation (quoted in the TDD).
 //   pnpm --filter @kisht/db sim:stats
-import { addDays, istDayOf } from "@kisht/domain";
+import { istDayOf, rollRate } from "@kisht/domain";
 import { simulate } from "../src/seed/simulate.js";
 
 const today = process.env.SEED_TODAY ?? istDayOf(new Date());
@@ -8,19 +8,7 @@ const started = Date.now();
 const sim = simulate(today);
 const ms = Date.now() - started;
 
-const dpdOn = new Map<string, number>();
-for (const s of sim.snapshots) dpdOn.set(`${s.loanId}|${s.asOfDate}`, s.dpd);
-
-// Roll rate: loans at 1-30 DPD on day D (weekly cohorts) that are 31+ on D+30 (A6).
-let cohort = 0;
-let rolled = 0;
-for (let d = sim.historyStart; addDays(d, 30) <= today; d = addDays(d, 7)) {
-  for (const s of sim.snapshots) {
-    if (s.asOfDate !== d || s.dpd < 1 || s.dpd > 30) continue;
-    cohort++;
-    if ((dpdOn.get(`${s.loanId}|${addDays(d, 30)}`) ?? 0) >= 31) rolled++;
-  }
-}
+const roll = rollRate(sim.snapshots, { from: sim.historyStart, to: today });
 
 const todays = sim.snapshots.filter((s) => s.asOfDate === today).map((s) => s.dpd);
 const count = (status: string) => sim.promises.filter((p) => p.status === status).length;
@@ -34,7 +22,7 @@ console.table({
   "blocked attempts (after 7 pm)": sim.attempts.filter((a) => !a.allowed).length,
   promises: sim.promises.length,
   "promise kept rate": (count("KEPT") / resolved).toFixed(3),
-  "roll rate 1-30 -> 31+": (rolled / cohort).toFixed(3),
+  "roll rate 1-30 -> 31+": roll.rate?.toFixed(3) ?? "n/a",
   "overdue today": todays.length,
   "1-30 DPD": todays.filter((d) => d <= 30).length,
   "31-60 DPD": todays.filter((d) => d > 30 && d <= 60).length,

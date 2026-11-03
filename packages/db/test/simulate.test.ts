@@ -1,4 +1,4 @@
-import { addDays, isContactAllowed } from "@kisht/domain";
+import { addDays, isContactAllowed, rollRate } from "@kisht/domain";
 import { beforeAll, describe, expect, it } from "vitest";
 import { type Simulation, simulate } from "../src/seed/simulate.js";
 
@@ -41,19 +41,9 @@ describe("seed simulation", () => {
   });
 
   it("matches the brief's roll rate (about 22%)", () => {
-    const dpdOn = new Map<string, number>();
-    for (const s of sim.snapshots) dpdOn.set(`${s.loanId}|${s.asOfDate}`, s.dpd);
-    let cohort = 0;
-    let rolled = 0;
-    for (let d = sim.historyStart; addDays(d, 30) <= TODAY; d = addDays(d, 7)) {
-      for (const s of sim.snapshots) {
-        if (s.asOfDate !== d || s.dpd < 1 || s.dpd > 30) continue;
-        cohort++;
-        if ((dpdOn.get(`${s.loanId}|${addDays(d, 30)}`) ?? 0) >= 31) rolled++;
-      }
-    }
-    expect(rolled / cohort).toBeGreaterThan(0.17);
-    expect(rolled / cohort).toBeLessThan(0.28);
+    const { rate } = rollRate(sim.snapshots, { from: sim.historyStart, to: TODAY });
+    expect(rate).toBeGreaterThan(0.17);
+    expect(rate).toBeLessThan(0.28);
   });
 
   it("keeps the invariants the database enforces", () => {
