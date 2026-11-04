@@ -25,6 +25,7 @@ const item = (over: Partial<TodayItem> = {}): TodayItem => ({
   attemptsToday: 0,
   promise: null,
   lastOutcome: null,
+  managerNote: null,
   openAttemptClientId: null,
   history: [],
   ...over,

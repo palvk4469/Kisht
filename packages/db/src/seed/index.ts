@@ -7,7 +7,17 @@
 // Wipes all data first. Refuses to run with NODE_ENV=production unless
 // SEED_ALLOW_RESET=true is also set (for the hosted demo).
 
-import { type IsoDay, isIsoDay, istDayOf, istDayStart, toDbDate } from "@kisht/domain";
+import {
+  addDays,
+  formatRupees,
+  type IsoDay,
+  isIsoDay,
+  istDayOf,
+  istDayStart,
+  planReminders,
+  renderReminder,
+  toDbDate,
+} from "@kisht/domain";
 import { CURRENT_MODEL, factsAt, type LoanEvents, scoreLoan } from "@kisht/domain/scoring";
 import { hashPassword } from "better-auth/crypto";
 import { createPrismaClient } from "../client.js";
@@ -185,6 +195,44 @@ export async function seed(prisma: PrismaClient, today: IsoDay, demoPassword: st
       })),
     }),
   );
+
+  // Reminders as they'd have gone out: planned from each recent promise, sent if
+  // their moment has passed (this morning counts as before opening).
+  const morning = new Date(istDayStart(today).getTime() + 7 * 60 * 60_000);
+  const recentFrom = addDays(today, -14);
+  const loanById = new Map(sim.loans.map((l) => [l.id, l]));
+  const borrowerById = new Map(sim.borrowers.map((b) => [b.id, b]));
+  const reminders = sim.promises
+    .filter((p) => p.dueDate >= recentFrom)
+    .flatMap((p) => {
+      const loan = loanById.get(p.loanId);
+      const borrower = loan && borrowerById.get(loan.borrowerId);
+      if (!loan || !borrower) return [];
+      const vars = {
+        borrowerName: borrower.name,
+        amount: formatRupees(p.amount),
+        date: p.dueDate,
+        loanNo: loan.loanNo,
+      };
+      return planReminders(p.dueDate, p.createdAt).map((r) => {
+        const settled =
+          p.status !== "PENDING" && p.resolvedOn !== null && istDayStart(p.resolvedOn) <= r.at;
+        const sent = !settled && r.at <= morning;
+        return {
+          promiseId: p.id,
+          recipient: r.recipient,
+          scheduledFor: r.at,
+          status: settled
+            ? ("CANCELLED" as const)
+            : sent
+              ? ("SENT_MOCK" as const)
+              : ("QUEUED" as const),
+          sentAt: sent ? r.at : null,
+          body: renderReminder(r.template, "hi", vars),
+        };
+      });
+    });
+  await inBatches(reminders, (data) => prisma.reminder.createMany({ data }));
 
   // Scores for every day on record, so lists and the back-test have history.
   const events = eventsByLoan(sim);

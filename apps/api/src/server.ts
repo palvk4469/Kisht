@@ -11,6 +11,7 @@ const app = await buildApp({
     baseURL: env.BETTER_AUTH_URL,
     demoMode: env.DEMO_MODE,
     docs: env.NODE_ENV !== "production" || env.DEMO_MODE,
+    backgroundJobs: true,
   },
   logger: true,
 });

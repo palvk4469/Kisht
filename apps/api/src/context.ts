@@ -12,6 +12,8 @@ export type AppConfig = {
   demoMode: boolean;
   /** Serve OpenAPI docs at /api/docs. */
   docs: boolean;
+  /** Run timers such as the reminder dispatcher. Off in tests, which call them directly. */
+  backgroundJobs: boolean;
 };
 
 /** Everything a feature module needs, passed explicitly instead of imported globals. */

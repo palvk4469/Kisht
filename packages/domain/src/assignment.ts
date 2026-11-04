@@ -2,7 +2,8 @@
 //
 // Ownership rules, in order:
 //  1. Continuity: a loan stays with its current officer while that officer
-//     still covers the borrower's pincode. Borrowers deal with one person.
+//     still covers the borrower's pincode, or a manager assigned it by hand.
+//     Borrowers deal with one person.
 //  2. Otherwise it goes to the covering officer with the fewest loans
 //     (after step 1), so workload evens out. Ties break on officer id so the
 //     result is deterministic.
@@ -20,6 +21,8 @@ export type LoanToAssign = {
   loanId: string;
   pincode: string;
   currentOfficerId: string | null;
+  /** A manager chose this officer by hand (A21): the import doesn't undo it. */
+  keepCurrent?: boolean;
 };
 
 export type AssignmentDecision =
@@ -55,7 +58,11 @@ export function assignLoans(
   // Pass 1: continuity.
   for (const loan of loans) {
     const covering = coverage.get(loan.pincode) ?? [];
-    if (loan.currentOfficerId && covering.includes(loan.currentOfficerId)) {
+    const stays =
+      loan.currentOfficerId !== null &&
+      (covering.includes(loan.currentOfficerId) ||
+        (loan.keepCurrent === true && load.has(loan.currentOfficerId)));
+    if (stays && loan.currentOfficerId) {
       assigned.push({ loanId: loan.loanId, officerId: loan.currentOfficerId, kind: "KEPT" });
       load.set(loan.currentOfficerId, (load.get(loan.currentOfficerId) ?? 0) + 1);
     } else {

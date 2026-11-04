@@ -86,6 +86,8 @@ export const TodayItem = z.object({
   attemptsToday: z.number().int(),
   promise: PromiseSummary.nullable(),
   lastOutcome: z.object({ type: OutcomeType, at: z.iso.datetime() }).nullable(),
+  /** Why a manager moved this loan up or down today (A21); shown to the officer. */
+  managerNote: z.string().nullable(),
   /** An allowed attempt today with no outcome yet: logging links to it. */
   openAttemptClientId: z.string().nullable(),
   /** Recent outcomes. In this payload so the loan screen needs no network (D22). */

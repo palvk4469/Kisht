@@ -153,16 +153,15 @@ async function prepare(
   });
   const current = await db.assignment.findMany({
     where: { loanId: { in: known.map((l) => l.id) }, endedAt: null },
-    select: { loanId: true, officerId: true },
+    select: { loanId: true, officerId: true, source: true },
   });
-  const currentByLoanNo = new Map(
-    current.map((a) => [loanNoById.get(a.loanId) ?? "", a.officerId]),
-  );
+  const currentByLoanNo = new Map(current.map((a) => [loanNoById.get(a.loanId) ?? "", a]));
   const assignment = assignLoans(
     rows.map((r) => ({
       loanId: r.loanNo,
       pincode: r.pincode,
-      currentOfficerId: currentByLoanNo.get(r.loanNo) ?? null,
+      currentOfficerId: currentByLoanNo.get(r.loanNo)?.officerId ?? null,
+      keepCurrent: currentByLoanNo.get(r.loanNo)?.source === "MANUAL",
     })),
     officers.map((o) => ({ officerId: o.id, pincodes: o.pincodes.map((p) => p.pincode) })),
   );

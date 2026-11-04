@@ -19,6 +19,7 @@ import {
 import type { AppContext } from "../../context.js";
 import type { AuthUser } from "../../http/guards.js";
 import { audit } from "../audit/audit.js";
+import { scheduleReminders } from "../reminders/service.js";
 
 // Field events arriving from the phone, possibly hours late (D7, D9).
 // Everything is judged by when it happened, corrected for the phone's clock,
@@ -169,7 +170,7 @@ async function recordOutcome(
         where: { loanId: e.loanId, status: "PENDING" },
         data: { status: "SUPERSEDED", resolvedAt: now },
       });
-      await tx.promiseToPay.create({
+      const promise = await tx.promiseToPay.create({
         data: {
           loanId: e.loanId,
           outcomeId: outcome.id,
@@ -178,6 +179,7 @@ async function recordOutcome(
           createdAt: at,
         },
       });
+      await scheduleReminders(tx, promise.id, at);
     }
     if (e.type === "DISPUTE") {
       // Contact stops until a manager reviews it (A12).

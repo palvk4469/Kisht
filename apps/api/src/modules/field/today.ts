@@ -1,5 +1,6 @@
 import type { TodayItem, TodayItemState, TodayList } from "@kisht/contracts";
 import {
+  applyPins,
   fromDbDate,
   type IsoDay,
   isContactAllowed,
@@ -7,6 +8,7 @@ import {
   istDayStart,
   maskPhone,
   nextAllowedAt,
+  toDbDate,
 } from "@kisht/domain";
 import { compareByPriority } from "@kisht/domain/scoring";
 import type { AppContext } from "../../context.js";
@@ -36,6 +38,31 @@ const HISTORY_LENGTH = 6;
 
 const STATE_ORDER: Record<TodayItemState, number> = { todo: 0, waiting: 1, done: 2, paused: 3 };
 
+type Listable = { state: TodayItemState; dpd: number };
+
+/**
+ * The one definition of an officer's order, used by their list and the
+ * manager's board: state first, the model within it, then a manager's pins on
+ * what's left to do.
+ */
+export function orderList<T extends Listable>(
+  items: readonly T[],
+  pinOf: (item: T) => number | null,
+  rupeesOf: (item: T) => number = (i) =>
+    (i as T & { priority?: { expectedLoss: number } | null }).priority?.expectedLoss ?? 0,
+): T[] {
+  const sorted = [...items].sort(
+    (a, b) =>
+      STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
+      compareByPriority(
+        { dpd: a.dpd, expectedLoss: rupeesOf(a) },
+        { dpd: b.dpd, expectedLoss: rupeesOf(b) },
+      ),
+  );
+  const todo = sorted.filter((i) => i.state === "todo");
+  return [...applyPins(todo, pinOf), ...sorted.filter((i) => i.state !== "todo")];
+}
+
 export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<TodayList> {
   const now = ctx.clock();
   const today = istDayOf(now);
@@ -59,6 +86,10 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
         orderBy: { correctedAt: "desc" },
         take: HISTORY_LENGTH,
         include: { officer: { select: { name: true } } },
+      },
+      overrides: {
+        where: { officerId: user.id, date: toDbDate(today) },
+        select: { position: true, reason: true },
       },
       contactAttempts: {
         where: {
@@ -110,25 +141,22 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
         attemptsToday: loan._count.contactAttempts,
         promise: promise ? visiblePromise(promise, today) : null,
         lastOutcome: outcome ? { type: outcome.type, at: outcome.correctedAt.toISOString() } : null,
+        managerNote: loan.overrides[0]?.reason ?? null,
         openAttemptClientId: loan.contactAttempts[0]?.clientId ?? null,
         history: loan.outcomes.map(toHistory),
       },
     ];
   });
 
-  items.sort(
-    (a, b) =>
-      STATE_ORDER[a.state] - STATE_ORDER[b.state] ||
-      compareByPriority(
-        { dpd: a.dpd, expectedLoss: a.priority?.expectedLoss ?? 0 },
-        { dpd: b.dpd, expectedLoss: b.priority?.expectedLoss ?? 0 },
-      ),
+  const position = new Map(
+    loans.flatMap((l) => (l.overrides[0] ? [[l.id, l.overrides[0].position] as const] : [])),
   );
+  const ordered = orderList(items, (i) => position.get(i.loanId) ?? null);
 
   // The cap is on what's left to do today; everything else stays visible (A3).
   let todoShown = 0;
   let beyondCapacity = 0;
-  const visible = items.filter((item) => {
+  const visible = ordered.filter((item) => {
     if (item.state !== "todo") return true;
     if (todoShown < dailyCapacity) {
       todoShown++;

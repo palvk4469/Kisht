@@ -18,7 +18,9 @@ import { registerField } from "./modules/field/routes.js";
 import { registerHealth } from "./modules/health/routes.js";
 import { registerImports } from "./modules/imports/routes.js";
 import { registerLoans } from "./modules/loans/routes.js";
+import { registerManager } from "./modules/manager/routes.js";
 import { registerMe } from "./modules/me/routes.js";
+import { startReminderTimer } from "./modules/reminders/service.js";
 
 export type BuildAppOptions = {
   prisma: PrismaClient;
@@ -36,11 +38,12 @@ const MODULES = [
   registerLoans,
   registerImports,
   registerField,
+  registerManager,
 ];
 
 // Composition root. Tests call this and use app.inject(); no port, no globals.
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const config: AppConfig = { demoMode: false, docs: false, ...opts.config };
+  const config: AppConfig = { demoMode: false, docs: false, backgroundJobs: false, ...opts.config };
   const auth = createAuth(opts.prisma, { secret: opts.authSecret, baseURL: config.baseURL });
   const demoClock = createDemoClock(opts.clock ?? (() => new Date()));
   const ctx: AppContext = {
@@ -77,5 +80,9 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
 
   for (const register of MODULES) register(app, ctx);
   if (config.demoMode) registerDemo(app, ctx, demoClock);
+  if (config.backgroundJobs) {
+    const stop = startReminderTimer(ctx, app.log);
+    app.addHook("onClose", async () => stop());
+  }
   return app;
 }
