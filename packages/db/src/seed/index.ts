@@ -139,6 +139,22 @@ export async function seed(prisma: PrismaClient, today: IsoDay, demoPassword: st
     }),
   );
 
+  // A few imperfect records, by position so the simulation itself is untouched:
+  // the activity log has real exceptions to show a manager.
+  const attemptNo = new Map(sim.attempts.map((a, i) => [a.id, i]));
+  const NO_GPS_EVERY = 41;
+  const FAR_VISIT_EVERY = 67;
+  const WRONG_CLOCK_EVERY = 151;
+  const fixFor = (a: (typeof sim.attempts)[number]) => {
+    const n = attemptNo.get(a.id) ?? 0;
+    if (a.channel !== "VISIT") return { lat: a.lat, lng: a.lng, accuracyM: a.accuracyM };
+    if (n % NO_GPS_EVERY === 0) return { lat: null, lng: null, accuracyM: null };
+    if (n % FAR_VISIT_EVERY === 0) return { lat: a.lat + 0.03, lng: a.lng, accuracyM: a.accuracyM };
+    return { lat: a.lat, lng: a.lng, accuracyM: a.accuracyM };
+  };
+  const deviceAtFor = (a: (typeof sim.attempts)[number]) =>
+    (attemptNo.get(a.id) ?? 0) % WRONG_CLOCK_EVERY === 0 ? new Date(a.at.getTime() + 40 * 60_000) : a.at;
+
   await inBatches(sim.attempts, (chunk) =>
     prisma.contactAttempt.createMany({
       data: chunk.map((a) => ({
@@ -147,12 +163,10 @@ export async function seed(prisma: PrismaClient, today: IsoDay, demoPassword: st
         loanId: a.loanId,
         officerId: userId(a.officer),
         channel: a.channel,
-        deviceAt: a.at,
+        deviceAt: deviceAtFor(a),
         correctedAt: a.at,
         receivedAt: a.receivedAt,
-        lat: a.lat,
-        lng: a.lng,
-        accuracyM: a.accuracyM,
+        ...fixFor(a),
         allowed: a.allowed,
         blockReason: a.blockReason,
       })),

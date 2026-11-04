@@ -21,6 +21,7 @@ import { registerLoans } from "./modules/loans/routes.js";
 import { registerManager } from "./modules/manager/routes.js";
 import { registerMe } from "./modules/me/routes.js";
 import { startReminderTimer } from "./modules/reminders/service.js";
+import { registerReports } from "./modules/reports/routes.js";
 
 export type BuildAppOptions = {
   prisma: PrismaClient;
@@ -39,6 +40,7 @@ const MODULES = [
   registerImports,
   registerField,
   registerManager,
+  registerReports,
 ];
 
 // Composition root. Tests call this and use app.inject(); no port, no globals.

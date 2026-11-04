@@ -29,6 +29,11 @@
   --color-ok: #067647;
   --color-ok-soft: #ecfdf3;
 
+  /* Chart series, validated for colour-blind separation on both surfaces. */
+  --color-series-1: #4a58d4;
+  --color-series-2: #d9622b;
+  --color-series-muted: #c9cbd3;
+
   --radius-card: 14px;
 }
 
@@ -48,6 +53,9 @@
   --color-accent-strong: #b6bdf8;
   --color-accent-soft: #1f2340;
   --color-on-accent: #0e1013;
+  --color-series-1: #6f7ce8;
+  --color-series-2: #d95926;
+  --color-series-muted: #3b3f49;
 
   --color-risk: #f97970;
   --color-risk-soft: #2c1513;

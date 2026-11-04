@@ -3,6 +3,7 @@ export * from "./clock.ts";
 export * from "./contactWindow.ts";
 export * from "./csv.ts";
 export * from "./dates.ts";
+export * from "./geo.ts";
 export * from "./importPlan.ts";
 export * from "./listOrder.ts";
 export * from "./privacy.ts";
