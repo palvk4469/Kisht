@@ -207,6 +207,27 @@ describe("offline retries", () => {
     expect(await prisma.promiseToPay.count({ where: { loanId } })).toBe(1);
   });
 
+  it("stores a batch once when retries arrive at the same moment", async () => {
+    const loanId = await makeLoan({ dpd: 10, expectedLoss: 100 });
+    const a = attempt(loanId, now.toISOString());
+    const o = outcome(loanId, a.clientId, now.toISOString(), {
+      type: "PROMISE",
+      promiseDueDate: "2026-11-07",
+    });
+    const results = await Promise.all(
+      Array.from({ length: 8 }, () => sync({ attempts: [a], outcomes: [o] })),
+    );
+    const statuses = (kind: "attempts" | "outcomes") =>
+      results.map((r) => r[kind][0]?.status).sort();
+    const oneRecorded = ["recorded", ...Array(7).fill("duplicate")].sort();
+    expect(statuses("attempts")).toEqual(oneRecorded);
+    expect(statuses("outcomes")).toEqual(oneRecorded);
+    expect(await prisma.contactAttempt.count({ where: { clientId: a.clientId } })).toBe(1);
+    expect(await prisma.outcome.count({ where: { clientId: o.clientId } })).toBe(1);
+    expect(await prisma.promiseToPay.count({ where: { loanId } })).toBe(1);
+    expect(await prisma.reminder.count({ where: { promise: { loanId } } })).toBeGreaterThan(0);
+  });
+
   it("refuses events over 30 days old", async () => {
     const loanId = await makeLoan({ dpd: 10, expectedLoss: 100 });
     const res = await sync({

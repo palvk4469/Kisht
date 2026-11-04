@@ -24,7 +24,9 @@ import { scheduleReminders } from "../reminders/service.js";
 // Field events arriving from the phone, possibly hours late (D7, D9).
 // Everything is judged by when it happened, corrected for the phone's clock,
 // and by the server: the phone's own idea of the window is only a courtesy.
-// Each event is keyed by the phone's UUID, so retries change nothing.
+// Each event is keyed by the phone's UUID, so retries change nothing. The early
+// lookups only save work: retries arriving together can all pass them, so the
+// inserts skip conflicts and the database decides which one recorded the event.
 
 const PROMISE_MAX_DAYS_AHEAD = 30;
 
@@ -91,7 +93,8 @@ async function recordAttempt(
     allowedAttemptsToday,
   });
 
-  await prisma.contactAttempt.create({
+  const { count } = await prisma.contactAttempt.createMany({
+    skipDuplicates: true,
     data: {
       clientId: e.clientId,
       loanId: e.loanId,
@@ -107,6 +110,7 @@ async function recordAttempt(
       blockReason: block,
     },
   });
+  if (count === 0) return { clientId: e.clientId, status: "duplicate", reason: null };
   return block
     ? { clientId: e.clientId, status: "blocked", reason: block }
     : { clientId: e.clientId, status: "recorded", reason: null };
@@ -141,13 +145,14 @@ async function recordOutcome(
     return rejected(e.clientId, "BAD_PROMISE_DATE");
   }
 
-  await prisma.$transaction(async (tx) => {
+  const recorded = await prisma.$transaction(async (tx) => {
     const loan = await tx.loan.findUniqueOrThrow({
       where: { id: e.loanId },
       select: { emiAmount: true },
     });
     const amount = e.type === "PROMISE" ? (e.amount ?? loan.emiAmount) : e.amount;
-    const outcome = await tx.outcome.create({
+    const [outcome] = await tx.outcome.createManyAndReturn({
+      skipDuplicates: true,
       data: {
         clientId: e.clientId,
         loanId: e.loanId,
@@ -164,6 +169,7 @@ async function recordOutcome(
         accuracyM: e.accuracyM,
       },
     });
+    if (!outcome) return false;
     if (e.type === "PROMISE") {
       // A new promise replaces any open one (one pending per loan).
       await tx.promiseToPay.updateMany({
@@ -192,6 +198,7 @@ async function recordOutcome(
         meta: { outcomeId: outcome.id, note: e.note },
       });
     }
+    return true;
   });
-  return { clientId: e.clientId, status: "recorded", reason: null };
+  return { clientId: e.clientId, status: recorded ? "recorded" : "duplicate", reason: null };
 }
