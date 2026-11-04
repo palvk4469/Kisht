@@ -57,7 +57,7 @@ export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number;
           <span className="num mt-0.5 w-5 shrink-0 text-sm text-faint">{rank}</span>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold">{item.borrowerName}</h3>
+              <h2 className="font-semibold">{item.borrowerName}</h2>
               <ChevronRight className="mt-0.5 size-4 shrink-0 text-faint" aria-hidden />
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">

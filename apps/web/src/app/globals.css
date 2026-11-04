@@ -11,7 +11,7 @@
 
   --color-ink: #16181d;
   --color-muted: #5f6470;
-  --color-faint: #8b909a;
+  --color-faint: #6b707c;
   --color-line: #e7e7e4;
   --color-surface: #f7f7f5;
   --color-canvas: #ffffff;
@@ -44,7 +44,7 @@
 :root.dark {
   --color-ink: #e9eaee;
   --color-muted: #a3a8b3;
-  --color-faint: #737985;
+  --color-faint: #969ba7;
   --color-line: #2a2d34;
   --color-surface: #17191e;
   --color-canvas: #0e1013;

@@ -1,9 +1,11 @@
 "use client";
 
-import { type ReactNode, useEffect } from "react";
-import { useI18n } from "@/lib/i18n";
+import { type ReactNode, useEffect, useRef } from "react";
 
-/** A bottom sheet on phones, a centred dialog on desktop. Esc or the backdrop closes it. */
+/**
+ * A bottom sheet on phones, a centred dialog on desktop. A native <dialog>, so
+ * focus stays inside, Esc closes it, and it sits above everything else.
+ */
 export function Sheet({
   title,
   onClose,
@@ -13,29 +15,31 @@ export function Sheet({
   onClose: () => void;
   children: ReactNode;
 }) {
-  const { t } = useI18n();
+  const ref = useRef<HTMLDialogElement>(null);
+
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
+    const dialog = ref.current;
+    dialog?.showModal();
+    return () => dialog?.close();
+  }, []);
+
   return (
-    <div
-      className="fixed inset-0 z-30 flex items-end justify-center sm:items-center"
-      role="dialog"
-      aria-modal
+    <dialog
+      ref={ref}
       aria-label={title}
+      onCancel={(e) => {
+        e.preventDefault();
+        onClose();
+      }}
+      // A click on the dialog element itself can only be the backdrop.
+      onClick={(e) => e.target === ref.current && onClose()}
+      onKeyDown={(e) => e.stopPropagation()}
+      className="m-auto mb-0 max-h-[90dvh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-canvas text-ink shadow-xl backdrop:bg-ink/40 sm:mb-auto sm:rounded-2xl"
     >
-      <button
-        type="button"
-        aria-label={t("common.cancel")}
-        onClick={onClose}
-        className="absolute inset-0 bg-ink/40"
-      />
-      <div className="relative w-full max-w-md rounded-t-2xl bg-canvas p-5 pb-6 shadow-xl sm:rounded-2xl">
+      <div className="p-5 pb-6">
         <h2 className="text-lg font-semibold">{title}</h2>
         {children}
       </div>
-    </div>
+    </dialog>
   );
 }

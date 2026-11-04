@@ -181,6 +181,7 @@ export function ImportWorkflow() {
               </button>
               <input
                 ref={fileInput}
+                aria-label={t("import.file")}
                 type="file"
                 accept=".csv,text/csv"
                 className="sr-only"
