@@ -1,20 +1,20 @@
 import type { Prisma } from "@kisht/db";
 import {
+  formatDay,
   formatRupees,
   fromDbDate,
   isContactAllowed,
   nextAllowedAt,
   planReminders,
+  type ReminderLang,
   renderReminder,
 } from "@kisht/domain";
-import type { FastifyBaseLogger } from "fastify";
 import type { AppContext } from "../../context.js";
 
 // Promise reminders, from approved templates only. Sending is mocked: a "sent"
 // message lands in MessageLog (D11). Nothing goes to a borrower outside 8 am to
 // 7 pm, or once the promise is settled or the loan is in dispute.
 
-const DISPATCH_EVERY_MS = 60_000;
 const BATCH = 200;
 
 export async function scheduleReminders(
@@ -28,23 +28,22 @@ export async function scheduleReminders(
   });
   const { borrower } = promise.loan;
   const dueDate = fromDbDate(promise.dueDate);
-  const vars = {
+  const varsFor = (lang: ReminderLang) => ({
     borrowerName: borrower.name,
     amount: formatRupees(promise.amount),
-    date: dueDate,
+    date: formatDay(dueDate, lang),
     loanNo: promise.loan.loanNo,
-  };
+  });
   await tx.reminder.createMany({
-    data: planReminders(dueDate, madeAt).map((r) => ({
-      promiseId,
-      recipient: r.recipient,
-      scheduledFor: r.at,
-      body: renderReminder(
-        r.template,
-        r.recipient === "OFFICER" ? "hi" : borrower.preferredLang,
-        vars,
-      ),
-    })),
+    data: planReminders(dueDate, madeAt).map((r) => {
+      const lang = r.recipient === "OFFICER" ? "hi" : borrower.preferredLang;
+      return {
+        promiseId,
+        recipient: r.recipient,
+        scheduledFor: r.at,
+        body: renderReminder(r.template, lang, varsFor(lang)),
+      };
+    }),
   });
 }
 
@@ -116,12 +115,4 @@ export async function dispatchReminders(ctx: AppContext): Promise<DispatchResult
     });
   }
   return result;
-}
-
-export function startReminderTimer(ctx: AppContext, log: FastifyBaseLogger): () => void {
-  const timer = setInterval(() => {
-    dispatchReminders(ctx).catch((err: unknown) => log.error(err, "reminder dispatch failed"));
-  }, DISPATCH_EVERY_MS);
-  timer.unref();
-  return () => clearInterval(timer);
 }

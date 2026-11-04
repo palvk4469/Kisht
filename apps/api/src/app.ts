@@ -11,6 +11,7 @@ import type { AppConfig, AppContext, Clock } from "./context.js";
 import { errorHandler } from "./http/errors.js";
 import { makeAuthenticate } from "./http/guards.js";
 import { makeOriginGuard } from "./http/origin.js";
+import { startBackgroundJobs } from "./jobs.js";
 import { createAuth } from "./modules/auth/auth.js";
 import { registerAuth } from "./modules/auth/routes.js";
 import { createDemoClock, registerDemo } from "./modules/demo/routes.js";
@@ -20,7 +21,6 @@ import { registerImports } from "./modules/imports/routes.js";
 import { registerLoans } from "./modules/loans/routes.js";
 import { registerManager } from "./modules/manager/routes.js";
 import { registerMe } from "./modules/me/routes.js";
-import { startReminderTimer } from "./modules/reminders/service.js";
 import { registerReports } from "./modules/reports/routes.js";
 
 export type BuildAppOptions = {
@@ -45,8 +45,18 @@ const MODULES = [
 
 // Composition root. Tests call this and use app.inject(); no port, no globals.
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
-  const config: AppConfig = { demoMode: false, docs: false, backgroundJobs: false, ...opts.config };
-  const auth = createAuth(opts.prisma, { secret: opts.authSecret, baseURL: config.baseURL });
+  const config: AppConfig = {
+    demoMode: false,
+    docs: false,
+    backgroundJobs: false,
+    rateLimit: false,
+    ...opts.config,
+  };
+  const auth = createAuth(opts.prisma, {
+    secret: opts.authSecret,
+    baseURL: config.baseURL,
+    rateLimit: config.rateLimit,
+  });
   const demoClock = createDemoClock(opts.clock ?? (() => new Date()));
   const ctx: AppContext = {
     prisma: opts.prisma,
@@ -83,7 +93,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   for (const register of MODULES) register(app, ctx);
   if (config.demoMode) registerDemo(app, ctx, demoClock);
   if (config.backgroundJobs) {
-    const stop = startReminderTimer(ctx, app.log);
+    const stop = startBackgroundJobs(ctx, app.log);
     app.addHook("onClose", async () => stop());
   }
   return app;

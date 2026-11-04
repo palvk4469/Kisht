@@ -1,14 +1,9 @@
-const inr = new Intl.NumberFormat("en-IN", {
-  style: "currency",
-  currency: "INR",
-  maximumFractionDigits: 0,
-});
+import { formatDay, formatRupees } from "@kisht/domain";
+
 const count = new Intl.NumberFormat("en-IN");
 
 /** ₹6,40,000 (Indian digit grouping). */
-export function rupees(value: number): string {
-  return inr.format(value);
-}
+export const rupees = formatRupees;
 
 /** ₹6.4 L / ₹1.2 Cr for tight spaces such as stat tiles. */
 export function rupeesShort(value: number): string {
@@ -54,11 +49,4 @@ export function time(value: string | Date, locale: "hi" | "en" = "en"): string {
 }
 
 /** "3 Nov": for badges, where the year is noise. */
-export function shortDay(iso: string, locale: "hi" | "en" = "en"): string {
-  const [y, m, d] = iso.split("-").map(Number);
-  return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  }).format(new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1)));
-}
+export const shortDay = (iso: string, locale: "hi" | "en" = "en") => formatDay(iso, locale);

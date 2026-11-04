@@ -30,7 +30,6 @@ describe("OpenAPI docs", () => {
       "/api/demo/clock",
       "/api/imports",
       "/api/imports/demo-sample",
-      "/api/imports/{id}",
       "/api/imports/{id}/commit",
       "/api/loans/{id}",
       "/api/loans/{id}/reveal-contact",

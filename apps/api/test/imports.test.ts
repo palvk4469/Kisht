@@ -3,6 +3,7 @@ import { OVERDUE_COLUMNS, toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
+import { purgeStalePreviews } from "../src/modules/imports/service.js";
 import { createFixture, type Fixture, signIn, TEST_ORIGIN, TEST_SECRET } from "./fixtures.js";
 
 const prisma = createTestPrisma();
@@ -274,7 +275,7 @@ describe("commit, then the next day's import", () => {
     expect(res.statusCode).toBe(409);
   });
 
-  it("does not let another branch's manager see or commit the batch", async () => {
+  it("does not let another branch's manager commit the batch", async () => {
     const p = await preview(
       managerA,
       "2026-11-02",
@@ -282,11 +283,26 @@ describe("commit, then the next day's import", () => {
     );
     const managerB = await signIn(app, fx.managerB.email);
     expect((await commit(managerB, p.json().id)).statusCode).toBe(404);
-    const view = await app.inject({
-      method: "GET",
-      url: `/api/imports/${p.json().id}`,
-      headers: { cookie: managerB },
-    });
-    expect(view.statusCode).toBe(404);
+  });
+
+  it("deletes abandoned previews after a day, with the borrower data they hold (DPDP)", async () => {
+    const p = await preview(
+      managerA,
+      "2026-11-02",
+      csv([{ loanNo: L("2"), pincode: "452002", dpd: 12 }]),
+    );
+    const ctx = { prisma, clock: () => now } as unknown as Parameters<typeof purgeStalePreviews>[0];
+    await prisma.importBatch.update({ where: { id: p.json().id }, data: { createdAt: now } });
+    await purgeStalePreviews(ctx);
+    expect(await prisma.importBatch.count({ where: { id: p.json().id } })).toBe(1);
+
+    now = new Date(now.getTime() + 25 * 3_600_000);
+    await purgeStalePreviews(ctx);
+    expect(await prisma.importBatch.count({ where: { id: p.json().id } })).toBe(0);
+    expect(
+      await prisma.importBatch.count({
+        where: { uploadedById: fx.managerA.id, status: "COMMITTED" },
+      }),
+    ).toBeGreaterThan(0);
   });
 });

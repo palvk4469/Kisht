@@ -1,8 +1,16 @@
 import { createTestPrisma } from "@kisht/db/testing";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { buildApp } from "../src/app.js";
 import { buildTestApp } from "./app.js";
-import { createFixture, type Fixture, signIn, TEST_ORIGIN, TEST_PASSWORD } from "./fixtures.js";
+import {
+  createFixture,
+  type Fixture,
+  signIn,
+  TEST_ORIGIN,
+  TEST_PASSWORD,
+  TEST_SECRET,
+} from "./fixtures.js";
 
 const prisma = createTestPrisma();
 let app: FastifyInstance;
@@ -211,5 +219,29 @@ describe("cross-site request protection", () => {
       expect(res.statusCode).toBe(403);
     }
     expect(await prisma.auditLog.count({ where: { actorId: fx.head.id } })).toBe(0);
+  });
+});
+
+describe("password guessing", () => {
+  it("is cut off per IP when the limit is on (as in production)", async () => {
+    const limited = await buildApp({
+      prisma,
+      authSecret: TEST_SECRET,
+      config: { baseURL: TEST_ORIGIN, rateLimit: true },
+    });
+    const guess = (ip: string) =>
+      limited.inject({
+        method: "POST",
+        url: "/api/auth/sign-in/email",
+        headers: { ...json, "x-forwarded-for": ip },
+        payload: { email: fx.officerA1.email, password: "wrong-password" },
+      });
+    const results: number[] = [];
+    for (let i = 0; i < 22; i++) results.push((await guess("203.0.113.7")).statusCode);
+    expect(results.slice(0, 20).every((s) => s === 401)).toBe(true);
+    expect(results.at(-1)).toBe(429);
+    // Someone else, elsewhere, isn't affected.
+    expect((await guess("203.0.113.8")).statusCode).toBe(401);
+    await limited.close();
   });
 });

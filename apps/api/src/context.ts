@@ -12,6 +12,8 @@ export type AppConfig = {
   demoMode: boolean;
   /** Serve OpenAPI docs at /api/docs. */
   docs: boolean;
+  /** Limit password guessing per IP. */
+  rateLimit: boolean;
   /** Run timers such as the reminder dispatcher. Off in tests, which call them directly. */
   backgroundJobs: boolean;
 };

@@ -9,15 +9,27 @@ export type DemoClockControl = {
   simulated: () => boolean;
 };
 
-/** A clock that can be moved, and keeps ticking from where it was set. */
+/** A shared demo shouldn't stay at a simulated hour after its visitor has gone. */
+const EXPIRES_AFTER_MS = 30 * 60_000;
+
+/** A clock that can be moved, keeps ticking from where it was set, then returns by itself. */
 export function createDemoClock(real: Clock): DemoClockControl {
   let offsetMs: number | null = null;
+  let expiresAt = 0;
+  const active = () => {
+    if (offsetMs !== null && real().getTime() > expiresAt) offsetMs = null;
+    return offsetMs;
+  };
   return {
-    now: () => (offsetMs === null ? real() : new Date(real().getTime() + offsetMs)),
+    now: () => {
+      const offset = active();
+      return offset === null ? real() : new Date(real().getTime() + offset);
+    },
     set: (at) => {
       offsetMs = at === null ? null : at.getTime() - real().getTime();
+      expiresAt = real().getTime() + EXPIRES_AFTER_MS;
     },
-    simulated: () => offsetMs !== null,
+    simulated: () => active() !== null,
   };
 }
 

@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { assignLoans } from "./assignment.ts";
 import { isContactAllowed } from "./contactWindow.ts";
 import { applyPins } from "./listOrder.ts";
-import { formatRupees, planReminders, REMINDER_TEMPLATES, renderReminder } from "./reminders.ts";
+import {
+  formatDay,
+  formatRupees,
+  planReminders,
+  REMINDER_TEMPLATES,
+  renderReminder,
+} from "./reminders.ts";
 import { findBlockedWords } from "./wordFilter.ts";
 
 const ist = (t: string) => new Date(`${t}+05:30`);
@@ -44,6 +50,14 @@ describe("renderReminder", () => {
       expect(text).toContain("₹26,700");
       expect(text).not.toMatch(/[{}]/);
     }
+  });
+});
+
+describe("formatDay", () => {
+  it("writes a date the way a person reads it", () => {
+    expect(formatDay("2026-11-07", "en")).toBe("7 Nov");
+    expect(formatDay("2026-11-07", "hi")).toContain("7");
+    expect(formatDay("2026-11-07", "hi")).not.toContain("2026");
   });
 });
 

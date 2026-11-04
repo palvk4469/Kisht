@@ -41,6 +41,7 @@ const AT_RISK_TO_DPD = 30;
 const AT_RISK_SHOWN = 8;
 const COHORTS_IN_HEADLINE = 4;
 const PROMISE_WEEKS = 8;
+const ROLL_WINDOW_DAYS = 200;
 const ACTIVITY_SHOWN = 60;
 
 /** A branch filter narrows the scope; it can never widen it. */
@@ -86,7 +87,8 @@ export async function getDashboard(
 
   // Roll rate: one tested definition, per branch and pooled.
   const snapshots = await prisma.loanSnapshot.findMany({
-    where: { loan: loans },
+    // A bounded window: this page shouldn't get slower every day for years.
+    where: { loan: loans, asOfDate: { gte: toDbDate(addDays(today, -ROLL_WINDOW_DAYS)) } },
     select: { loanId: true, asOfDate: true, dpd: true, loan: { select: { branchId: true } } },
   });
   const observations = snapshots.map((s) => ({
@@ -371,6 +373,7 @@ export async function getActivity(
       id: a.id,
       at: a.correctedAt.toISOString(),
       officerName: a.officer.name,
+      loanId: a.loanId,
       loanNo: a.loan.loanNo,
       borrowerName: borrower.name,
       channel: a.channel,

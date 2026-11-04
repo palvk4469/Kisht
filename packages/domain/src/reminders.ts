@@ -58,3 +58,12 @@ export function formatRupees(amount: number): string {
     maximumFractionDigits: 0,
   }).format(amount);
 }
+
+/** "7 Nov" or "7 नव॰". Never an ISO date in a message a person reads. */
+export function formatDay(day: IsoDay, lang: ReminderLang): string {
+  return new Intl.DateTimeFormat(lang === "hi" ? "hi-IN" : "en-IN", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(`${day}T00:00:00Z`));
+}

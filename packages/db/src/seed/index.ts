@@ -9,6 +9,7 @@
 
 import {
   addDays,
+  formatDay,
   formatRupees,
   type IsoDay,
   isIsoDay,
@@ -227,7 +228,7 @@ export async function seed(prisma: PrismaClient, today: IsoDay, demoPassword: st
       const vars = {
         borrowerName: borrower.name,
         amount: formatRupees(p.amount),
-        date: p.dueDate,
+        date: formatDay(p.dueDate, "hi"),
         loanNo: loan.loanNo,
       };
       return planReminders(p.dueDate, p.createdAt).map((r) => {

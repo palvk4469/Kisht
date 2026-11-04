@@ -5,6 +5,8 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 export type AuthConfig = {
   secret: string;
   baseURL: string;
+  /** Limit password guessing per IP. On in production. */
+  rateLimit: boolean;
 };
 
 const DAY_SECONDS = 24 * 60 * 60;
@@ -28,6 +30,13 @@ export function createAuth(prisma: PrismaClient, config: AuthConfig) {
         branchId: { type: "string", required: false, input: false },
         locale: { type: "string", required: false, defaultValue: "hi", input: false },
       },
+    },
+    rateLimit: {
+      enabled: config.rateLimit,
+      storage: "memory",
+      window: 60,
+      max: 100,
+      customRules: { "/sign-in/email": { window: 60, max: 20 } },
     },
     advanced: {
       // Better Auth skips its Origin/CSRF checks when NODE_ENV=test. Force them on

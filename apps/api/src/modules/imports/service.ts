@@ -1,6 +1,5 @@
 import type {
   ImportCommitted,
-  ImportDetail,
   ImportHistoryItem,
   ImportPreview,
   ImportPreviewBody,
@@ -498,22 +497,18 @@ export async function listImports(ctx: AppContext, user: AuthUser): Promise<Impo
   }));
 }
 
-export async function getImport(
-  ctx: AppContext,
-  user: AuthUser,
-  id: string,
-): Promise<ImportDetail> {
-  const b = await ctx.prisma.importBatch.findFirst({
-    where: { AND: [batchesAffecting(managerScope(user))], id },
+const PREVIEW_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * A preview holds borrowers' names and phone numbers until it's committed. One
+ * that was abandoned has no business keeping them (DPDP).
+ */
+export async function purgeStalePreviews(ctx: AppContext): Promise<number> {
+  const { count } = await ctx.prisma.importBatch.deleteMany({
+    where: {
+      status: "PREVIEW",
+      createdAt: { lt: new Date(ctx.clock().getTime() - PREVIEW_MAX_AGE_MS) },
+    },
   });
-  if (!b) throw notFound("Import");
-  return {
-    id: b.id,
-    asOfDate: fromDbDate(b.asOfDate),
-    fileName: b.fileName,
-    status: b.status,
-    summary: (b.summary as ImportSummary | null) ?? null,
-    errors: (b.errors as RowError[] | null) ?? [],
-    canCommit: b.status === "PREVIEW" && b.uploadedById === user.id && b.payload !== null,
-  };
+  return count;
 }

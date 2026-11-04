@@ -1,7 +1,6 @@
 import {
   IdParams,
   ImportCommitted,
-  ImportDetail,
   ImportHistory,
   ImportPreview,
   ImportPreviewBody,
@@ -14,7 +13,7 @@ import type { AppContext } from "../../context.js";
 import { currentUser, requireRole } from "../../http/guards.js";
 import { managerScope } from "../auth/scope.js";
 import { buildDemoSample } from "./demoSample.js";
-import { commitImport, getImport, listImports, previewImport } from "./service.js";
+import { commitImport, listImports, previewImport } from "./service.js";
 
 export function registerImports(app: FastifyInstance, ctx: AppContext) {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -83,10 +82,4 @@ export function registerImports(app: FastifyInstance, ctx: AppContext) {
       },
     );
   }
-
-  r.get(
-    "/api/imports/:id",
-    { preHandler: managers, schema: { tags, params: IdParams, response: { 200: ImportDetail } } },
-    async (request) => getImport(ctx, currentUser(request), request.params.id),
-  );
 }
