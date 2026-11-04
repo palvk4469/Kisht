@@ -66,6 +66,8 @@ apps/api/src
     audit/          append-only audit log
     scoring/        scores a day's loans on import
     field/          today's list, sync (contact window, attempts, outcomes)
+    manager/        officers' lists, pins, reassignment, disputes, promise tracker
+    reminders/      schedules and dispatches promise reminders (sending is mocked)
     demo/           demo clock; only registered in demo mode
     health/ me/ loans/ imports/
       routes.ts     HTTP only: guards + contract schemas, then calls the service

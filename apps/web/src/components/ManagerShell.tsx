@@ -15,6 +15,8 @@ import { useSignOut } from "./useSignOut";
 // Only screens that exist are linked: no dead buttons.
 const NAV: { href: string; label: MessageKey }[] = [
   { href: "/manager/import", label: "nav.import" },
+  { href: "/manager/lists", label: "nav.lists" },
+  { href: "/manager/promises", label: "nav.promises" },
 ];
 
 export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) {
@@ -24,21 +26,21 @@ export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) 
   return (
     <div className="min-h-dvh bg-surface">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-6xl items-center gap-4 px-4">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 px-4 py-2 sm:h-14 sm:flex-nowrap sm:py-0">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <span className="flex size-7 items-center justify-center rounded-lg bg-accent text-sm text-on-accent">
               क
             </span>
             <span className="hidden sm:inline">{t("app.name")}</span>
           </Link>
-          <nav className="flex items-center gap-1">
+          <nav className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto pt-1 sm:order-none sm:mx-0 sm:w-auto sm:pt-0">
             {NAV.map((n) => (
               <Link
                 key={n.href}
                 href={n.href}
                 aria-current={pathname.startsWith(n.href) ? "page" : undefined}
                 className={cx(
-                  "rounded-lg px-3 py-1.5 text-sm",
+                  "whitespace-nowrap rounded-lg px-3 py-1.5 text-sm",
                   pathname.startsWith(n.href)
                     ? "bg-accent-soft font-medium text-accent"
                     : "text-muted hover:text-ink",
