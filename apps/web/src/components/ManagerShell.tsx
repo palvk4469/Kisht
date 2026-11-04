@@ -5,6 +5,7 @@ import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import { DemoClockBar } from "@/features/demo/DemoClockBar";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import { LanguageToggle } from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
@@ -65,6 +66,7 @@ export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) 
           </div>
         </div>
       </header>
+      <DemoClockBar />
       <main className="mx-auto max-w-6xl px-4 py-6 sm:py-8">{children}</main>
     </div>
   );

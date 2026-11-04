@@ -43,3 +43,22 @@ export function dateTime(value: string | Date, locale: "hi" | "en" = "en"): stri
     timeZone: "Asia/Kolkata",
   }).format(new Date(value));
 }
+
+/** "8:00 am" in IST. */
+export function time(value: string | Date, locale: "hi" | "en" = "en"): string {
+  return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Asia/Kolkata",
+  }).format(new Date(value));
+}
+
+/** "3 Nov": for badges, where the year is noise. */
+export function shortDay(iso: string, locale: "hi" | "en" = "en"): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Intl.DateTimeFormat(locale === "hi" ? "hi-IN" : "en-IN", {
+    day: "numeric",
+    month: "short",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(y ?? 1970, (m ?? 1) - 1, d ?? 1)));
+}

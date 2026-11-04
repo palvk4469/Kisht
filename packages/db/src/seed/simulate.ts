@@ -146,14 +146,8 @@ type LoanState = {
   scriptMissOn: IsoDay | null;
 };
 
-const VISIT_NOTES_HI = [
-  "दुकान बंद थी",
-  "मालिक बाहर गए हैं",
-  "अगले हफ्ते भुगतान का वादा",
-  "माल का पेमेंट अटका है",
-  "बेटे से बात हुई",
-];
-const CALL_NOTES = ["Phone switched off", "Call not answered", "फोन बंद है", "बाद में कॉल करने को कहा"];
+const VISIT_NOTES_HI = ["दुकान बंद थी", "मालिक बाहर गए हैं", "ताला लगा था"];
+const CALL_NOTES = ["Phone switched off", "Call not answered", "फोन बंद है", "घंटी गई, उठाया नहीं"];
 
 function dayOfMonth(day: IsoDay): number {
   return Number(day.slice(8, 10));
@@ -549,7 +543,8 @@ export function simulate(today: IsoDay, seed = 20261102): Simulation {
         .slice(0, perDay);
       for (const s of list) {
         if (s.arrears.length === 0) continue;
-        if (inHistory) contact(s, o.key, day);
+        // Today's work hasn't happened yet: the demo opens at the start of the day.
+        if (inHistory && day !== today) contact(s, o.key, day);
         contactedToday.add(s.loan.id);
       }
     }

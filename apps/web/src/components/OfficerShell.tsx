@@ -3,6 +3,8 @@
 import type { Me } from "@kisht/contracts";
 import { LogOut } from "lucide-react";
 import type { ReactNode } from "react";
+import { DemoClockBar } from "@/features/demo/DemoClockBar";
+import { FlashProvider } from "@/features/field/Flash";
 import { useI18n } from "@/lib/i18n";
 import { LanguageToggle } from "./LanguageToggle";
 import { ThemeToggle } from "./ThemeToggle";
@@ -33,7 +35,10 @@ export function OfficerShell({ me, children }: { me: Me; children: ReactNode }) 
           </button>
         </div>
       </header>
-      <main>{children}</main>
+      <DemoClockBar />
+      <FlashProvider>
+        <main>{children}</main>
+      </FlashProvider>
     </div>
   );
 }
