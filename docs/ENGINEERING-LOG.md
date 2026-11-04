@@ -137,3 +137,14 @@ With every screen built, I audited with tools rather than opinions: dead-code an
 - **2 moderate advisories in the API docs' dependencies (`glob`, `minimatch`).** The fix was published today, and our supply-chain rule makes new releases wait. They come in through the docs page's file serving, and as far as I can see no user input reaches them. Update when the release ages in.
 - **245 KB of JavaScript against a 200 KB target.** Replacing Dexie would save about 33 KB of a first load that happens once, in exchange for hand-written storage code in the riskiest part of the app. Not worth it.
 - **First-visit LCP of 3.7 s on Lighthouse's slow profile.** It's a first visit with nothing on the phone yet; later opens come from the phone's copy.
+
+## Second review (2026-11-04)
+
+A second review raised six points. Each was checked against the code first.
+
+- **Simultaneous sync retries returned a 500. Real.** Reproduced with eight identical batches at once. The check-then-insert let several through to the unique constraint. Inserts now skip conflicts, and only the one that actually inserted writes the promise and reminders.
+- **Login rate limit was in memory. Real.** Moved to Postgres (D29), with a test that it holds across a restart.
+- **`pnpm install` failed without a `.env`. Real.** Reproduced on a clean clone. `prisma generate` needs no database, so it no longer asks for a URL. `migrate` still stops with a clear message.
+- **Stale status lines. Real.** Fixed, and the requirements checklist no longer quotes test counts or assumption ranges, which go stale.
+- **`'unsafe-inline'` scripts. True, kept on purpose** (D30): nonces would cost the static shell that offline and weak-signal opening rely on.
+- **The model's edge is modest. True, and already stated** in [MODEL.md](MODEL.md). No change: tuning the model to win more simulated weeks would prove nothing about real loans.

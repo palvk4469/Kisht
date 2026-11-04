@@ -11,7 +11,7 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 | Overdue CSV import                                               | Done   | Screen 5, `modules/imports`; preview → commit, row-level errors          |
 | Auto-assignment by pincode and workload                          | Done   | `domain/assignment.ts`; continuity first, then least-loaded (A3)         |
 | Officer priority list                                            | Done   | Screen 2; ordered by the model (A18), capped at 25                       |
-| Outcome logging: paid, promise, not reachable, dispute, with GPS | Done   | Screen 3; three taps, GPS never blocks logging. Offline queue day 4      |
+| Outcome logging: paid, promise, not reachable, dispute, with GPS | Done   | Screen 3; three taps, GPS never blocks logging; works offline            |
 | Promise tracker                                                  | Done   | Screens 4 (officer, works offline) and 7 (manager, with filters)         |
 | Manager roll-rate view                                           | Done   | Screen 8; by branch, by week, against the 16% target, with a table view  |
 | Roles: field officer and branch manager (+ head)                 | Done   | `modules/auth/scope.ts`, tested per role                                 |
@@ -64,17 +64,17 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 
 ## Submission rules
 
-| Requirement                                                                                                | Status         | Where / note                                                         |
-| ---------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------- |
-| Frontend, backend, database, sign-in                                                                       | Done           |                                                                      |
-| Tests for the most important logic                                                                         | Done (ongoing) | 101 unit/API + browser tests; domain coverage ≥ 90% enforced         |
-| No secrets in the repo, validated inputs, access control                                                   | Done           | Contracts validate every input; `scope.ts`; CI-only throwaway values |
-| No dead buttons                                                                                            | Ongoing        | Only built screens are linked                                        |
-| Every assumption labelled                                                                                  | Ongoing        | `docs/ASSUMPTIONS.md` (A1–A17)                                       |
-| Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                           |
-| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Day 7          | Skeleton in `docs/TDD.md`; architecture written                      |
-| deployment.md: local run, deployment, env var names, demo logins                                           | Day 7          |                                                                      |
-| Live deployment                                                                                            | Day 7          | Vercel + Render + Neon                                               |
+| Requirement                                                                                                | Status         | Where / note                                                          |
+| ---------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------- |
+| Frontend, backend, database, sign-in                                                                       | Done           |                                                                       |
+| Tests for the most important logic                                                                         | Done (ongoing) | Unit, API and browser tests in CI; domain coverage ≥ 90% enforced     |
+| No secrets in the repo, validated inputs, access control                                                   | Done           | Contracts validate every input; `scope.ts`; CI-only throwaway values  |
+| No dead buttons                                                                                            | Ongoing        | Only built screens are linked                                         |
+| Every assumption labelled                                                                                  | Ongoing        | `docs/ASSUMPTIONS.md`, numbered and referenced from the code and docs |
+| Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                            |
+| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Day 7          | Skeleton in `docs/TDD.md`; architecture written                       |
+| deployment.md: local run, deployment, env var names, demo logins                                           | Day 7          |                                                                       |
+| Live deployment                                                                                            | Day 7          | Vercel + Render + Neon                                                |
 
 ## Cut
 

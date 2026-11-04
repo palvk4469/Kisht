@@ -44,13 +44,13 @@ flowchart TB
   db --> domain
 ```
 
-| Package     | Owns                                                                                                                                                                 | May not import                        |
-| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `domain`    | Dates in IST, contact window (RBI 8 am–7 pm), promise resolution, assignment, CSV parsing, import planning, roll rate, phone masking, and (day 3) the priority model | db, contracts, any framework, any I/O |
-| `contracts` | The wire format: request and response schemas, plus enums                                                                                                            | db, servers, UI frameworks            |
-| `db`        | Schema and migrations, the client, user provisioning, the deterministic seed                                                                                         | apps                                  |
-| `api`       | Auth, access scope, HTTP, transactions                                                                                                                               | the web app                           |
-| `web`       | Screens, i18n, and (day 4) the offline outbox                                                                                                                        | **the database**                      |
+| Package     | Owns                                                                                                                                                         | May not import                        |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------- |
+| `domain`    | Dates in IST, contact window (RBI 8 am–7 pm), promise resolution, assignment, CSV parsing, import planning, roll rate, phone masking, and the priority model | db, contracts, any framework, any I/O |
+| `contracts` | The wire format: request and response schemas, plus enums                                                                                                    | db, servers, UI frameworks            |
+| `db`        | Schema and migrations, the client, user provisioning, the deterministic seed                                                                                 | apps                                  |
+| `api`       | Auth, access scope, HTTP, transactions                                                                                                                       | the web app                           |
+| `web`       | Screens, i18n, and the offline outbox                                                                                                                        | **the database**                      |
 
 These rules are enforced by Biome's `noRestrictedImports` (see `biome.json`), so a violation fails `pnpm lint` and CI. Because `domain` is pure, the phone and the server run the _same_ contact-window and promise code: the button an officer sees disabled is exactly what the server would reject.
 
@@ -158,4 +158,4 @@ sequenceDiagram
 | Database tests                              | Partial unique indexes (one current officer and one pending promise per loan), date round-trips                | `packages/db/test`                  |
 | Seed tests                                  | Determinism, the brief's sample rows reproduced exactly, roll rate ≈ 22%                                       | `packages/db/test/simulate.test.ts` |
 | API integration tests                       | Access scope per role, CSRF, sign-up closed, contract guarantees, import preview/commit/re-upload/out-of-order | `apps/api/test`                     |
-| Browser tests (phone + desktop)             | Sign-in routing and the full import flow on the demo data                                                      | `e2e/`                              |
+| Browser tests (phone + desktop)             | Every main flow on the demo data, real offline logging, theme, and accessibility (axe) on every screen         | `e2e/`                              |
