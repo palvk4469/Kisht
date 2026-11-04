@@ -9,7 +9,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { request } from "@/lib/api";
 
-export const importKeys = {
+const importKeys = {
   all: ["imports"] as const,
   history: () => [...importKeys.all, "history"] as const,
 };

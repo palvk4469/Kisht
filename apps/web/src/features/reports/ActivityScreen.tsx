@@ -4,6 +4,7 @@ import type { ActivityEntry, ActivityFilter } from "@kisht/contracts";
 import { MapPin, Phone, ShieldCheck } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge, Card, cx, EmptyState, ErrorState, Skeleton, Stat } from "@/components/ui";
+import { LoanLink } from "@/features/manager/LoanView";
 import { dateTime, number } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import { useActivity } from "./api";
@@ -38,7 +39,7 @@ function Entry({ e }: { e: ActivityEntry }) {
         aria-label={t(e.channel === "VISIT" ? "activity.visit" : "activity.call")}
       />
       <div className="min-w-48 flex-1">
-        <p className="font-medium">{e.borrowerName}</p>
+        <LoanLink loanId={e.loanId} name={e.borrowerName} className="font-medium" />
         <p className="text-xs text-muted">
           {e.officerName} · {dateTime(e.at, locale)} · {e.loanNo}
         </p>

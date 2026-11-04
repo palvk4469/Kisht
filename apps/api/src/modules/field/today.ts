@@ -3,11 +3,9 @@ import {
   applyPins,
   fromDbDate,
   type IsoDay,
-  isContactAllowed,
   istDayOf,
   istDayStart,
   maskPhone,
-  nextAllowedAt,
   toDbDate,
 } from "@kisht/domain";
 import { compareByPriority } from "@kisht/domain/scoring";
@@ -15,10 +13,6 @@ import type { AppContext } from "../../context.js";
 import type { AuthUser } from "../../http/guards.js";
 import { loanWhere, scopeOf } from "../auth/scope.js";
 import { toHistory, toPriority, visiblePromise } from "./present.js";
-
-export function contactState(now: Date) {
-  return { allowed: isContactAllowed(now), nextAllowedAt: nextAllowedAt(now).toISOString() };
-}
 
 /** Which part of the day's list a loan belongs to. Order of checks matters. */
 export function stateOf(input: {
@@ -170,8 +164,6 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
   return {
     asOfDate: newest.length > 0 ? (newest.sort().at(-1) ?? null) : null,
     serverTime: now.toISOString(),
-    contact: contactState(now),
-    capacity: dailyCapacity,
     beyondCapacity,
     items: visible,
   };

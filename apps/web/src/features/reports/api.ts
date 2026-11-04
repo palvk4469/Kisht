@@ -4,7 +4,7 @@ import { type ActivityFilter, ActivityLog, Dashboard } from "@kisht/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { request } from "@/lib/api";
 
-export const reportKeys = {
+const reportKeys = {
   all: ["manager", "reports"] as const,
   dashboard: (branchId: string) => [...reportKeys.all, "dashboard", branchId] as const,
   activity: (officerId: string, filter: ActivityFilter) =>

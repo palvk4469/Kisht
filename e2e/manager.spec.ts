@@ -23,7 +23,7 @@ test("a manager moves a loan up with a reason, and the officer sees it", async (
 
   const list = page.getByTestId("officer-list");
   const second = list.locator("li").nth(1);
-  const name = (await second.locator("p").first().textContent()) ?? "";
+  const name = (await second.getByRole("button", { name: /^Open / }).textContent()) ?? "";
   await second.getByRole("button", { name: /Move .* up/ }).click();
 
   const reason = `Borrower at the shop today ${Date.now()}`;
@@ -72,7 +72,7 @@ test("an officer's dispute reaches the manager, who can reopen contact", async (
   const officer = await browser.newContext();
   const phone = await officer.newPage();
   await signInAs(phone, "rahul.chouhan@kisht.example");
-  const name = (await phone.getByTestId("loan-card").first().locator("h3").textContent()) ?? "";
+  const name = (await phone.getByTestId("loan-card").first().locator("h2").textContent()) ?? "";
   await phone.getByTestId("loan-card").first().click();
   await phone.getByRole("button", { name: "विवाद" }).click();
   await phone.getByLabel(/नोट/).fill("Amount is wrong");
@@ -206,4 +206,28 @@ test("when the dashboard can't load, it says so and retry works", async ({ page 
   await page.unroute("**/api/manager/dashboard");
   await page.getByRole("button", { name: "Try again" }).click();
   await expect(page.getByRole("img", { name: "Roll rate by week" })).toBeVisible();
+});
+
+test("a manager can open any loan, and showing the number is deliberate", async ({ page }) => {
+  await signInManager(page);
+  await page
+    .getByRole("button", { name: /^Open Company/ })
+    .first()
+    .click();
+  const sheet = page.getByRole("dialog", { name: "Loan details" });
+  await expect(sheet.getByText(/••••••\d{4}/)).toBeVisible();
+  await sheet.getByRole("button", { name: "Show number" }).click();
+  await expect(sheet.locator('a[href^="tel:"]')).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(sheet).toHaveCount(0);
+});
+
+test("an unknown address gets a helpful page, and security headers are set", async ({ page }) => {
+  const res = await page.goto("/no-such-page");
+  expect(res?.status()).toBe(404);
+  await expect(page.getByRole("link", { name: /शुरुआत पर जाएँ|Go to the start/ })).toBeVisible();
+  const headers = res?.headers() ?? {};
+  expect(headers["x-frame-options"]).toBe("DENY");
+  expect(headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(headers["x-powered-by"]).toBeUndefined();
 });

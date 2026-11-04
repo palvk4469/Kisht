@@ -5,6 +5,7 @@ import { BarChart3, Download } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, Stat } from "@/components/ui";
 import { DpdBadge } from "@/features/field/LoanCard";
+import { LoanLink } from "@/features/manager/LoanView";
 import { day, number, rupees, rupeesShort, shortDay } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { useDashboard } from "./api";
@@ -123,7 +124,7 @@ function AtRiskCard({ data }: { data: Dashboard }) {
               className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2.5 text-sm"
             >
               <span className="min-w-40 flex-1">
-                <span className="block font-medium">{l.borrowerName}</span>
+                <LoanLink loanId={l.loanId} name={l.borrowerName} className="block font-medium" />
                 <span className="block text-xs text-muted">
                   {l.officerName ?? t("board.noOfficer")}
                 </span>

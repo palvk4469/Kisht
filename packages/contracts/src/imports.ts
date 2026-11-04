@@ -69,14 +69,3 @@ export const ImportHistoryItem = z.object({
 export type ImportHistoryItem = z.infer<typeof ImportHistoryItem>;
 
 export const ImportHistory = z.array(ImportHistoryItem);
-
-export const ImportDetail = z.object({
-  id: z.string(),
-  asOfDate: IsoDaySchema,
-  fileName: z.string(),
-  status: ImportStatus,
-  summary: ImportSummary.nullable(),
-  errors: z.array(RowError),
-  canCommit: z.boolean(),
-});
-export type ImportDetail = z.infer<typeof ImportDetail>;

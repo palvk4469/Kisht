@@ -28,9 +28,9 @@ import {
   type SampleLoan,
   STAFF,
 } from "./reference.js";
-import { createRng, type Rng } from "./rng.js";
+import { createRng } from "./rng.js";
 
-export const HISTORY_DAYS = 180;
+const HISTORY_DAYS = 180;
 const WARMUP_DAYS = 90;
 const GENERATED_LOANS = 2600;
 const MINUTE_MS = 60_000;
@@ -631,5 +631,3 @@ export function simulate(today: IsoDay, seed = 20261102): Simulation {
     risk: new Map(states.map((s) => [s.loan.id, s.risk])),
   };
 }
-
-export type { Rng };

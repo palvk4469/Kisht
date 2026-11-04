@@ -18,7 +18,7 @@ const GROUPS: { key: "due" | "upcoming" | "broken"; title: MessageKey }[] = [
   { key: "broken", title: "promises.broken" },
 ];
 
-export function promiseGroup(item: FieldItem, today: string): "due" | "upcoming" | "broken" | null {
+function promiseGroup(item: FieldItem, today: string): "due" | "upcoming" | "broken" | null {
   const p = item.promise;
   if (!p) return null;
   if (p.status === "BROKEN" || p.status === "PARTIAL") return "broken";

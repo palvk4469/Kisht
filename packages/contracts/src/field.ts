@@ -45,13 +45,6 @@ export const PromiseSummary = z.object({
 });
 export type PromiseSummary = z.infer<typeof PromiseSummary>;
 
-/** Server's view of the contact window, so the phone never trusts its own clock. */
-export const ContactState = z.object({
-  allowed: z.boolean(),
-  nextAllowedAt: z.iso.datetime(),
-});
-export type ContactState = z.infer<typeof ContactState>;
-
 export const HistoryEntry = z.object({
   id: z.string(),
   type: OutcomeType,
@@ -98,8 +91,6 @@ export type TodayItem = z.infer<typeof TodayItem>;
 export const TodayList = z.object({
   asOfDate: IsoDaySchema.nullable(),
   serverTime: z.iso.datetime(),
-  contact: ContactState,
-  capacity: z.number().int(),
   /** Loans to do beyond today's capacity, not shown. */
   beyondCapacity: z.number().int(),
   items: z.array(TodayItem),

@@ -12,7 +12,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { request } from "@/lib/api";
 
-export const managerKeys = {
+const managerKeys = {
   all: ["manager"] as const,
   board: () => [...managerKeys.all, "board"] as const,
   promises: (status: PromiseFilter, officerId: string) =>

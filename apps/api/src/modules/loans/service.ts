@@ -1,12 +1,11 @@
 import type { LoanDetail } from "@kisht/contracts";
-import { fromDbDate, istDayOf, istDayStart, maskPhone } from "@kisht/domain";
+import { fromDbDate, istDayOf, maskPhone } from "@kisht/domain";
 import type { AppContext } from "../../context.js";
 import { notFound } from "../../http/errors.js";
 import type { AuthUser } from "../../http/guards.js";
 import { audit } from "../audit/audit.js";
 import { loanWhere, scopeOf } from "../auth/scope.js";
 import { toHistory, toPriority, visiblePromise } from "../field/present.js";
-import { contactState } from "../field/today.js";
 
 export async function getLoanDetail(
   ctx: AppContext,
@@ -38,24 +37,7 @@ export async function getLoanDetail(
   });
   if (!loan) throw notFound("Loan");
 
-  const now = ctx.clock();
-  const today = istDayOf(now);
-  const officer = loan.assignments[0]?.officer ?? null;
-  const holdsLoan = user.role === "OFFICER" && officer?.id === user.id;
-  // The latest allowed attempt today that no outcome has answered yet.
-  const open = holdsLoan
-    ? await ctx.prisma.contactAttempt.findFirst({
-        where: {
-          loanId: loan.id,
-          officerId: user.id,
-          allowed: true,
-          correctedAt: { gte: istDayStart(today) },
-          outcomes: { none: {} },
-        },
-        orderBy: { correctedAt: "desc" },
-        select: { clientId: true },
-      })
-    : null;
+  const today = istDayOf(ctx.clock());
   const score = loan.scores[0];
   const promise = loan.promises[0];
 
@@ -82,16 +64,9 @@ export async function getLoanDetail(
           dpd: snapshot.dpd,
         }
       : null,
-    officer,
-    phone: holdsLoan ? loan.borrower.phone : null,
+    officer: loan.assignments[0]?.officer ?? null,
     priority: score ? toPriority(score) : null,
     promise: promise ? visiblePromise(promise, today) : null,
-    contact: contactState(now),
-    openAttemptClientId: open?.clientId ?? null,
-    serverTime: now.toISOString(),
-    attemptsToday: await ctx.prisma.contactAttempt.count({
-      where: { loanId: loan.id, allowed: true, correctedAt: { gte: istDayStart(today) } },
-    }),
     history: loan.outcomes.map(toHistory),
   };
 }

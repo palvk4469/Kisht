@@ -5,6 +5,7 @@ import { toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
+import { createDemoClock } from "../src/modules/demo/routes.js";
 import { stateOf } from "../src/modules/field/today.js";
 import { createFixture, type Fixture, signIn, TEST_ORIGIN, TEST_SECRET } from "./fixtures.js";
 
@@ -259,14 +260,16 @@ describe("access", () => {
     expect(res.statusCode).toBe(403);
   });
 
-  it("gives the phone number only to the officer holding the loan", async () => {
+  it("sends the full number only on the holder's list, never in loan detail", async () => {
     const loanId = await makeLoan({ dpd: 10, expectedLoss: 100 });
-    const detail = async (cookie: string) =>
-      (
-        await app.inject({ method: "GET", url: `/api/loans/${loanId}`, headers: { cookie } })
-      ).json();
-    expect((await detail(officer)).phone).toBe("9000012345");
-    expect((await detail(await signIn(app, fx.managerA.email))).phone).toBeNull();
+    expect((await today()).items.find((i) => i.loanId === loanId)?.phone).toBe("9000012345");
+    const detail = await app.inject({
+      method: "GET",
+      url: `/api/loans/${loanId}`,
+      headers: { cookie: await signIn(app, fx.managerA.email) },
+    });
+    expect(detail.statusCode).toBe(200);
+    expect(detail.body).not.toContain("9000012345");
   });
 
   it("rejects a promise with no date, and a cross-site post", async () => {
@@ -363,7 +366,6 @@ describe("today's list", () => {
     expect(list.items.map((i) => i.loanId)).toEqual([big, small, past, waiting]);
     expect(list.items.map((i) => i.state)).toEqual(["todo", "todo", "todo", "waiting"]);
     expect(list.items[0]?.priority?.reasons[0]).toEqual({ code: "NEAR_ROLL", value: 23 });
-    expect(list.contact.allowed).toBe(true);
     expect(list.asOfDate).toBe(DAY);
   });
 
@@ -395,14 +397,11 @@ describe("today's list", () => {
     const list = await today(await signIn(app, fx.officerA2.email));
     expect(list.items.filter((i) => i.state === "todo")).toHaveLength(1);
     expect(list.beyondCapacity).toBe(2);
-    expect(list.capacity).toBe(1);
   });
 
-  it("tells the phone when contact next opens, by the server's clock", async () => {
+  it("gives the phone the server's clock, so a wrong phone clock can't fool the window", async () => {
     now = ist(`${DAY}T19:30:00`);
-    const { contact } = await today();
-    expect(contact.allowed).toBe(false);
-    expect(new Date(contact.nextAllowedAt)).toEqual(ist("2026-11-05T08:00:00"));
+    expect((await today()).serverTime).toBe(now.toISOString());
   });
 });
 
@@ -445,18 +444,37 @@ describe("demo clock (D13)", () => {
   it("moves the server's rules, not just the display, and can be undone", async () => {
     const demo = await demoApp(true);
     const cookie = await signIn(demo, fx.officerA1.email);
-    const list = async () =>
-      (
-        await demo.inject({ method: "GET", url: "/api/officer/today", headers: { cookie } })
-      ).json<TodayList>();
+    const loanId = await makeLoan({ dpd: 10, expectedLoss: 100 });
+    const tryCall = async () => {
+      const at = new Date().toISOString();
+      const res = await demo.inject({
+        method: "POST",
+        url: "/api/sync",
+        headers: { ...json, cookie },
+        payload: { sentAt: at, attempts: [attempt(loanId, at)], outcomes: [] },
+      });
+      return res.json<SyncResponse>().attempts[0]?.reason;
+    };
 
     await setClock(demo, cookie, ist(`${DAY}T20:00:00`).toISOString());
-    expect((await list()).contact.allowed).toBe(false);
+    expect(await tryCall()).toBe("OUTSIDE_CONTACT_WINDOW");
     await setClock(demo, cookie, ist(`${DAY}T11:00:00`).toISOString());
-    expect((await list()).contact.allowed).toBe(true);
+    expect(await tryCall()).toBeNull();
 
     const back = await setClock(demo, cookie, null);
     expect(back.json().simulated).toBe(false);
     await demo.close();
+  });
+
+  it("returns to real time by itself, so one visitor can't leave it set for the next", () => {
+    let real = ist(`${DAY}T20:00:00`);
+    const clock = createDemoClock(() => real);
+    clock.set(ist(`${DAY}T11:00:00`));
+    expect(clock.simulated()).toBe(true);
+    real = new Date(real.getTime() + 29 * 60_000);
+    expect(clock.now()).toEqual(new Date(ist(`${DAY}T11:00:00`).getTime() + 29 * 60_000));
+    real = new Date(real.getTime() + 2 * 60_000);
+    expect(clock.simulated()).toBe(false);
+    expect(clock.now()).toEqual(real);
   });
 });

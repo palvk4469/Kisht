@@ -7,6 +7,7 @@ import { Badge, Card, cx, EmptyState, ErrorState, Skeleton, Stat } from "@/compo
 import { dateTime, number, rupees, shortDay } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import { usePromiseTracker } from "./api";
+import { LoanLink } from "./LoanView";
 
 const FILTERS: { value: PromiseFilter; label: MessageKey }[] = [
   { value: "open", label: "tracker.open" },
@@ -42,7 +43,7 @@ function Rows({ promises }: { promises: TrackedPromise[] }) {
         {promises.map((p) => (
           <li key={p.id} className="px-4 py-3">
             <div className="flex items-start justify-between gap-3">
-              <span className="font-medium">{p.borrowerName}</span>
+              <LoanLink loanId={p.loanId} name={p.borrowerName} className="font-medium" />
               <PromiseStatus promise={p} />
             </div>
             <p className="num mt-1 text-sm text-muted">
@@ -67,7 +68,7 @@ function Rows({ promises }: { promises: TrackedPromise[] }) {
           {promises.map((p) => (
             <tr key={p.id}>
               <td className="px-5 py-2.5">
-                <span className="font-medium">{p.borrowerName}</span>
+                <LoanLink loanId={p.loanId} name={p.borrowerName} className="font-medium" />
                 <span className="block text-xs text-muted">{p.loanNo}</span>
               </td>
               <td className="px-5 py-2.5 text-muted">{p.officerName ?? t("board.noOfficer")}</td>

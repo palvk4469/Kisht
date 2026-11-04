@@ -10,6 +10,7 @@ import { dateTime, day, number, rupees, rupeesShort } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { ClearDisputeSheet, MoveSheet, ReassignSheet } from "./ActionSheets";
 import { useBoard, useUnpin } from "./api";
+import { LoanLink } from "./LoanView";
 
 type Action =
   | { kind: "move"; loan: BoardLoan; officerId: string; position: number }
@@ -24,7 +25,7 @@ function LoanSummary({ loan }: { loan: BoardLoan }) {
   const reasonText = useReasonText();
   return (
     <div className="min-w-0 flex-1">
-      <p className="font-medium">{loan.borrowerName}</p>
+      <LoanLink loanId={loan.loanId} name={loan.borrowerName} className="font-medium" />
       <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
         <span className="num">{rupees(loan.outstanding)}</span>
         <DpdBadge dpd={loan.dpd} />
@@ -122,7 +123,9 @@ function OfficerList({
               key={loan.loanId}
               className="flex items-center gap-3 bg-surface/50 px-4 py-2.5 text-sm"
             >
-              <span className="min-w-0 flex-1 truncate text-muted">{loan.borrowerName}</span>
+              <span className="min-w-0 flex-1 truncate text-muted">
+                <LoanLink loanId={loan.loanId} name={loan.borrowerName} />
+              </span>
               <Badge>{t(`board.state.${loan.state}`)}</Badge>
               {loan.state !== "paused" && (
                 <Button

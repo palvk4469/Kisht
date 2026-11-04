@@ -94,6 +94,7 @@ export const ActivityEntry = z.object({
   id: z.string(),
   at: z.iso.datetime(),
   officerName: z.string(),
+  loanId: z.string(),
   loanNo: z.string(),
   borrowerName: z.string(),
   channel: ContactChannel,
