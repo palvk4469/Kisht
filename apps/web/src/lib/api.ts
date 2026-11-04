@@ -1,4 +1,7 @@
-import type { z } from "zod";
+import { z } from "zod";
+
+// zod probes for eval unless told not to, which our security policy (rightly) blocks.
+z.config({ jitless: true });
 
 // Same-origin fetch. /api/* is proxied to Fastify (D3), so cookies are
 // first-party and every mutation carries this page's Origin, which the API
@@ -20,7 +23,8 @@ type Options<S extends z.ZodType> = {
   schema: S;
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
-  signal?: AbortSignal;
+  /** Weak signal hangs rather than fails, so field calls give up and fall back. */
+  timeoutMs?: number;
 };
 
 export async function request<S extends z.ZodType>(
@@ -34,7 +38,7 @@ export async function request<S extends z.ZodType>(
       credentials: "same-origin",
       headers: opts.body !== undefined ? { "content-type": "application/json" } : undefined,
       body: opts.body !== undefined ? JSON.stringify(opts.body) : undefined,
-      signal: opts.signal,
+      signal: opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined,
     });
   } catch {
     throw new ApiError(0, "network");

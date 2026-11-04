@@ -82,6 +82,7 @@ export function TodayScreen() {
             <div
               className="mt-1.5 h-1.5 rounded-full bg-surface"
               role="progressbar"
+              aria-label={t("today.progress", { done, total: workable })}
               aria-valuemin={0}
               aria-valuemax={workable}
               aria-valuenow={done}
@@ -95,7 +96,7 @@ export function TodayScreen() {
         )}
       </section>
 
-      {list.data.fromCache && (
+      {list.data.fromCache && !list.isPlaceholderData && (
         <p className="mx-4 mt-3 text-xs text-muted">
           {t("sync.listFrom", { time: dateTime(new Date(list.data.savedAt), locale) })}
         </p>

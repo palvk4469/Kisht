@@ -86,6 +86,7 @@ export function OutcomeSheet(props: Props) {
               <input
                 id={amountId}
                 inputMode="numeric"
+                maxLength={9}
                 value={amount}
                 onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
                 className={cx(field, "num")}

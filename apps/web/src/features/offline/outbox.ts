@@ -7,6 +7,7 @@ import { db, type OutboxRow } from "./db";
 // however many times it arrives (D7).
 
 const BATCH_SIZE = 100;
+const SEND_TIMEOUT_MS = 20_000;
 
 export type FlushResult = "done" | "offline" | "signed-out" | "error";
 
@@ -37,6 +38,7 @@ async function sendBatch(rows: OutboxRow[]) {
   const res = await request("/api/sync", {
     method: "POST",
     // The phone's clock now: the server corrects every event by the gap (D20).
+    timeoutMs: SEND_TIMEOUT_MS,
     body: {
       sentAt: new Date().toISOString(),
       attempts: rows.flatMap((r) => (r.kind === "attempt" ? [r.event] : [])),
@@ -89,12 +91,39 @@ export function countActions(rows: readonly OutboxRow[]): number {
 
 let running: Promise<FlushResult> | null = null;
 
+const isInvalid = (err: unknown) =>
+  err instanceof ApiError && (err.status === 400 || err.status === 413);
+
+/**
+ * The server rejected the whole batch as invalid, so retrying it can never work
+ * and would jam everything behind it. Send one at a time: only the bad entry is
+ * set aside, with a message, and the rest go through.
+ */
+async function sendOneByOne(rows: OutboxRow[]) {
+  for (const row of rows) {
+    try {
+      await sendBatch([row]);
+    } catch (err) {
+      if (!isInvalid(err)) throw err;
+      await db.outbox
+        .where("clientId")
+        .equals(row.clientId)
+        .modify({ status: "failed", reason: null });
+    }
+  }
+}
+
 async function drain(userId: string): Promise<FlushResult> {
   try {
     for (;;) {
       const rows = (await pendingFor(userId)).slice(0, BATCH_SIZE);
       if (rows.length === 0) return "done";
-      await sendBatch(rows);
+      try {
+        await sendBatch(rows);
+      } catch (err) {
+        if (!isInvalid(err)) throw err;
+        await sendOneByOne(rows);
+      }
     }
   } catch (err) {
     if (err instanceof ApiError && err.status === 0) return "offline";

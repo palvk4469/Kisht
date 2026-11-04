@@ -54,7 +54,7 @@ export function SyncBar() {
           <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
           <span className="flex-1">
             <span className="font-medium">{row.borrowerName}: </span>
-            {row.reason ? t(`syncError.${row.reason}`) : t("common.error")}
+            {row.reason ? t(`syncError.${row.reason}`) : t("sync.invalid")}
           </span>
           <button
             type="button"

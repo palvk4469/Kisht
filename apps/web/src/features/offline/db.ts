@@ -20,7 +20,7 @@ export type OutboxRow = {
   | { kind: "outcome"; event: OutcomeEvent }
 );
 
-export type CachedToday = {
+type CachedToday = {
   userId: string;
   list: TodayList;
   /** Server clock minus this device's clock, measured when the list arrived. */

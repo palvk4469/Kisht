@@ -12,12 +12,13 @@ import { useMe } from "../session/api";
 import { currentFix } from "./gps";
 import { newClientId } from "./ids";
 
-export const fieldKeys = {
+const fieldKeys = {
   all: ["field"] as const,
   today: (userId: string) => [...fieldKeys.all, "today", userId] as const,
 };
 
 const REFRESH_MS = 60_000;
+const FETCH_TIMEOUT_MS = 8000;
 /** How long logging waits for a GPS fix before sending without one. */
 const GPS_WAIT_MS = 1500;
 
@@ -29,22 +30,32 @@ export type LoadedToday = {
   fromCache: boolean;
 };
 
+/** The phone's copy of the day, unless it's too old to keep (DPDP). */
+async function readCached(userId: string): Promise<LoadedToday | null> {
+  const cached = await db.today.get(userId);
+  if (!cached) return null;
+  if (Date.now() - cached.savedAt > CACHE_MAX_AGE_MS) {
+    await db.today.delete(userId);
+    return null;
+  }
+  return { ...cached, fromCache: true };
+}
+
 async function loadToday(userId: string): Promise<LoadedToday> {
   try {
-    const list = await request("/api/officer/today", { schema: TodayList });
+    const list = await request("/api/officer/today", {
+      schema: TodayList,
+      timeoutMs: FETCH_TIMEOUT_MS,
+    });
     const savedAt = Date.now();
     const clockOffsetMs = new Date(list.serverTime).getTime() - savedAt;
     await db.today.put({ userId, list, clockOffsetMs, savedAt });
     return { list, clockOffsetMs, savedAt, fromCache: false };
   } catch (err) {
     if (!(err instanceof ApiError && err.status === 0)) throw err;
-    const cached = await db.today.get(userId);
+    const cached = await readCached(userId);
     if (!cached) throw err;
-    if (Date.now() - cached.savedAt > CACHE_MAX_AGE_MS) {
-      await db.today.delete(userId); // DPDP: stale borrower data doesn't linger.
-      throw err;
-    }
-    return { ...cached, fromCache: true };
+    return cached;
   }
 }
 
@@ -52,7 +63,16 @@ async function loadToday(userId: string): Promise<LoadedToday> {
 export function useToday() {
   const me = useMe().data;
   const userId = me?.id ?? "";
+  // Shown at once while the network catches up, however slow it is.
+  const saved = useQuery({
+    queryKey: [...fieldKeys.today(userId), "saved"],
+    queryFn: () => readCached(userId),
+    enabled: Boolean(userId),
+    networkMode: "always",
+    staleTime: Number.POSITIVE_INFINITY,
+  });
   const query = useQuery({
+    placeholderData: saved.data ?? undefined,
     queryKey: fieldKeys.today(userId),
     queryFn: () => loadToday(userId),
     enabled: Boolean(userId),

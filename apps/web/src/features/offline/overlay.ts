@@ -3,7 +3,7 @@ import { istDayOf } from "@kisht/domain";
 import type { OutboxRow } from "./db";
 
 /** A history line that exists only on this phone so far. */
-export type LocalHistoryEntry = HistoryEntry & { unsent?: boolean };
+type LocalHistoryEntry = HistoryEntry & { unsent?: boolean };
 
 export type FieldItem = Omit<TodayItem, "history"> & {
   history: LocalHistoryEntry[];

@@ -164,3 +164,51 @@ test("signing out warns about unsent work and clears borrower data from the phon
   expect(stored.cached).toBe(0);
   expect(stored.queued).toBeGreaterThan(0);
 });
+
+test("one invalid entry is set aside and doesn't jam the rest", async ({ page }) => {
+  await signInAs(page, "priya.malviya@kisht.example");
+  // The server refuses anything carrying this note as invalid, as it would a corrupt entry.
+  await page.route("**/api/sync", async (route) => {
+    const body = route.request().postDataJSON() as { outcomes: { note: string | null }[] };
+    if (body.outcomes.some((o) => o.note === "CORRUPT")) {
+      await route.fulfill({
+        status: 400,
+        contentType: "application/json",
+        body: '{"error":"Invalid input"}',
+      });
+    } else {
+      await route.continue();
+    }
+  });
+
+  await page.getByTestId("loan-card").first().click();
+  await page.getByRole("button", { name: "संपर्क नहीं हुआ" }).click();
+  await page.getByRole("button", { name: /नोट जोड़ें/ }).click();
+  await page.getByLabel(/नोट/).fill("CORRUPT");
+  await page.getByRole("button", { name: "पक्का करें" }).click();
+  await expect(page.getByRole("alert").filter({ hasText: "सेव नहीं हो सकी" })).toBeVisible({
+    timeout: 20_000,
+  });
+
+  const nextLoan = await firstLoanId(page);
+  await logNotReachable(page);
+  await expect
+    .poll(async () => (await serverItem(page, nextLoan))?.state, { timeout: 20_000 })
+    .toBe("done");
+  await expect(page.getByRole("status").filter({ hasText: /भेजने बाकी|भेजे जा रहे/ })).toHaveCount(0, {
+    timeout: 20_000,
+  });
+});
+
+test("opens at once from the phone's copy, even if the network hangs", async ({ page }) => {
+  await signInAs(page, "arjun.patidar@kisht.example");
+  const name = await page.getByTestId("loan-card").first().locator("h2").textContent();
+
+  // Weak signal: the request neither succeeds nor fails.
+  await page.route("**/api/officer/today", () => {});
+  await page.route("**/api/me", () => {});
+  await page.reload();
+  await expect(page.getByTestId("loan-card").first().locator("h2")).toHaveText(name ?? "", {
+    timeout: 3000,
+  });
+});
