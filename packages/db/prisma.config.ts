@@ -1,4 +1,4 @@
-import { defineConfig, env } from "prisma/config";
+import { defineConfig } from "prisma/config";
 import { loadRootEnv } from "./src/env.ts";
 
 loadRootEnv();
@@ -12,6 +12,8 @@ export default defineConfig({
     path: "prisma/migrations",
   },
   datasource: {
-    url: env(urlVar),
+    // Not env(), which throws: `prisma generate` runs on install, before any .env
+    // exists, and needs no database. Commands that connect report a missing URL.
+    url: process.env[urlVar],
   },
 });
