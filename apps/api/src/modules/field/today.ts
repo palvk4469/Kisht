@@ -4,6 +4,7 @@ import {
   type IsoDay,
   isContactAllowed,
   istDayOf,
+  istDayStart,
   maskPhone,
   nextAllowedAt,
 } from "@kisht/domain";
@@ -53,6 +54,11 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
         take: 1,
       },
       outcomes: { orderBy: { correctedAt: "desc" }, take: 1 },
+      _count: {
+        select: {
+          contactAttempts: { where: { allowed: true, correctedAt: { gte: istDayStart(today) } } },
+        },
+      },
     },
   });
 
@@ -83,6 +89,8 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
           lastOutcomeDay: outcome ? istDayOf(outcome.correctedAt) : null,
           pendingDueDate: promise?.status === "PENDING" ? fromDbDate(promise.dueDate) : null,
         }),
+        contactPaused: loan.contactPaused,
+        attemptsToday: loan._count.contactAttempts,
         promise: promise ? visiblePromise(promise, today) : null,
         lastOutcome: outcome ? { type: outcome.type, at: outcome.correctedAt.toISOString() } : null,
       },

@@ -27,6 +27,7 @@ describe("OpenAPI docs", () => {
     expect(res.statusCode).toBe(200);
     const paths = Object.keys(res.json().paths).sort();
     expect(paths).toEqual([
+      "/api/demo/clock",
       "/api/imports",
       "/api/imports/demo-sample",
       "/api/imports/{id}",

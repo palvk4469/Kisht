@@ -88,6 +88,10 @@ export async function getLoanDetail(
     promise: promise ? visiblePromise(promise, today) : null,
     contact: contactState(now),
     openAttemptClientId: open?.clientId ?? null,
+    serverTime: now.toISOString(),
+    attemptsToday: await ctx.prisma.contactAttempt.count({
+      where: { loanId: loan.id, allowed: true, correctedAt: { gte: istDayStart(today) } },
+    }),
     history: loan.outcomes.map((o) => ({
       id: o.id,
       type: o.type,

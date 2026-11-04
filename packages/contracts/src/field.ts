@@ -71,6 +71,9 @@ export const TodayItem = z.object({
   emiAmount: z.number().int(),
   priority: Priority.nullable(),
   state: TodayItemState,
+  contactPaused: z.boolean(),
+  /** Allowed contact attempts so far today, against the daily cap. */
+  attemptsToday: z.number().int(),
   promise: PromiseSummary.nullable(),
   lastOutcome: z.object({ type: OutcomeType, at: z.iso.datetime() }).nullable(),
 });

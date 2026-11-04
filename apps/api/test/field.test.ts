@@ -404,3 +404,45 @@ describe("stateOf", () => {
     expect(stateOf({ ...base, contactPaused: true, lastOutcomeDay: DAY })).toBe("paused");
   });
 });
+
+describe("demo clock (D13)", () => {
+  async function demoApp(demoMode: boolean) {
+    return buildApp({
+      prisma,
+      authSecret: TEST_SECRET,
+      config: { baseURL: TEST_ORIGIN, demoMode },
+    });
+  }
+  const setClock = (a: FastifyInstance, cookie: string, at: string | null) =>
+    a.inject({
+      method: "POST",
+      url: "/api/demo/clock",
+      headers: { ...json, cookie },
+      payload: { at },
+    });
+
+  it("does not exist outside demo mode", async () => {
+    const plain = await demoApp(false);
+    const cookie = await signIn(plain, fx.officerA1.email);
+    expect((await setClock(plain, cookie, `${DAY}T05:30:00.000Z`)).statusCode).toBe(404);
+    await plain.close();
+  });
+
+  it("moves the server's rules, not just the display, and can be undone", async () => {
+    const demo = await demoApp(true);
+    const cookie = await signIn(demo, fx.officerA1.email);
+    const list = async () =>
+      (
+        await demo.inject({ method: "GET", url: "/api/officer/today", headers: { cookie } })
+      ).json<TodayList>();
+
+    await setClock(demo, cookie, ist(`${DAY}T20:00:00`).toISOString());
+    expect((await list()).contact.allowed).toBe(false);
+    await setClock(demo, cookie, ist(`${DAY}T11:00:00`).toISOString());
+    expect((await list()).contact.allowed).toBe(true);
+
+    const back = await setClock(demo, cookie, null);
+    expect(back.json().simulated).toBe(false);
+    await demo.close();
+  });
+});

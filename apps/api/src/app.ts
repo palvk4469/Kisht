@@ -13,6 +13,7 @@ import { makeAuthenticate } from "./http/guards.js";
 import { makeOriginGuard } from "./http/origin.js";
 import { createAuth } from "./modules/auth/auth.js";
 import { registerAuth } from "./modules/auth/routes.js";
+import { createDemoClock, registerDemo } from "./modules/demo/routes.js";
 import { registerField } from "./modules/field/routes.js";
 import { registerHealth } from "./modules/health/routes.js";
 import { registerImports } from "./modules/imports/routes.js";
@@ -41,10 +42,11 @@ const MODULES = [
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {
   const config: AppConfig = { demoMode: false, docs: false, ...opts.config };
   const auth = createAuth(opts.prisma, { secret: opts.authSecret, baseURL: config.baseURL });
+  const demoClock = createDemoClock(opts.clock ?? (() => new Date()));
   const ctx: AppContext = {
     prisma: opts.prisma,
     auth,
-    clock: opts.clock ?? (() => new Date()),
+    clock: demoClock.now,
     config,
     authenticate: makeAuthenticate(auth),
   };
@@ -74,5 +76,6 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
   }
 
   for (const register of MODULES) register(app, ctx);
+  if (config.demoMode) registerDemo(app, ctx, demoClock);
   return app;
 }
