@@ -5,12 +5,14 @@ import { LogOut } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { DemoClockBar } from "@/features/demo/DemoClockBar";
 import { FlashProvider } from "@/features/field/Flash";
+import { OfficerTabs } from "@/features/field/OfficerTabs";
 import { InstallPrompt } from "@/features/offline/InstallPrompt";
 import { SyncBar } from "@/features/offline/SyncBar";
 import { SyncProvider } from "@/features/offline/SyncProvider";
 import { countUnsent } from "@/features/offline/signOutCleanup";
 import { useI18n } from "@/lib/i18n";
 import { LanguageToggle } from "./LanguageToggle";
+import { Sheet } from "./Sheet";
 import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui";
 import { useSignOut } from "./useSignOut";
@@ -52,34 +54,23 @@ export function OfficerShell({ me, children }: { me: Me; children: ReactNode }) 
         <SyncBar />
         <InstallPrompt />
         <FlashProvider>
-          <main>{children}</main>
+          {/* Room for the tab bar, so the last card can always be reached. */}
+          <main className="pb-16">{children}</main>
+          <OfficerTabs />
         </FlashProvider>
       </SyncProvider>
       {unsent > 0 && (
-        <div
-          className="fixed inset-0 z-20 flex items-end justify-center"
-          role="alertdialog"
-          aria-modal
-        >
-          <button
-            type="button"
-            aria-label={t("common.cancel")}
-            onClick={() => setUnsent(0)}
-            className="absolute inset-0 bg-ink/40"
-          />
-          <div className="relative w-full max-w-md rounded-t-2xl bg-canvas p-5 pb-6 shadow-xl">
-            <h2 className="text-lg font-semibold">{t("signOut.title", { n: unsent })}</h2>
-            <p className="mt-1 text-sm text-muted">{t("signOut.body")}</p>
-            <div className="mt-4 flex flex-col gap-2">
-              <Button size="lg" variant="secondary" onClick={() => setUnsent(0)}>
-                {t("common.cancel")}
-              </Button>
-              <Button size="lg" variant="danger" onClick={() => void signOut()}>
-                {t("signOut.confirm")}
-              </Button>
-            </div>
+        <Sheet title={t("signOut.title", { n: unsent })} onClose={() => setUnsent(0)}>
+          <p className="mt-1 text-sm text-muted">{t("signOut.body")}</p>
+          <div className="mt-4 flex flex-col gap-2">
+            <Button size="lg" variant="secondary" onClick={() => setUnsent(0)}>
+              {t("common.cancel")}
+            </Button>
+            <Button size="lg" variant="danger" onClick={() => void signOut()}>
+              {t("signOut.confirm")}
+            </Button>
           </div>
-        </div>
+        </Sheet>
       )}
     </div>
   );

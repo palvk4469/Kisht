@@ -3,7 +3,8 @@
 import type { OutcomeType } from "@kisht/contracts";
 import { addDays, istDayOf } from "@kisht/domain";
 import { useRouter } from "next/navigation";
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
+import { Sheet } from "@/components/Sheet";
 import { Button, cx } from "@/components/ui";
 import { day } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
@@ -51,12 +52,6 @@ export function OutcomeSheet(props: Props) {
   const [showDetails, setShowDetails] = useState(type === "PAID" || type === "DISPUTE");
   const today = istDayOf(props.now);
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && props.onClose();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [props.onClose]);
-
   const parsedAmount = Number(amount);
   const validAmount = Number.isInteger(parsedAmount) && parsedAmount > 0;
 
@@ -77,95 +72,81 @@ export function OutcomeSheet(props: Props) {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-20 flex items-end justify-center"
-      role="dialog"
-      aria-modal
-      aria-label={t(TITLES[type])}
-    >
-      <button
-        type="button"
-        aria-label={t("common.cancel")}
-        onClick={props.onClose}
-        className="absolute inset-0 bg-ink/40"
-      />
-      <div className="relative w-full max-w-md rounded-t-2xl bg-canvas p-5 pb-6 shadow-xl">
-        <h2 className="text-lg font-semibold">{t(TITLES[type])}</h2>
-        {type === "PAID" && <p className="mt-1 text-sm text-muted">{t("sheet.paidHint")}</p>}
-        {type === "DISPUTE" && <p className="mt-1 text-sm text-warn">{t("sheet.disputeHint")}</p>}
+    <Sheet title={t(TITLES[type])} onClose={props.onClose}>
+      {type === "PAID" && <p className="mt-1 text-sm text-muted">{t("sheet.paidHint")}</p>}
+      {type === "DISPUTE" && <p className="mt-1 text-sm text-warn">{t("sheet.disputeHint")}</p>}
 
-        {showDetails ? (
-          <div className="mt-4 space-y-3">
-            {(type === "PAID" || type === "PROMISE") && (
-              <div>
-                <label htmlFor={amountId} className="text-sm font-medium">
-                  {t("sheet.amount")}
-                </label>
-                <input
-                  id={amountId}
-                  inputMode="numeric"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-                  className={cx(field, "num")}
-                />
-              </div>
-            )}
+      {showDetails ? (
+        <div className="mt-4 space-y-3">
+          {(type === "PAID" || type === "PROMISE") && (
             <div>
-              <label htmlFor={noteId} className="text-sm font-medium">
-                {t("sheet.note")}
+              <label htmlFor={amountId} className="text-sm font-medium">
+                {t("sheet.amount")}
               </label>
               <input
-                id={noteId}
-                value={note}
-                maxLength={500}
-                onChange={(e) => setNote(e.target.value)}
-                className={field}
+                id={amountId}
+                inputMode="numeric"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+                className={cx(field, "num")}
               />
             </div>
+          )}
+          <div>
+            <label htmlFor={noteId} className="text-sm font-medium">
+              {t("sheet.note")}
+            </label>
+            <input
+              id={noteId}
+              value={note}
+              maxLength={500}
+              onChange={(e) => setNote(e.target.value)}
+              className={field}
+            />
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowDetails(true)}
-            className="mt-2 min-h-10 text-sm text-accent underline underline-offset-2"
-          >
-            {t("sheet.details")}
-          </button>
-        )}
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setShowDetails(true)}
+          className="mt-2 min-h-10 text-sm text-accent underline underline-offset-2"
+        >
+          {t("sheet.details")}
+        </button>
+      )}
 
-        {type === "PROMISE" ? (
-          <div className="mt-4 grid grid-cols-3 gap-2">
-            {PROMISE_CHOICES.map((n) => {
-              const due = addDays(today, n);
-              return (
-                <button
-                  key={n}
-                  type="button"
-                  disabled={saving || !validAmount}
-                  onClick={() => void submit(due)}
-                  className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-line px-1 hover:border-accent hover:bg-accent-soft disabled:opacity-50"
-                >
-                  <span className="font-medium">
-                    {n === 1 ? t("sheet.tomorrow") : t("sheet.inDays", { n })}
-                  </span>
-                  <span className="text-xs text-muted">{day(due, locale)}</span>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <Button
-            size="lg"
-            variant={type === "DISPUTE" ? "danger" : "primary"}
-            className="mt-4 w-full"
-            busy={saving}
-            disabled={type === "PAID" && !validAmount}
-            onClick={() => void submit(null)}
-          >
-            {saving ? t("sheet.saving") : t("sheet.confirm")}
-          </Button>
-        )}
-      </div>
-    </div>
+      {type === "PROMISE" ? (
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {PROMISE_CHOICES.map((n) => {
+            const due = addDays(today, n);
+            return (
+              <button
+                key={n}
+                type="button"
+                disabled={saving || !validAmount}
+                onClick={() => void submit(due)}
+                className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-line px-1 hover:border-accent hover:bg-accent-soft disabled:opacity-50"
+              >
+                <span className="font-medium">
+                  {n === 1 ? t("sheet.tomorrow") : t("sheet.inDays", { n })}
+                </span>
+                <span className="text-xs text-muted">{day(due, locale)}</span>
+              </button>
+            );
+          })}
+        </div>
+      ) : (
+        <Button
+          size="lg"
+          variant={type === "DISPUTE" ? "danger" : "primary"}
+          className="mt-4 w-full"
+          busy={saving}
+          disabled={type === "PAID" && !validAmount}
+          onClick={() => void submit(null)}
+        >
+          {saving ? t("sheet.saving") : t("sheet.confirm")}
+        </Button>
+      )}
+    </Sheet>
   );
 }

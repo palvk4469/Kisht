@@ -66,6 +66,11 @@ export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number;
               <PromiseBadge promise={item.promise} />
             </div>
             {topReason && <p className="mt-2 text-sm text-muted">{reasonText(topReason)}</p>}
+            {item.managerNote && (
+              <p className="mt-1 text-sm text-accent">
+                {t("loan.managerNote", { note: item.managerNote })}
+              </p>
+            )}
             {item.priority?.limitedHistory && (
               <p className="mt-1 text-xs text-faint">{t("today.limitedHistory")}</p>
             )}

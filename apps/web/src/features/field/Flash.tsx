@@ -37,7 +37,7 @@ export function FlashProvider({ children }: { children: ReactNode }) {
     <FlashContext.Provider value={show}>
       {children}
       {message && (
-        <div className="pointer-events-none fixed inset-x-0 bottom-4 z-30 flex justify-center px-4">
+        <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 flex justify-center px-4">
           <p
             role="status"
             className="flex max-w-md items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-medium text-canvas shadow-lg"

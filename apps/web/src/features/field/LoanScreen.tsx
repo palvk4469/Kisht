@@ -95,6 +95,11 @@ export function LoanScreen({ loanId }: { loanId: string }) {
           <DpdBadge dpd={dpd} />
           <PromiseBadge promise={loan.promise} />
         </div>
+        {loan.managerNote && (
+          <p className="mt-2 text-sm text-accent">
+            {t("loan.managerNote", { note: loan.managerNote })}
+          </p>
+        )}
         <dl className="mt-4 grid grid-cols-3 gap-2">
           <div className="rounded-xl bg-surface px-3 py-2.5">
             <dt className="text-xs text-muted">{t("loan.outstanding")}</dt>

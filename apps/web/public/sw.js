@@ -8,7 +8,7 @@
 
 const VERSION = new URL(self.location.href).searchParams.get("v") ?? "dev";
 const CACHE = `kisht-shell-${VERSION}`;
-const SHELL = ["/", "/login", "/today", "/today/loan", "/manager/import"];
+const SHELL = ["/", "/login", "/today", "/today/loan", "/today/promises", "/manager/import"];
 const NETWORK_TIMEOUT_MS = 3000;
 
 const staticUrls = (text) => text.match(/\/_next\/static\/[^"'\s\\)]+/g) ?? [];
