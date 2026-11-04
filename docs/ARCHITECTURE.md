@@ -64,6 +64,9 @@ apps/api/src
   modules/
     auth/           Better Auth bridge, scope.ts (the one access-control module)
     audit/          append-only audit log
+    scoring/        scores a day's loans on import
+    field/          today's list, sync (contact window, attempts, outcomes)
+    demo/           demo clock; only registered in demo mode
     health/ me/ loans/ imports/
       routes.ts     HTTP only: guards + contract schemas, then calls the service
       service.ts    logic and Prisma, returns contract types
@@ -115,6 +118,10 @@ sequenceDiagram
   A->>P: COMMIT
   A-->>M: summary, including promises kept, partial or broken
 ```
+
+## The priority model
+
+`domain/scoring` holds the features, the model, the reasons and the back-test as pure code. `packages/db/scripts/trainModel.ts` trains on simulated worlds and tests on one it never saw, writing `model-v1.json` and its metrics. Scores are written on seed and on every import commit, then read by the list. Details and honest limits: [MODEL.md](MODEL.md).
 
 ## Offline logging (day 4)
 

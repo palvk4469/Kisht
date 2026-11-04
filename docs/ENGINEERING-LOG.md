@@ -64,3 +64,12 @@ After two days of shipping features, I stopped and removed the duplication befor
 Also renamed `@kisht/shared` to `@kisht/domain`: it holds business rules, and the name should say so. The API now serves OpenAPI docs at `/api/docs`, generated from the same schemas.
 
 Deliberately not done: splitting into services, or adding CQRS or a repository layer over Prisma. For a product this size they add indirection without a benefit a reviewer could point to.
+
+## Day 3: the priority model and the officer's screens (2026-11-04)
+
+- **The back-test caught a bad model before anyone saw it.** The first version beat today's practice easily (59% of rolling rupees in each officer's first 10 loans, against 17%). But I had added a simple baseline to compare with, oldest first within 1–30 days, and it scored **88%**. The model was spending slots on 31+ loans that can't roll any more. The fix was to put loans that can still be stopped first, then rank by rupees at stake. Result: 91.8% vs 88.5% at ten loans, 68.3% vs 59.2% at five. Most of the gain is that stage rule; the model's own lead is modest, and [MODEL.md](MODEL.md) says so.
+- **A feature was hiding the most obvious reason.** "Days overdue in the last 90" already contains the current spell, so it absorbed the DPD signal and "4 days to roll" hardly registered. It now counts only earlier lateness, so "close to rolling" and "often late before" are separate, true statements.
+- **Reasons measured against a clean loan.** Measured against the average, one broken promise counted for nothing, because broken promises are common. Officers don't think like that. The ranking doesn't change, only the explanation. On LN-11930 the model still ranks the broken promise fourth, so it appears as a badge from the record rather than as a forced reason.
+- **The phone's clock isn't trusted (D20).** Each batch says what the phone's clock read when sent, and the server corrects by the gap. A phone set back to 3 pm at 9 pm is still blocked; a real call at 18:50 synced at 21:00 still counts. Blocked attempts are stored, outcomes stand only on an allowed attempt, and retries change nothing.
+- **Demo clock brought forward from day 6.** Browser tests have to pass at any hour, and otherwise a reviewer at night can't try the flow at all.
+- **Caught by looking at the screens:** the seed had officers working "today", so the demo opened with outcomes timed later than the current time; "in 1 days"; sample notes contradicting their outcome; an overdue promise looking the same as an upcoming one.
