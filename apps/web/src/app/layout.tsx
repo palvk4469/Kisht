@@ -1,21 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans, Noto_Sans_Devanagari } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { THEME_SCRIPT } from "@/features/theme/theme";
 import { Providers } from "./providers";
 
-const notoSans = Noto_Sans({ subsets: ["latin"], variable: "--font-noto-sans", display: "swap" });
-const notoDevanagari = Noto_Sans_Devanagari({
-  subsets: ["devanagari"],
-  weight: ["400", "500", "600"],
-  variable: "--font-noto-devanagari",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "Kisht Collections",
   description: "Field collections for MSME loans",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icons/icon-192.png", apple: "/icons/icon-192.png" },
 };
 
 export const viewport: Viewport = {
@@ -31,7 +24,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html
       lang="hi"
-      className={`${notoSans.variable} ${notoDevanagari.variable}`}
       // The theme script sets class="dark" before React hydrates.
       suppressHydrationWarning
     >

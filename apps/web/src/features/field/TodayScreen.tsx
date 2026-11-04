@@ -1,12 +1,13 @@
 "use client";
 
-import type { TodayItem, TodayItemState } from "@kisht/contracts";
+import type { TodayItemState } from "@kisht/contracts";
 import { Clock, ListChecks, PartyPopper } from "lucide-react";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
-import { day, number, rupeesShort, time } from "@/lib/format";
+import { dateTime, day, number, rupeesShort, time } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import { DemoTimeButton } from "../demo/DemoClockBar";
-import { useTodayList } from "./api";
+import type { FieldItem } from "../offline/overlay";
+import { useToday } from "./api";
 import { LoanCard, LoanRow } from "./LoanCard";
 import { useContactWindow } from "./useContactWindow";
 
@@ -29,8 +30,8 @@ function Loading() {
 
 export function TodayScreen() {
   const { t, locale } = useI18n();
-  const list = useTodayList();
-  const clock = useContactWindow(list.data?.serverTime);
+  const list = useToday();
+  const clock = useContactWindow(list.data?.clockOffsetMs);
 
   if (list.isPending) return <Loading />;
   if (list.error) {
@@ -41,7 +42,8 @@ export function TodayScreen() {
     );
   }
 
-  const { items, beyondCapacity, asOfDate } = list.data;
+  const { items } = list;
+  const { beyondCapacity, asOfDate } = list.data.list;
   if (items.length === 0) {
     return (
       <EmptyState
@@ -52,7 +54,7 @@ export function TodayScreen() {
     );
   }
 
-  const of = (state: TodayItemState): TodayItem[] => items.filter((i) => i.state === state);
+  const of = (state: TodayItemState): FieldItem[] => items.filter((i) => i.state === state);
   const todo = of("todo");
   const done = of("done").length;
   const workable = todo.length + done;
@@ -92,6 +94,12 @@ export function TodayScreen() {
           </>
         )}
       </section>
+
+      {list.data.fromCache && (
+        <p className="mx-4 mt-3 text-xs text-muted">
+          {t("sync.listFrom", { time: dateTime(new Date(list.data.savedAt), locale) })}
+        </p>
+      )}
 
       {!clock.allowed && (
         <div

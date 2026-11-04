@@ -16,7 +16,7 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 | Manager roll-rate view                                           | Day 6   | Screen 8; metric done (`domain/rollRate.ts`)                                     |
 | Roles: field officer and branch manager (+ head)                 | Done    | `modules/auth/scope.ts`, tested per role                                         |
 | AI: priority score with top three reasons                        | Done    | `domain/scoring`, [MODEL.md](MODEL.md); up to three, only true ones              |
-| Hard part: offline logging with sync                             | Partial | Idempotent `/api/sync` done and tested; on-device queue day 4                    |
+| Hard part: offline logging with sync                             | Done    | Outbox on the phone + idempotent `/api/sync`; real offline browser tests         |
 | Hard part: 8 am–7 pm contact block                               | Done    | UI and server, by corrected time; blocked taps recorded                          |
 | Mocked payments, messages and outside systems                    | Partial | `MessageLog` table in place; reminders day 5                                     |
 | Seeded from the sample data                                      | Done    | The three sample rows exactly, plus 6 months of history                          |
@@ -44,13 +44,13 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 
 ## Constraints
 
-| Requirement                                          | Status  | Where / note                                                         |
-| ---------------------------------------------------- | ------- | -------------------------------------------------------------------- |
-| Block contact outside 8 am–7 pm                      | Done    | Blocked and explained in the UI with the next time; server re-checks |
-| Record every contact attempt, including blocked ones | Done    | `ContactAttempt` with `allowed` and `blockReason`; tested            |
-| DPDP: borrower data as personal data                 | Partial | Phones masked, every reveal audited; list views follow the same rule |
-| Offline on low-end phones, weak signal               | Day 4   | PWA + outbox; JS budget on officer routes                            |
-| Hindi interface                                      | Partial | Hindi default, toggle everywhere; officer screens arrive in Hindi    |
+| Requirement                                          | Status  | Where / note                                                                                                                     |
+| ---------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Block contact outside 8 am–7 pm                      | Done    | Blocked and explained in the UI with the next time; server re-checks                                                             |
+| Record every contact attempt, including blocked ones | Done    | `ContactAttempt` with `allowed` and `blockReason`; tested                                                                        |
+| DPDP: borrower data as personal data                 | Partial | Phones masked, every reveal audited; list views follow the same rule                                                             |
+| Offline on low-end phones, weak signal               | Done    | Service worker + IndexedDB; system fonts; first load 245 KB JS (over the 200 KB target, see the log), then served from the phone |
+| Hindi interface                                      | Partial | Hindi default, toggle everywhere; officer screens arrive in Hindi                                                                |
 
 ## Design
 
@@ -78,4 +78,6 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 
 ## Cut
 
-Nothing yet. Anything cut later is listed here with the reason.
+| What                                                               | Why                                                                                                                                           |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Sending the outbox while the app is fully closed (Background Sync) | It would duplicate the send logic inside the service worker, and officers have the app open all day. Everything sends the next time it opens. |

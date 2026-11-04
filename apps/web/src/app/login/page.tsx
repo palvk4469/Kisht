@@ -7,7 +7,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button, cx } from "@/components/ui";
 import { fetchMe, homeFor, sessionKeys } from "@/features/session/api";
-import { authClient } from "@/lib/auth-client";
+import { ApiError } from "@/lib/api";
+import { signInWithEmail } from "@/lib/auth";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 
 const DEMO_MODE = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
@@ -47,21 +48,17 @@ export default function LoginPage() {
     setError(null);
     setBusy(withEmail);
     try {
-      const res = await authClient.signIn.email({ email: withEmail, password: withPassword });
-      if (res.error) {
-        setError(
-          res.error.status === 401 ? t("login.invalid") : (res.error.message ?? t("common.error")),
-        );
-        return;
-      }
+      await signInWithEmail(withEmail, withPassword);
       const me = await queryClient.fetchQuery({
         queryKey: sessionKeys.me(),
         queryFn: fetchMe,
         staleTime: 0,
       });
       router.replace(homeFor(me.role));
-    } catch {
-      setError(t("common.offline"));
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 401) setError(t("login.invalid"));
+      else if (err instanceof ApiError && err.status !== 0) setError(err.message);
+      else setError(t("common.offline"));
     } finally {
       setBusy(null);
     }

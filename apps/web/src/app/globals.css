@@ -3,7 +3,11 @@
 /* Design tokens. One accent (ink indigo); red/amber/green are reserved for
    meaning (risk, warning, done), never decoration. */
 @theme {
-  --font-sans: var(--font-noto-sans), var(--font-noto-devanagari), system-ui, sans-serif;
+  /* System fonts on purpose (D23): web fonts cost 415 KB, more than all our code,
+     and every platform we target ships a good Latin and Devanagari face. */
+  --font-sans:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", "Nirmala UI",
+    "Kohinoor Devanagari", sans-serif;
 
   --color-ink: #16181d;
   --color-muted: #5f6470;
@@ -63,8 +67,6 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
-    /* No text-rendering: optimizeLegibility: it mis-spaces Noto at small sizes
-       and costs layout time on low-end phones. */
   }
   body {
     @apply bg-canvas text-ink antialiased;

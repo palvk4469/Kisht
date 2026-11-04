@@ -7,8 +7,12 @@ import Link from "next/link";
 import { Badge, cx } from "@/components/ui";
 import { rupees, shortDay } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
+import type { FieldItem } from "../offline/overlay";
 import { ContactActions } from "./ContactActions";
 import { useReasonText } from "./useReasonText";
+
+/** A query string, not a path segment, so one cached page serves every loan offline. */
+export const loanHref = (loanId: string) => `/today/loan?id=${encodeURIComponent(loanId)}`;
 
 /** Red at the edge of the roll or past it: the colour says where to look first. */
 export function dpdTone(dpd: number): "risk" | "warn" | "neutral" {
@@ -42,13 +46,13 @@ export function PromiseBadge({ promise }: { promise: TodayItem["promise"] }) {
 
 type Clock = { now: Date; nextAllowedAt: Date };
 
-export function LoanCard({ item, rank, clock }: { item: TodayItem; rank: number; clock: Clock }) {
+export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number; clock: Clock }) {
   const { t } = useI18n();
   const reasonText = useReasonText();
   const topReason = item.priority?.reasons[0];
   return (
     <li className="rounded-card border border-line bg-canvas">
-      <Link href={`/today/${item.loanId}`} className="block p-4 pb-3" data-testid="loan-card">
+      <Link href={loanHref(item.loanId)} className="block p-4 pb-3" data-testid="loan-card">
         <div className="flex items-start gap-3">
           <span className="num mt-0.5 w-5 shrink-0 text-sm text-faint">{rank}</span>
           <div className="min-w-0 flex-1">
@@ -71,6 +75,7 @@ export function LoanCard({ item, rank, clock }: { item: TodayItem; rank: number;
       <div className="px-4 pb-4">
         <ContactActions
           loanId={item.loanId}
+          borrowerName={item.borrowerName}
           phone={item.phone}
           address={item.address}
           lat={item.lat}
@@ -88,14 +93,14 @@ export function LoanCard({ item, rank, clock }: { item: TodayItem; rank: number;
 const OUTCOME_ICON = { waiting: HandCoins, done: History, paused: History } as const;
 
 /** A quiet row for loans that need nothing right now. */
-export function LoanRow({ item }: { item: TodayItem }) {
+export function LoanRow({ item }: { item: FieldItem }) {
   const { t } = useI18n();
   const state = item.state === "todo" ? "done" : item.state;
   const Icon = OUTCOME_ICON[state];
   return (
     <li>
       <Link
-        href={`/today/${item.loanId}`}
+        href={loanHref(item.loanId)}
         className="flex min-h-14 items-center gap-3 px-4 py-2 hover:bg-surface"
       >
         <Icon className="size-4 shrink-0 text-faint" aria-hidden />
@@ -104,6 +109,7 @@ export function LoanRow({ item }: { item: TodayItem }) {
           <span className={cx("num block text-xs text-muted")}>
             {rupees(item.outstanding)}
             {item.lastOutcome && state === "done" && ` · ${t(`outcome.${item.lastOutcome.type}`)}`}
+            {item.unsent && ` · ${t("sync.notSent")}`}
           </span>
         </span>
         <PromiseBadge promise={item.state === "waiting" ? item.promise : null} />

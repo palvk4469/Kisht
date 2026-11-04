@@ -20,7 +20,7 @@ const NAV: { href: string; label: MessageKey }[] = [
 export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) {
   const { t } = useI18n();
   const pathname = usePathname();
-  const signOut = useSignOut();
+  const signOut = useSignOut(me.id);
   return (
     <div className="min-h-dvh bg-surface">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 backdrop-blur">

@@ -1,31 +1,7 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import { setClock, signInAs } from "./helpers";
 
 // The demo clock pins the time of day, so these pass at any hour (D13).
-const istToday = () => new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10);
-
-async function setClock(page: Page, time: string | null) {
-  const at = time && new Date(`${istToday()}T${time}:00+05:30`).toISOString();
-  const status = await page.evaluate(async (body) => {
-    const res = await fetch("/api/demo/clock", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ at: body }),
-    });
-    return res.status;
-  }, at);
-  expect(status).toBe(200);
-}
-
-async function signInAs(page: Page, email: string, time = "11:00") {
-  await page.goto("/login");
-  await page.getByLabel(/Email|ईमेल/).fill(email);
-  await page.getByLabel(/Password|पासवर्ड/).fill(process.env.DEMO_PASSWORD ?? "Kisht@Demo2026");
-  await page.getByRole("button", { name: /^(Sign in|लॉग इन करें)$/ }).click();
-  await expect(page).toHaveURL(/\/today$/);
-  await setClock(page, time);
-  await page.reload();
-  await expect(page.getByRole("heading", { name: "आज की सूची" })).toBeVisible();
-}
 
 test.afterEach(async ({ page }) => {
   await setClock(page, null).catch(() => {});

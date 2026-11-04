@@ -2,6 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { type ReactNode, useState } from "react";
+import { ServiceWorker } from "@/features/offline/ServiceWorker";
 import { ThemeProvider } from "@/features/theme/ThemeProvider";
 import { LocaleProvider } from "@/lib/i18n";
 
@@ -16,6 +17,7 @@ export function Providers({ children }: { children: ReactNode }) {
   );
   return (
     <QueryClientProvider client={client}>
+      <ServiceWorker />
       <ThemeProvider>
         <LocaleProvider>{children}</LocaleProvider>
       </ThemeProvider>

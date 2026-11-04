@@ -5,11 +5,10 @@ import { ArrowLeft, Ban, CalendarClock, HandCoins, PhoneOff } from "lucide-react
 import Link from "next/link";
 import { useState } from "react";
 import { Badge, Card, cx, EmptyState, ErrorState, Skeleton } from "@/components/ui";
-import { ApiError } from "@/lib/api";
 import { dateTime, rupees, time } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { DemoTimeButton } from "../demo/DemoClockBar";
-import { useLoan } from "./api";
+import { useToday } from "./api";
 import { ContactActions } from "./ContactActions";
 import { DpdBadge, dpdTone, PromiseBadge } from "./LoanCard";
 import { OutcomeSheet } from "./OutcomeSheet";
@@ -34,8 +33,8 @@ const percent = (p: number) => `${Math.round(p * 100)}%`;
 
 export function LoanScreen({ loanId }: { loanId: string }) {
   const { t, locale } = useI18n();
-  const query = useLoan(loanId);
-  const clock = useContactWindow(query.data?.serverTime);
+  const query = useToday();
+  const clock = useContactWindow(query.data?.clockOffsetMs);
   const reasonText = useReasonText();
   const [sheet, setSheet] = useState<OutcomeType | null>(null);
 
@@ -59,24 +58,27 @@ export function LoanScreen({ loanId }: { loanId: string }) {
     );
   }
   if (query.error) {
-    const gone = query.error instanceof ApiError && query.error.status === 404;
     return (
       <div>
         {back}
-        {gone ? (
-          <EmptyState title={t("loan.notFound")} />
-        ) : (
-          <div className="px-4">
-            <ErrorState error={query.error} onRetry={() => void query.refetch()} />
-          </div>
-        )}
+        <div className="px-4">
+          <ErrorState error={query.error} onRetry={() => void query.refetch()} />
+        </div>
       </div>
     );
   }
 
-  const loan = query.data;
-  const outstanding = loan.latest?.outstanding ?? 0;
-  const dpd = loan.latest?.dpd ?? 0;
+  // The whole day is one payload, so this works with no signal (D22).
+  const loan = query.items.find((i) => i.loanId === loanId);
+  if (!loan) {
+    return (
+      <div>
+        {back}
+        <EmptyState title={t("loan.notFound")} />
+      </div>
+    );
+  }
+  const { outstanding, dpd } = loan;
   const score = loan.priority;
   // A call inside the window can be logged after it closes (D9).
   const canLog = !loan.contactPaused && (clock.allowed || loan.openAttemptClientId !== null);
@@ -85,9 +87,9 @@ export function LoanScreen({ loanId }: { loanId: string }) {
     <div className="pb-8">
       {back}
       <section className="px-4">
-        <h1 className="text-xl font-semibold">{loan.borrower.name}</h1>
+        <h1 className="text-xl font-semibold">{loan.borrowerName}</h1>
         <p className="mt-0.5 text-sm text-muted">
-          {loan.loanNo} · {loan.borrower.address}
+          {loan.loanNo} · {loan.address}
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <DpdBadge dpd={dpd} />
@@ -117,51 +119,48 @@ export function LoanScreen({ loanId }: { loanId: string }) {
         </dl>
       </section>
 
-      {loan.phone && (
-        <section className="mt-4 px-4">
-          <ContactActions
-            loanId={loan.id}
-            phone={loan.phone}
-            address={loan.borrower.address}
-            lat={loan.borrower.lat}
-            lng={loan.borrower.lng}
-            contactPaused={loan.contactPaused}
-            attemptsToday={loan.attemptsToday}
-            now={clock.now}
-            nextAllowedAt={clock.nextAllowedAt}
-          />
-        </section>
-      )}
+      <section className="mt-4 px-4">
+        <ContactActions
+          loanId={loan.loanId}
+          borrowerName={loan.borrowerName}
+          phone={loan.phone}
+          address={loan.address}
+          lat={loan.lat}
+          lng={loan.lng}
+          contactPaused={loan.contactPaused}
+          attemptsToday={loan.attemptsToday}
+          now={clock.now}
+          nextAllowedAt={clock.nextAllowedAt}
+        />
+      </section>
 
-      {loan.phone && (
-        <section className="mt-6 px-4">
-          <h2 className="font-medium">{t("loan.whatHappened")}</h2>
-          {loan.contactPaused ? (
-            <p role="status" className="mt-2 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
-              {t("loan.pausedLog")}
-            </p>
-          ) : canLog ? (
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              {OUTCOMES.map(({ type, icon: Icon, className }) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => setSheet(type)}
-                  className="flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-xl border border-line px-2 font-medium hover:bg-surface"
-                >
-                  <Icon className={cx("size-6", className)} aria-hidden />
-                  {t(`outcome.${type}`)}
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div role="status" className="mt-2 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
-              <p>{t("loan.closedLog", { time: time(clock.nextAllowedAt, locale) })}</p>
-              <DemoTimeButton />
-            </div>
-          )}
-        </section>
-      )}
+      <section className="mt-6 px-4">
+        <h2 className="font-medium">{t("loan.whatHappened")}</h2>
+        {loan.contactPaused ? (
+          <p role="status" className="mt-2 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
+            {t("loan.pausedLog")}
+          </p>
+        ) : canLog ? (
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {OUTCOMES.map(({ type, icon: Icon, className }) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setSheet(type)}
+                className="flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-xl border border-line px-2 font-medium hover:bg-surface"
+              >
+                <Icon className={cx("size-6", className)} aria-hidden />
+                {t(`outcome.${type}`)}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div role="status" className="mt-2 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
+            <p>{t("loan.closedLog", { time: time(clock.nextAllowedAt, locale) })}</p>
+            <DemoTimeButton />
+          </div>
+        )}
+      </section>
 
       <section className="mt-6 px-4">
         <Card className="p-4">
@@ -204,7 +203,9 @@ export function LoanScreen({ loanId }: { loanId: string }) {
               <li key={h.id} className="text-sm">
                 <div className="flex items-center justify-between gap-2">
                   <Badge tone={OUTCOME_TONE[h.type]}>{t(`outcome.${h.type}`)}</Badge>
-                  <span className="text-xs text-muted">{dateTime(h.at, locale)}</span>
+                  <span className="text-xs text-muted">
+                    {h.unsent ? t("sync.notSent") : dateTime(h.at, locale)}
+                  </span>
                 </div>
                 {(h.amount !== null || h.note) && (
                   <p className="mt-1 text-muted">
@@ -222,8 +223,8 @@ export function LoanScreen({ loanId }: { loanId: string }) {
       {sheet && (
         <OutcomeSheet
           type={sheet}
-          loanId={loan.id}
-          borrowerName={loan.borrower.name}
+          loanId={loan.loanId}
+          borrowerName={loan.borrowerName}
           emiAmount={loan.emiAmount}
           openAttemptClientId={loan.openAttemptClientId}
           now={clock.now}

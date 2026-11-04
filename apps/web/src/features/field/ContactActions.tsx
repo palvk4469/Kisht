@@ -6,7 +6,7 @@ import { useState } from "react";
 import { cx } from "@/components/ui";
 import { time } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
-import { useRecordAttempt } from "./api";
+import { useFieldLog } from "./api";
 
 const BLOCK_TEXT: Record<ContactBlockReason, MessageKey> = {
   OUTSIDE_CONTACT_WINDOW: "contact.blockedWindow",
@@ -16,6 +16,7 @@ const BLOCK_TEXT: Record<ContactBlockReason, MessageKey> = {
 
 type Props = {
   loanId: string;
+  borrowerName: string;
   phone: string;
   address: string;
   lat: number | null;
@@ -41,7 +42,7 @@ const target =
  */
 export function ContactActions(props: Props) {
   const { t, locale } = useI18n();
-  const record = useRecordAttempt();
+  const { recordAttempt } = useFieldLog();
   const [notice, setNotice] = useState<string | null>(null);
   const block = checkContact({
     at: props.now,
@@ -59,7 +60,7 @@ export function ContactActions(props: Props) {
           <button
             type="button"
             onClick={() => {
-              record.mutate({ loanId: props.loanId, channel: "CALL" });
+              void recordAttempt(props, "CALL", true);
               setNotice(blockText);
             }}
             className={cx(target, "bg-surface text-muted")}
@@ -70,7 +71,7 @@ export function ContactActions(props: Props) {
         ) : (
           <a
             href={`tel:${props.phone}`}
-            onClick={() => record.mutate({ loanId: props.loanId, channel: "CALL" })}
+            onClick={() => void recordAttempt(props, "CALL", false)}
             className={cx(target, "bg-accent text-on-accent hover:bg-accent-strong")}
           >
             <Phone className="size-4" aria-hidden />

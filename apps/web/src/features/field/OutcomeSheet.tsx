@@ -1,13 +1,13 @@
 "use client";
 
-import type { OutcomeType, SyncReason } from "@kisht/contracts";
+import type { OutcomeType } from "@kisht/contracts";
 import { addDays, istDayOf } from "@kisht/domain";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useState } from "react";
-import { Button, cx, ErrorState } from "@/components/ui";
+import { Button, cx } from "@/components/ui";
 import { day } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
-import { useLogOutcome } from "./api";
+import { useFieldLog } from "./api";
 import { useFlash } from "./Flash";
 
 type Props = {
@@ -42,13 +42,13 @@ export function OutcomeSheet(props: Props) {
   const { t, locale } = useI18n();
   const router = useRouter();
   const flash = useFlash();
-  const log = useLogOutcome();
+  const { logOutcome } = useFieldLog();
+  const [saving, setSaving] = useState(false);
   const amountId = useId();
   const noteId = useId();
   const [amount, setAmount] = useState(String(emiAmount));
   const [note, setNote] = useState("");
   const [showDetails, setShowDetails] = useState(type === "PAID" || type === "DISPUTE");
-  const [refusal, setRefusal] = useState<SyncReason | null>(null);
   const today = istDayOf(props.now);
 
   useEffect(() => {
@@ -60,28 +60,20 @@ export function OutcomeSheet(props: Props) {
   const parsedAmount = Number(amount);
   const validAmount = Number.isInteger(parsedAmount) && parsedAmount > 0;
 
-  function submit(promiseDueDate: string | null) {
-    setRefusal(null);
-    log.mutate(
-      {
-        loanId: props.loanId,
-        openAttemptClientId: props.openAttemptClientId,
-        type,
-        amount: type === "PAID" || type === "PROMISE" ? parsedAmount : null,
-        promiseDueDate,
-        note: note.trim() || null,
-      },
-      {
-        onSuccess: (result) => {
-          if (result?.status === "recorded" || result?.status === "duplicate") {
-            flash(t("saved.flash", { type: t(`outcome.${type}`), name: props.borrowerName }));
-            router.replace("/today");
-          } else {
-            setRefusal(result?.reason ?? "ATTEMPT_NOT_FOUND");
-          }
-        },
-      },
-    );
+  async function submit(promiseDueDate: string | null) {
+    setSaving(true);
+    await logOutcome({
+      loanId: props.loanId,
+      borrowerName: props.borrowerName,
+      openAttemptClientId: props.openAttemptClientId,
+      type,
+      amount: type === "PAID" || type === "PROMISE" ? parsedAmount : null,
+      promiseDueDate,
+      note: note.trim() || null,
+    });
+    // Safe on the phone from here; if the server refuses it later, the sync bar says so.
+    flash(t("saved.flash", { type: t(`outcome.${type}`), name: props.borrowerName }));
+    router.replace("/today");
   }
 
   return (
@@ -141,17 +133,6 @@ export function OutcomeSheet(props: Props) {
           </button>
         )}
 
-        {refusal && (
-          <p role="alert" className="mt-3 rounded-xl bg-risk-soft px-4 py-3 text-sm text-risk">
-            {t(`syncError.${refusal}`)}
-          </p>
-        )}
-        {log.error && (
-          <div className="mt-3">
-            <ErrorState error={log.error} />
-          </div>
-        )}
-
         {type === "PROMISE" ? (
           <div className="mt-4 grid grid-cols-3 gap-2">
             {PROMISE_CHOICES.map((n) => {
@@ -160,8 +141,8 @@ export function OutcomeSheet(props: Props) {
                 <button
                   key={n}
                   type="button"
-                  disabled={log.isPending || !validAmount}
-                  onClick={() => submit(due)}
+                  disabled={saving || !validAmount}
+                  onClick={() => void submit(due)}
                   className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-line px-1 hover:border-accent hover:bg-accent-soft disabled:opacity-50"
                 >
                   <span className="font-medium">
@@ -177,11 +158,11 @@ export function OutcomeSheet(props: Props) {
             size="lg"
             variant={type === "DISPUTE" ? "danger" : "primary"}
             className="mt-4 w-full"
-            busy={log.isPending}
+            busy={saving}
             disabled={type === "PAID" && !validAmount}
-            onClick={() => submit(null)}
+            onClick={() => void submit(null)}
           >
-            {log.isPending ? t("sheet.saving") : t("sheet.confirm")}
+            {saving ? t("sheet.saving") : t("sheet.confirm")}
           </Button>
         )}
       </div>

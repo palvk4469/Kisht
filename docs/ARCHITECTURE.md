@@ -123,9 +123,29 @@ sequenceDiagram
 
 `domain/scoring` holds the features, the model, the reasons and the back-test as pure code. `packages/db/scripts/trainModel.ts` trains on simulated worlds and tests on one it never saw, writing `model-v1.json` and its metrics. Scores are written on seed and on every import commit, then read by the list. Details and honest limits: [MODEL.md](MODEL.md).
 
-## Offline logging (day 4)
+## Offline logging
 
-The officer app writes every call or visit attempt and every outcome to an on-device outbox (IndexedDB) as an append-only event with a client UUID. Sync is an idempotent batch upsert keyed by that UUID, judged by the time the event happened (corrected for device clock skew), not when it arrived. This section gets its sequence diagram when the sync endpoint lands.
+```mermaid
+sequenceDiagram
+  participant O as Officer
+  participant P as Phone (IndexedDB)
+  participant A as API
+  participant D as Postgres
+
+  O->>P: Tap: attempt + outcome, stamped now, with a client UUID
+  P-->>O: On screen at once (list = last server copy + unsent events)
+  Note over P: No signal: nothing changes. Reloads are safe, it's on disk.
+  P->>A: Signal returns: batch + what the phone's clock reads now
+  A->>A: Correct each event's time by the gap to the server's clock
+  A->>D: Attempt: stored, allowed or blocked. Outcome: only on an allowed attempt
+  A-->>P: Per-item result: recorded, blocked, duplicate or rejected
+  P->>P: Clear what landed. Refused items stay on screen with the reason
+```
+
+- **Append-only events with client UUIDs (D7).** Nothing is edited, so nothing needs merging, and a retry after a lost response stores nothing twice.
+- **The app itself is cached** by a service worker (`public/sw.js`): pages network-first with a 3-second timeout, because weak signal hangs rather than fails; hashed files cache-first. The build id names the cache, so each deploy replaces the old one. API responses are never cached there.
+- **Borrower data on the phone** lives only in IndexedDB, scoped to the user, cleared on sign-out and expired after 7 days. Unsent work survives sign-out, because it's the only copy.
+- **The contact window** follows the server's clock using the offset measured when the list last arrived, so it works offline and the screen changes at 7 pm by itself. The server still has the final say (D9).
 
 ## Testing
 
