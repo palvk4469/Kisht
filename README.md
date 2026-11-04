@@ -8,6 +8,15 @@ A field collections app for an MSME lender (an RBI-registered NBFC in Indore). E
 
 > **Status:** in active development (a 7-day build, 2026-11-02 to 2026-11-08). Done so far: sign-in and roles, the daily import, the priority model, the officer's list, three-tap logging, full offline use, promises and reminders, the manager's lists, and the roll-rate dashboard. Next: deployment, real-phone testing and refinement. The [engineering log](docs/ENGINEERING-LOG.md) tracks what's built and why.
 
+<p>
+  <img src="docs/screenshots/officer-today.png" width="230" alt="An officer's list for the day, in Hindi, ordered by rupees at stake, each with its reason and big Call and Map buttons">
+  <img src="docs/screenshots/officer-loan.png" width="230" alt="A loan: outcomes logged in three taps, with why it's on the list and the maths behind it">
+  <img src="docs/screenshots/officer-after-7pm.png" width="230" alt="After 7 pm: calling is locked and explained, and a blocked tap is recorded">
+</p>
+<p>
+  <img src="docs/screenshots/manager-dashboard.png" width="700" alt="The manager's dashboard: roll rate against the 16% target, by branch and week">
+</p>
+
 See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md), [docs/DECISIONS.md](docs/DECISIONS.md) and [docs/ENGINEERING-LOG.md](docs/ENGINEERING-LOG.md).
 
 ## Stack
@@ -58,6 +67,10 @@ pnpm test          # unit + API integration tests (uses the kisht_test database)
 pnpm e2e           # browser tests on phone and desktop; needs a seeded DB and a web build:
                    # pnpm db:seed && pnpm --filter @kisht/web build && pnpm e2e
 ```
+
+### Quality gates
+
+CI fails if any of these slip: Biome lint and package boundaries, strict TypeScript, unit and API tests, 90% coverage on the business rules, and Playwright on phone and desktop, including real offline runs and WCAG 2.1 AA (axe) on every screen in both themes.
 
 ### Demo mode
 
