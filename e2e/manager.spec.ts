@@ -5,7 +5,7 @@ async function signInManager(page: Page) {
   await page.goto("/login");
   await page.getByRole("button", { name: "English" }).click();
   await page.getByText("Sanjay Joshi").click();
-  await expect(page).toHaveURL(/\/manager\/import$/);
+  await expect(page).toHaveURL(/\/manager\/dashboard$/);
   await setClock(page, "11:00");
 }
 
@@ -126,7 +126,13 @@ async function fits(page: Page, path: string) {
 
 test("every manager screen fits, with no sideways scrolling", async ({ page }) => {
   await signInManager(page);
-  for (const path of ["/manager/import", "/manager/lists", "/manager/promises"])
+  for (const path of [
+    "/manager/dashboard",
+    "/manager/lists",
+    "/manager/promises",
+    "/manager/activity",
+    "/manager/import",
+  ])
     await fits(page, path);
 });
 
@@ -134,4 +140,70 @@ test("every officer screen fits, with no sideways scrolling", async ({ page }) =
   await signInAs(page, "priya.malviya@kisht.example");
   const href = (await page.getByTestId("loan-card").first().getAttribute("href")) ?? "/today";
   for (const path of ["/today", href, "/today/promises"]) await fits(page, path);
+});
+
+test("the dashboard answers the head's question, with its numbers checkable", async ({ page }) => {
+  await signInManager(page);
+  await expect(page.getByText("Roll rate, 1–30 to 31+")).toBeVisible();
+  await expect(page.getByRole("img", { name: "Roll rate by week" })).toBeVisible();
+  await expect(page.getByText("Target 16%").first()).toBeVisible();
+
+  // Every chart has a table with the same values.
+  await page.getByText("View as a table").first().click();
+  await expect(page.getByRole("columnheader", { name: "Indore Central" })).toBeVisible();
+
+  // The back-test puts the score against what officers do today.
+  await expect(page.getByText("Is the priority score earning its place?")).toBeVisible();
+  await expect(page.getByText("Oldest first (today's practice)")).toBeVisible();
+
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download CSV" }).click();
+  expect((await download).suggestedFilename()).toMatch(/^officers-.*\.csv$/);
+});
+
+test("the head of collections can filter to one branch", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByRole("button", { name: "English" }).click();
+  await page.getByText("Anil Mehta").click();
+  await expect(page).toHaveURL(/\/manager\/dashboard$/);
+  await expect(page.getByRole("img", { name: "Roll rate by week" })).toBeVisible();
+  await page.getByLabel("Branch").selectOption({ label: "Pithampur" });
+  await page.getByText("View as a table").first().click();
+  await expect(page.getByRole("columnheader", { name: "Pithampur" })).toBeVisible();
+  await expect(page.getByRole("columnheader", { name: "Indore Central" })).toHaveCount(0);
+});
+
+test("the activity log shows the rule was kept, and flags what to check", async ({ page }) => {
+  await signInManager(page);
+  await page.getByRole("link", { name: "Activity" }).click();
+  await expect(page.getByText("No contact got through outside 8 am to 7 pm")).toBeVisible();
+
+  await page.getByRole("button", { name: "Visits to check" }).click();
+  await expect(
+    page
+      .getByTestId("activity-list")
+      .getByText(/No GPS|m from address/)
+      .first(),
+  ).toBeVisible();
+
+  await page.getByRole("button", { name: "Blocked" }).click();
+  await expect(
+    page.getByTestId("activity-list").getByText("Blocked: after hours").first(),
+  ).toBeVisible();
+});
+
+test("when the dashboard can't load, it says so and retry works", async ({ page }) => {
+  await signInManager(page);
+  await page.route("**/api/manager/dashboard", (route) =>
+    route.fulfill({
+      status: 500,
+      contentType: "application/json",
+      body: '{"error":"Something went wrong"}',
+    }),
+  );
+  await page.goto("/manager/dashboard");
+  await expect(page.getByText("Something went wrong")).toBeVisible({ timeout: 15_000 });
+  await page.unroute("**/api/manager/dashboard");
+  await page.getByRole("button", { name: "Try again" }).click();
+  await expect(page.getByRole("img", { name: "Roll rate by week" })).toBeVisible();
 });

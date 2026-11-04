@@ -14,9 +14,11 @@ import { useSignOut } from "./useSignOut";
 
 // Only screens that exist are linked: no dead buttons.
 const NAV: { href: string; label: MessageKey }[] = [
-  { href: "/manager/import", label: "nav.import" },
+  { href: "/manager/dashboard", label: "nav.dashboard" },
   { href: "/manager/lists", label: "nav.lists" },
   { href: "/manager/promises", label: "nav.promises" },
+  { href: "/manager/activity", label: "nav.activity" },
+  { href: "/manager/import", label: "nav.import" },
 ];
 
 export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) {

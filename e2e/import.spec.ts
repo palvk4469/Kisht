@@ -20,6 +20,8 @@ test("a branch manager previews and commits the daily import", async ({ page }, 
   await page.goto("/login");
   await page.getByRole("button", { name: "English" }).click();
   await page.getByText("Sanjay Joshi").click();
+  await expect(page).toHaveURL(/\/manager\/dashboard$/);
+  await page.getByRole("link", { name: "Daily import" }).click();
   await expect(page).toHaveURL(/\/manager\/import$/);
 
   const download = page.waitForEvent("download");

@@ -153,7 +153,9 @@ export async function seed(prisma: PrismaClient, today: IsoDay, demoPassword: st
     return { lat: a.lat, lng: a.lng, accuracyM: a.accuracyM };
   };
   const deviceAtFor = (a: (typeof sim.attempts)[number]) =>
-    (attemptNo.get(a.id) ?? 0) % WRONG_CLOCK_EVERY === 0 ? new Date(a.at.getTime() + 40 * 60_000) : a.at;
+    (attemptNo.get(a.id) ?? 0) % WRONG_CLOCK_EVERY === 0
+      ? new Date(a.at.getTime() + 40 * 60_000)
+      : a.at;
 
   await inBatches(sim.attempts, (chunk) =>
     prisma.contactAttempt.createMany({

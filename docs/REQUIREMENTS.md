@@ -13,7 +13,7 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 | Officer priority list                                            | Done   | Screen 2; ordered by the model (A18), capped at 25                       |
 | Outcome logging: paid, promise, not reachable, dispute, with GPS | Done   | Screen 3; three taps, GPS never blocks logging. Offline queue day 4      |
 | Promise tracker                                                  | Done   | Screens 4 (officer, works offline) and 7 (manager, with filters)         |
-| Manager roll-rate view                                           | Day 6  | Screen 8; metric done (`domain/rollRate.ts`)                             |
+| Manager roll-rate view                                           | Done   | Screen 8; by branch, by week, against the 16% target, with a table view  |
 | Roles: field officer and branch manager (+ head)                 | Done   | `modules/auth/scope.ts`, tested per role                                 |
 | AI: priority score with top three reasons                        | Done   | `domain/scoring`, [MODEL.md](MODEL.md); up to three, only true ones      |
 | Hard part: offline logging with sync                             | Done   | Outbox on the phone + idempotent `/api/sync`; real offline browser tests |
@@ -23,24 +23,24 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 
 ## Must have (beyond the core)
 
-| Requirement                                                | Status | Where / note                                                                   |
-| ---------------------------------------------------------- | ------ | ------------------------------------------------------------------------------ |
-| Call and map buttons                                       | Done   | `tel:` and Maps link (D11)                                                     |
-| Promise-to-pay reminders to borrower and officer           | Done   | Approved templates only; held outside 8 am–7 pm; stop when settled or disputed |
-| AI-drafted Hindi/English reminders from approved templates | Day 7  | Template-first; word filter; sent only on the officer's tap                    |
-| Manager dashboard: roll rates and broken promises          | Day 6  | Screen 8                                                                       |
-| Officer activity log with visit locations                  | Day 6  | Screen 8; GPS stored on every attempt and outcome                              |
+| Requirement                                                | Status | Where / note                                                                        |
+| ---------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------- |
+| Call and map buttons                                       | Done   | `tel:` and Maps link (D11)                                                          |
+| Promise-to-pay reminders to borrower and officer           | Done   | Approved templates only; held outside 8 am–7 pm; stop when settled or disputed      |
+| AI-drafted Hindi/English reminders from approved templates | Day 7  | Template-first; word filter; sent only on the officer's tap                         |
+| Manager dashboard: roll rates and broken promises          | Done   | Screen 8; loans about to roll, broken promises by week, officers with CSV download  |
+| Officer activity log with visit locations                  | Done   | Activity screen; each visit checked against the borrower's address, with a map link |
 
 ## When the AI is wrong
 
-| Requirement                                 | Status  | Where / note                                                                                      |
-| ------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------- |
-| Score is advisory                           | Done    | Reasons and maths shown; nothing is blocked by a score                                            |
-| Managers can reorder lists                  | Done    | Screen 6; reason required, shown to the officer and audited                                       |
-| Weekly back-test: scores vs actual payments | Partial | Back-test done against a world it never saw ([MODEL.md](MODEL.md)); weekly card on screen 8 day 6 |
-| Drafts only from approved templates         | Partial | Reminders already use approved templates only; AI drafts day 7                                    |
-| Word filter blocks threatening language     | Partial | Filter built and tested in `domain/wordFilter.ts`; applied to AI drafts on day 7                  |
-| Nothing sends without the officer's tap     | Day 7   |                                                                                                   |
+| Requirement                                 | Status  | Where / note                                                                           |
+| ------------------------------------------- | ------- | -------------------------------------------------------------------------------------- |
+| Score is advisory                           | Done    | Reasons and maths shown; nothing is blocked by a score                                 |
+| Managers can reorder lists                  | Done    | Screen 6; reason required, shown to the officer and audited                            |
+| Weekly back-test: scores vs actual payments | Done    | Runs on stored scores and later outcomes; on the dashboard and in [MODEL.md](MODEL.md) |
+| Drafts only from approved templates         | Partial | Reminders already use approved templates only; AI drafts day 7                         |
+| Word filter blocks threatening language     | Partial | Filter built and tested in `domain/wordFilter.ts`; applied to AI drafts on day 7       |
+| Nothing sends without the officer's tap     | Day 7   |                                                                                        |
 
 ## Constraints
 
@@ -48,19 +48,19 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 | ---------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | Block contact outside 8 am–7 pm                      | Done    | Blocked and explained in the UI with the next time; server re-checks                                                             |
 | Record every contact attempt, including blocked ones | Done    | `ContactAttempt` with `allowed` and `blockReason`; tested                                                                        |
-| DPDP: borrower data as personal data                 | Partial | Phones masked, every reveal audited; list views follow the same rule                                                             |
+| DPDP: borrower data as personal data                 | Done    | Phones masked for managers, reveals audited, device data cleared on sign-out and expires; reports show no numbers                |
 | Offline on low-end phones, weak signal               | Done    | Service worker + IndexedDB; system fonts; first load 245 KB JS (over the 200 KB target, see the log), then served from the phone |
-| Hindi interface                                      | Partial | Hindi default, toggle everywhere; officer screens arrive in Hindi                                                                |
+| Hindi interface                                      | Partial | Every screen in Hindi and English; needs a native read. Server error messages are English only                                   |
 
 ## Design
 
-| Requirement                                                  | Status  | Where / note                                                |
-| ------------------------------------------------------------ | ------- | ----------------------------------------------------------- |
-| Minimal: white space, restrained palette, clear type         | Partial | Tokens, Noto Sans + Devanagari; applies to every new screen |
-| One hand: big tap targets, short list, outcome in three taps | Done    | 48 px targets; covered by a browser test                    |
-| Loading, empty and error states                              | Partial | Shared components; on every screen built so far             |
-| Layout that works on a phone                                 | Partial | Screens built so far are tested at 390 px                   |
-| Light and dark themes                                        | Done    | Follows the device, or a remembered choice; no flash        |
+| Requirement                                                  | Status  | Where / note                                                                                  |
+| ------------------------------------------------------------ | ------- | --------------------------------------------------------------------------------------------- |
+| Minimal: white space, restrained palette, clear type         | Done    | One accent, status colours for meaning only, system fonts (D23)                               |
+| One hand: big tap targets, short list, outcome in three taps | Done    | 48 px targets; covered by a browser test                                                      |
+| Loading, empty and error states                              | Done    | Shared components on every screen                                                             |
+| Layout that works on a phone                                 | Partial | Every screen tested at phone width with no sideways scrolling; not yet tried on a real device |
+| Light and dark themes                                        | Done    | Follows the device, or a remembered choice; no flash                                          |
 
 ## Submission rules
 

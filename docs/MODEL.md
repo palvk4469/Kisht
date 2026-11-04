@@ -52,6 +52,17 @@ Share of the rupees that rolled inside each officer's first loans of the day:
 
 Calibration on the test world, predicted vs actual by decile: 10/7, 13/10, 16/21, 23/35, 37/47, 50/55, 61/62, 72/68, 77/77, 83/80 (%). It is reasonable at the extremes and **under-predicts by about 10 points in the 20–40% range**.
 
+### The weekly back-test
+
+The dashboard runs the same comparison every week on the scores actually given, against what those loans did thirty days later, and keeps each finished week. Expect it to differ from the table above, which is one fixed run. On the demo world, for the first 5 loans per officer:
+
+| Period                    | Model | Oldest first, 1–30 only |
+| ------------------------- | ----- | ----------------------- |
+| First 4 weeks of history  | 52%   | 52%                     |
+| Last 8 weeks with results | 82%   | 67%                     |
+
+Single weeks range from 73% to 86%, and in one of those eight weeks the simple rule narrowly won (84% vs 83%). The model does worst early on, when loans have little history behind them. **Quote the conservative 68%, and expect week-to-week movement.**
+
 ## Limits
 
 - **The data is synthetic (A9).** These numbers show the method works on a simulation built to match the brief (roll rate about 22%). They are not a forecast for this lender. It must be retrained on real repayment history before go-live.

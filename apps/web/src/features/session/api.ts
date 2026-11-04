@@ -48,5 +48,5 @@ export function useMe() {
 
 /** Each role's landing screen. */
 export function homeFor(role: Role): string {
-  return role === "OFFICER" ? "/today" : "/manager/import";
+  return role === "OFFICER" ? "/today" : "/manager/dashboard";
 }
