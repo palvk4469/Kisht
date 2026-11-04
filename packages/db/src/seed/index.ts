@@ -8,17 +8,20 @@
 // SEED_ALLOW_RESET=true is also set (for the hosted demo).
 
 import { type IsoDay, isIsoDay, istDayOf, istDayStart, toDbDate } from "@kisht/domain";
+import { CURRENT_MODEL, factsAt, type LoanEvents, scoreLoan } from "@kisht/domain/scoring";
 import { hashPassword } from "better-auth/crypto";
 import { createPrismaClient } from "../client.js";
 import { loadRootEnv } from "../env.js";
 import type { PrismaClient } from "../generated/prisma/client.js";
 import { provisionUser } from "../provision.js";
 import { BRANCHES, STAFF } from "./reference.js";
+import { eventsByLoan } from "./scoringEvents.js";
 import { simulate } from "./simulate.js";
 
 loadRootEnv();
 
 const BATCH = 5000;
+const EMPTY_EVENTS: LoanEvents = { snapshots: [], promises: [], outcomes: [] };
 
 const userId = (key: string) => `usr_${key}`;
 const branchId = (code: string) => `br_${code.toLowerCase()}`;
@@ -182,6 +185,26 @@ export async function seed(prisma: PrismaClient, today: IsoDay, demoPassword: st
       })),
     }),
   );
+
+  // Scores for every day on record, so lists and the back-test have history.
+  const events = eventsByLoan(sim);
+  const scores = sim.snapshots.flatMap((snap) => {
+    const facts = factsAt(events.get(snap.loanId) ?? EMPTY_EVENTS, snap.asOfDate);
+    if (!facts) return [];
+    const score = scoreLoan(CURRENT_MODEL, facts);
+    return [
+      {
+        loanId: snap.loanId,
+        asOfDate: toDbDate(snap.asOfDate),
+        modelVersion: score.modelVersion,
+        probability: score.probability,
+        expectedLoss: score.expectedLoss,
+        reasons: score.reasons,
+        limitedHistory: score.limitedHistory,
+      },
+    ];
+  });
+  await inBatches(scores, (data) => prisma.priorityScore.createMany({ data }));
 
   return sim;
 }

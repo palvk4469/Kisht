@@ -36,6 +36,7 @@ import {
   managerScope,
   officerWhere,
 } from "../auth/scope.js";
+import { scoreLoans } from "../scoring/service.js";
 
 // Daily overdue import: preview (validate, plan, no loan data written) and
 // commit (apply the plan in one transaction). See A1, A2, A3, A7, A8.
@@ -445,6 +446,13 @@ export async function commitImport(
         if (resolution.status === "PARTIAL") promiseCounts.partial++;
         if (resolution.status === "BROKEN") promiseCounts.broken++;
       }
+
+      // 7. Fresh priority scores for today's list, after promises settled above.
+      await scoreLoans(
+        tx,
+        rows.map((r) => loanId(r.loanNo)),
+        asOfDate,
+      );
 
       const summary: ImportSummary = {
         ...summarise(asOfDate, p, batch.errorCount, batch.skippedCount),

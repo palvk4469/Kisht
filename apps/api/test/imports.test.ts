@@ -169,6 +169,19 @@ describe("commit, then the next day's import", () => {
     ).toBe(1);
   });
 
+  it("scores every loan on the list, with reasons", async () => {
+    const l1 = await loanByNo(L("1"));
+    const score = await prisma.priorityScore.findFirstOrThrow({
+      where: { loanId: l1.id, asOfDate: toDbDate("2026-10-31") },
+    });
+    expect(score.probability).toBeGreaterThan(0);
+    expect(score.probability).toBeLessThan(1);
+    expect(score.expectedLoss).toBeGreaterThan(0);
+    expect(score.modelVersion).toBe("v1");
+    // A brand-new loan with no payments or contact on record says so.
+    expect(Array.isArray(score.reasons)).toBe(true);
+  });
+
   it("refuses to commit the same preview twice", async () => {
     const p = await preview(
       managerA,
@@ -198,6 +211,11 @@ describe("commit, then the next day's import", () => {
       select: { status: true },
     });
     expect(statuses.map((s) => s.status)).toEqual(["SUPERSEDED", "COMMITTED"]);
+    expect(
+      await prisma.priorityScore.count({
+        where: { loanId: l1.id, asOfDate: toDbDate("2026-10-31") },
+      }),
+    ).toBe(1);
   });
 
   it("detects payments, cures and resolves promises", async () => {

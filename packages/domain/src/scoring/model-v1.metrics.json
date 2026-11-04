@@ -1,0 +1,151 @@
+{
+  "trainedOn": {
+    "seeds": [101, 202, 303],
+    "rows": 13149,
+    "note": "simulated history (A9)"
+  },
+  "testedOn": {
+    "seed": 20261102,
+    "note": "the demo world, never used in training"
+  },
+  "top5": {
+    "rows": 13461,
+    "auc": 0.793359,
+    "aucWithin30": 0.727106,
+    "aucWithin30DpdOnly": 0.670891,
+    "rollRate": 0.247789,
+    "calibration": [
+      {
+        "predicted": 0.102933,
+        "actual": 0.071322,
+        "n": 1346
+      },
+      {
+        "predicted": 0.133327,
+        "actual": 0.104012,
+        "n": 1346
+      },
+      {
+        "predicted": 0.164724,
+        "actual": 0.208024,
+        "n": 1346
+      },
+      {
+        "predicted": 0.233647,
+        "actual": 0.350669,
+        "n": 1346
+      },
+      {
+        "predicted": 0.367365,
+        "actual": 0.470282,
+        "n": 1346
+      },
+      {
+        "predicted": 0.503793,
+        "actual": 0.548291,
+        "n": 1346
+      },
+      {
+        "predicted": 0.610776,
+        "actual": 0.615156,
+        "n": 1346
+      },
+      {
+        "predicted": 0.721804,
+        "actual": 0.679049,
+        "n": 1346
+      },
+      {
+        "predicted": 0.774432,
+        "actual": 0.774889,
+        "n": 1346
+      },
+      {
+        "predicted": 0.825696,
+        "actual": 0.79807,
+        "n": 1347
+      }
+    ],
+    "coverage": {
+      "topK": 5,
+      "model": 0.683205,
+      "oldestFirst": 0,
+      "oldestWithin30": 0.592102
+    },
+    "rollingRupeesPerDay": {
+      "total": 423760,
+      "model": 289515,
+      "oldestFirst": 0
+    }
+  },
+  "top10": {
+    "rows": 13461,
+    "auc": 0.793359,
+    "aucWithin30": 0.727106,
+    "aucWithin30DpdOnly": 0.670891,
+    "rollRate": 0.247789,
+    "calibration": [
+      {
+        "predicted": 0.102933,
+        "actual": 0.071322,
+        "n": 1346
+      },
+      {
+        "predicted": 0.133327,
+        "actual": 0.104012,
+        "n": 1346
+      },
+      {
+        "predicted": 0.164724,
+        "actual": 0.208024,
+        "n": 1346
+      },
+      {
+        "predicted": 0.233647,
+        "actual": 0.350669,
+        "n": 1346
+      },
+      {
+        "predicted": 0.367365,
+        "actual": 0.470282,
+        "n": 1346
+      },
+      {
+        "predicted": 0.503793,
+        "actual": 0.548291,
+        "n": 1346
+      },
+      {
+        "predicted": 0.610776,
+        "actual": 0.615156,
+        "n": 1346
+      },
+      {
+        "predicted": 0.721804,
+        "actual": 0.679049,
+        "n": 1346
+      },
+      {
+        "predicted": 0.774432,
+        "actual": 0.774889,
+        "n": 1346
+      },
+      {
+        "predicted": 0.825696,
+        "actual": 0.79807,
+        "n": 1347
+      }
+    ],
+    "coverage": {
+      "topK": 10,
+      "model": 0.91783,
+      "oldestFirst": 0.16687,
+      "oldestWithin30": 0.884983
+    },
+    "rollingRupeesPerDay": {
+      "total": 423760,
+      "model": 388940,
+      "oldestFirst": 70713
+    }
+  }
+}

@@ -54,6 +54,8 @@ enum PromiseStatus {
   KEPT
   PARTIAL
   BROKEN
+  // Replaced by a new promise before its result was known.
+  SUPERSEDED
 }
 
 enum ReminderRecipient {
