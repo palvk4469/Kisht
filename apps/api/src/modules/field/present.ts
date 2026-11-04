@@ -1,4 +1,4 @@
-import type { Priority, PromiseSummary, Reason } from "@kisht/contracts";
+import type { HistoryEntry, Priority, PromiseSummary, Reason } from "@kisht/contracts";
 import { daysBetween, fromDbDate, type IsoDay, istDayOf } from "@kisht/domain";
 
 /** Stored score row to the wire shape. Reasons' internal weights stay on the server. */
@@ -33,4 +33,22 @@ export function visiblePromise(
     return summary;
   }
   return null;
+}
+
+export function toHistory(o: {
+  id: string;
+  type: HistoryEntry["type"];
+  correctedAt: Date;
+  amount: number | null;
+  note: string | null;
+  officer: { name: string };
+}): HistoryEntry {
+  return {
+    id: o.id,
+    type: o.type,
+    at: o.correctedAt.toISOString(),
+    amount: o.amount,
+    note: o.note,
+    officerName: o.officer.name,
+  };
 }

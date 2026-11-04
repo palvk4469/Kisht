@@ -374,6 +374,20 @@ describe("today's list", () => {
     const item = (await today()).items.find((i) => i.loanId === loanId);
     expect(item?.state).toBe("done");
     expect(item?.lastOutcome?.type).toBe("NOT_REACHABLE");
+    // The list carries what the loan screen needs, so it works with no signal (D22).
+    expect(item?.history[0]).toMatchObject({ type: "NOT_REACHABLE", officerName: "officer-a1" });
+    expect(item?.openAttemptClientId).toBeNull();
+  });
+
+  it("offers today's unanswered attempt, so a call can be logged after the window closes", async () => {
+    const loanId = await makeLoan({ dpd: 10, expectedLoss: 100 });
+    const a = attempt(loanId, ist(`${DAY}T18:50:00`).toISOString());
+    now = ist(`${DAY}T18:51:00`);
+    await sync({ attempts: [a] });
+    now = ist(`${DAY}T19:30:00`);
+    const item = (await today()).items.find((i) => i.loanId === loanId);
+    expect(item?.openAttemptClientId).toBe(a.clientId);
+    expect(item?.attemptsToday).toBe(1);
   });
 
   it("caps what's left to do at the officer's daily capacity (A3)", async () => {

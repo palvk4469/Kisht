@@ -52,6 +52,16 @@ export const ContactState = z.object({
 });
 export type ContactState = z.infer<typeof ContactState>;
 
+export const HistoryEntry = z.object({
+  id: z.string(),
+  type: OutcomeType,
+  at: z.iso.datetime(),
+  amount: z.number().int().nullable(),
+  note: z.string().nullable(),
+  officerName: z.string(),
+});
+export type HistoryEntry = z.infer<typeof HistoryEntry>;
+
 export const TodayItemState = z.enum(["todo", "waiting", "done", "paused"]);
 export type TodayItemState = z.infer<typeof TodayItemState>;
 
@@ -76,6 +86,10 @@ export const TodayItem = z.object({
   attemptsToday: z.number().int(),
   promise: PromiseSummary.nullable(),
   lastOutcome: z.object({ type: OutcomeType, at: z.iso.datetime() }).nullable(),
+  /** An allowed attempt today with no outcome yet: logging links to it. */
+  openAttemptClientId: z.string().nullable(),
+  /** Recent outcomes. In this payload so the loan screen needs no network (D22). */
+  history: z.array(HistoryEntry),
 });
 export type TodayItem = z.infer<typeof TodayItem>;
 

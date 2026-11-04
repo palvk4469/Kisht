@@ -5,7 +5,7 @@ import { notFound } from "../../http/errors.js";
 import type { AuthUser } from "../../http/guards.js";
 import { audit } from "../audit/audit.js";
 import { loanWhere, scopeOf } from "../auth/scope.js";
-import { toPriority, visiblePromise } from "../field/present.js";
+import { toHistory, toPriority, visiblePromise } from "../field/present.js";
 import { contactState } from "../field/today.js";
 
 export async function getLoanDetail(
@@ -92,14 +92,7 @@ export async function getLoanDetail(
     attemptsToday: await ctx.prisma.contactAttempt.count({
       where: { loanId: loan.id, allowed: true, correctedAt: { gte: istDayStart(today) } },
     }),
-    history: loan.outcomes.map((o) => ({
-      id: o.id,
-      type: o.type,
-      at: o.correctedAt.toISOString(),
-      amount: o.amount,
-      note: o.note,
-      officerName: o.officer.name,
-    })),
+    history: loan.outcomes.map(toHistory),
   };
 }
 

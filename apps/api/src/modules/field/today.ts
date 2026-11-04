@@ -12,7 +12,7 @@ import { compareByPriority } from "@kisht/domain/scoring";
 import type { AppContext } from "../../context.js";
 import type { AuthUser } from "../../http/guards.js";
 import { loanWhere, scopeOf } from "../auth/scope.js";
-import { toPriority, visiblePromise } from "./present.js";
+import { toHistory, toPriority, visiblePromise } from "./present.js";
 
 export function contactState(now: Date) {
   return { allowed: isContactAllowed(now), nextAllowedAt: nextAllowedAt(now).toISOString() };
@@ -31,6 +31,8 @@ export function stateOf(input: {
   if (input.pendingDueDate && input.pendingDueDate > input.today) return "waiting";
   return "todo";
 }
+
+const HISTORY_LENGTH = 6;
 
 const STATE_ORDER: Record<TodayItemState, number> = { todo: 0, waiting: 1, done: 2, paused: 3 };
 
@@ -53,7 +55,22 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
         orderBy: { createdAt: "desc" },
         take: 1,
       },
-      outcomes: { orderBy: { correctedAt: "desc" }, take: 1 },
+      outcomes: {
+        orderBy: { correctedAt: "desc" },
+        take: HISTORY_LENGTH,
+        include: { officer: { select: { name: true } } },
+      },
+      contactAttempts: {
+        where: {
+          officerId: user.id,
+          allowed: true,
+          correctedAt: { gte: istDayStart(today) },
+          outcomes: { none: {} },
+        },
+        orderBy: { correctedAt: "desc" },
+        take: 1,
+        select: { clientId: true },
+      },
       _count: {
         select: {
           contactAttempts: { where: { allowed: true, correctedAt: { gte: istDayStart(today) } } },
@@ -93,6 +110,8 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
         attemptsToday: loan._count.contactAttempts,
         promise: promise ? visiblePromise(promise, today) : null,
         lastOutcome: outcome ? { type: outcome.type, at: outcome.correctedAt.toISOString() } : null,
+        openAttemptClientId: loan.contactAttempts[0]?.clientId ?? null,
+        history: loan.outcomes.map(toHistory),
       },
     ];
   });
