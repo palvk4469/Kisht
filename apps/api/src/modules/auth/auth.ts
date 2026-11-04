@@ -33,7 +33,8 @@ export function createAuth(prisma: PrismaClient, config: AuthConfig) {
     },
     rateLimit: {
       enabled: config.rateLimit,
-      storage: "memory",
+      // In Postgres, so a restart or a second instance doesn't reset the count (D29).
+      storage: "database",
       window: 60,
       max: 100,
       customRules: { "/sign-in/email": { window: 60, max: 20 } },
@@ -52,3 +53,13 @@ export function createAuth(prisma: PrismaClient, config: AuthConfig) {
 }
 
 export type Auth = ReturnType<typeof createAuth>;
+
+const RATE_LIMIT_KEEP_MS = DAY_SECONDS * 1000;
+
+/** Rate-limit keys contain IP addresses, and every window is far shorter than a day. */
+export async function purgeStaleRateLimits(prisma: PrismaClient, now: Date): Promise<number> {
+  const { count } = await prisma.rateLimit.deleteMany({
+    where: { lastRequest: { lt: BigInt(now.getTime() - RATE_LIMIT_KEEP_MS) } },
+  });
+  return count;
+}

@@ -1,5 +1,6 @@
 import type { FastifyBaseLogger } from "fastify";
 import type { AppContext } from "./context.js";
+import { purgeStaleRateLimits } from "./modules/auth/auth.js";
 import { purgeStalePreviews } from "./modules/imports/service.js";
 import { dispatchReminders } from "./modules/reminders/service.js";
 
@@ -16,6 +17,10 @@ export function startBackgroundJobs(ctx: AppContext, log: FastifyBaseLogger): ()
     ),
     setInterval(
       () => purgeStalePreviews(ctx).catch(logFailure("preview purge")),
+      HOUSEKEEPING_EVERY_MS,
+    ),
+    setInterval(
+      () => purgeStaleRateLimits(ctx.prisma, ctx.clock()).catch(logFailure("rate limit purge")),
       HOUSEKEEPING_EVERY_MS,
     ),
   ];

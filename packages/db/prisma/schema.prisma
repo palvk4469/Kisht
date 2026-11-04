@@ -159,6 +159,18 @@ model Verification {
   @@map("verification")
 }
 
+// Better Auth's sign-in rate limit. Here rather than in memory so it survives a
+// restart and holds across API instances (D29). Keys contain IP addresses, so
+// old rows are purged.
+model RateLimit {
+  id          String @id
+  key         String @unique
+  count       Int
+  lastRequest BigInt
+
+  @@map("rateLimit")
+}
+
 // ---------------------------------------------------------------------------
 // Organisation
 // ---------------------------------------------------------------------------

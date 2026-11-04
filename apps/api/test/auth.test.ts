@@ -1,7 +1,9 @@
+import { randomUUID } from "node:crypto";
 import { createTestPrisma } from "@kisht/db/testing";
 import type { FastifyInstance } from "fastify";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
+import { purgeStaleRateLimits } from "../src/modules/auth/auth.js";
 import { buildTestApp } from "./app.js";
 import {
   createFixture,
@@ -223,25 +225,57 @@ describe("cross-site request protection", () => {
 });
 
 describe("password guessing", () => {
-  it("is cut off per IP when the limit is on (as in production)", async () => {
-    const limited = await buildApp({
+  const limitedApp = () =>
+    buildApp({
       prisma,
       authSecret: TEST_SECRET,
       config: { baseURL: TEST_ORIGIN, rateLimit: true },
     });
-    const guess = (ip: string) =>
-      limited.inject({
-        method: "POST",
-        url: "/api/auth/sign-in/email",
-        headers: { ...json, "x-forwarded-for": ip },
-        payload: { email: fx.officerA1.email, password: "wrong-password" },
-      });
+  const guess = (app: FastifyInstance, ip: string) =>
+    app.inject({
+      method: "POST",
+      url: "/api/auth/sign-in/email",
+      headers: { ...json, "x-forwarded-for": ip },
+      payload: { email: fx.officerA1.email, password: "wrong-password" },
+    });
+  // Counts live in the database, so they outlast a run.
+  beforeEach(() => prisma.rateLimit.deleteMany());
+
+  it("is cut off per IP when the limit is on (as in production)", async () => {
+    const limited = await limitedApp();
+    const ip = "203.0.113.7";
     const results: number[] = [];
-    for (let i = 0; i < 22; i++) results.push((await guess("203.0.113.7")).statusCode);
+    for (let i = 0; i < 22; i++) results.push((await guess(limited, ip)).statusCode);
     expect(results.slice(0, 20).every((s) => s === 401)).toBe(true);
     expect(results.at(-1)).toBe(429);
     // Someone else, elsewhere, isn't affected.
-    expect((await guess("203.0.113.8")).statusCode).toBe(401);
+    expect((await guess(limited, "203.0.113.8")).statusCode).toBe(401);
     await limited.close();
+  });
+
+  it("stays cut off after a restart and on a second instance", async () => {
+    const first = await limitedApp();
+    const ip = "203.0.113.7";
+    for (let i = 0; i < 20; i++) await guess(first, ip);
+    await first.close();
+    const second = await limitedApp();
+    expect((await guess(second, ip)).statusCode).toBe(429);
+    await second.close();
+  });
+
+  it("forgets addresses after a day", async () => {
+    const now = new Date("2026-11-04T10:00:00Z");
+    const row = (key: string, ageMs: number) => ({
+      id: randomUUID(),
+      key,
+      count: 1,
+      lastRequest: BigInt(now.getTime() - ageMs),
+    });
+    await prisma.rateLimit.createMany({
+      data: [row("old", 25 * 60 * 60_000), row("recent", 60_000)],
+    });
+    await purgeStaleRateLimits(prisma, now);
+    const left = await prisma.rateLimit.findMany();
+    expect(left.map((r) => r.key)).toEqual(["recent"]);
   });
 });
