@@ -1,4 +1,5 @@
 export * from "./assignment.ts";
+export * from "./clock.ts";
 export * from "./contactWindow.ts";
 export * from "./csv.ts";
 export * from "./dates.ts";

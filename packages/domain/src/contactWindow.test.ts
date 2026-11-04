@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isContactAllowed, istMinuteOfDay, nextAllowedAt } from "./contactWindow.ts";
+import { checkContact, isContactAllowed, istMinuteOfDay, nextAllowedAt } from "./contactWindow.ts";
 
 const ist = (t: string) => new Date(`${t}+05:30`);
 
@@ -42,5 +42,32 @@ describe("nextAllowedAt", () => {
   it("returns 08:00 the next day after it closes, across month ends", () => {
     expect(nextAllowedAt(ist("2026-11-02T19:00:00"))).toEqual(ist("2026-11-03T08:00:00"));
     expect(nextAllowedAt(ist("2026-11-30T21:00:00"))).toEqual(ist("2026-12-01T08:00:00"));
+  });
+});
+
+describe("checkContact", () => {
+  const at = ist("2026-11-02T10:00:00");
+
+  it("allows contact inside the window, under the cap", () => {
+    expect(checkContact({ at, contactPaused: false, allowedAttemptsToday: 2 })).toBeNull();
+  });
+
+  it("blocks outside the window first, whatever else is true", () => {
+    expect(
+      checkContact({
+        at: ist("2026-11-02T19:00:00"),
+        contactPaused: true,
+        allowedAttemptsToday: 9,
+      }),
+    ).toBe("OUTSIDE_CONTACT_WINDOW");
+  });
+
+  it("blocks a disputed loan (A12) and a fourth attempt in a day (A5)", () => {
+    expect(checkContact({ at, contactPaused: true, allowedAttemptsToday: 0 })).toBe(
+      "CONTACT_PAUSED",
+    );
+    expect(checkContact({ at, contactPaused: false, allowedAttemptsToday: 3 })).toBe(
+      "DAILY_ATTEMPT_CAP",
+    );
   });
 });

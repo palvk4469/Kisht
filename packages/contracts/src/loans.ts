@@ -1,5 +1,6 @@
 import { IsoDaySchema } from "@kisht/domain";
 import { z } from "zod";
+import { ContactState, OutcomeType, Priority, PromiseSummary } from "./field.ts";
 
 export const LoanDetail = z.object({
   id: z.string(),
@@ -21,6 +22,23 @@ export const LoanDetail = z.object({
     .object({ asOfDate: IsoDaySchema, outstanding: z.number().int(), dpd: z.number().int() })
     .nullable(),
   officer: z.object({ id: z.string(), name: z.string() }).nullable(),
+  /** The number, for the officer holding this loan only (D19); null for everyone else. */
+  phone: z.string().nullable(),
+  priority: Priority.nullable(),
+  promise: PromiseSummary.nullable(),
+  contact: ContactState,
+  /** An allowed attempt today with no outcome yet: logging links to it. */
+  openAttemptClientId: z.string().nullable(),
+  history: z.array(
+    z.object({
+      id: z.string(),
+      type: OutcomeType,
+      at: z.iso.datetime(),
+      amount: z.number().int().nullable(),
+      note: z.string().nullable(),
+      officerName: z.string(),
+    }),
+  ),
 });
 export type LoanDetail = z.infer<typeof LoanDetail>;
 

@@ -34,6 +34,8 @@ describe("OpenAPI docs", () => {
       "/api/loans/{id}",
       "/api/loans/{id}/reveal-contact",
       "/api/me",
+      "/api/officer/today",
+      "/api/sync",
       "/health",
     ]);
   });

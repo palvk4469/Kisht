@@ -13,6 +13,7 @@ import { makeAuthenticate } from "./http/guards.js";
 import { makeOriginGuard } from "./http/origin.js";
 import { createAuth } from "./modules/auth/auth.js";
 import { registerAuth } from "./modules/auth/routes.js";
+import { registerField } from "./modules/field/routes.js";
 import { registerHealth } from "./modules/health/routes.js";
 import { registerImports } from "./modules/imports/routes.js";
 import { registerLoans } from "./modules/loans/routes.js";
@@ -27,7 +28,14 @@ export type BuildAppOptions = {
 };
 
 /** Every feature module, registered in one place. Each gets the same context. */
-const MODULES = [registerHealth, registerAuth, registerMe, registerLoans, registerImports];
+const MODULES = [
+  registerHealth,
+  registerAuth,
+  registerMe,
+  registerLoans,
+  registerImports,
+  registerField,
+];
 
 // Composition root. Tests call this and use app.inject(); no port, no globals.
 export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> {

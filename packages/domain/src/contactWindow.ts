@@ -27,3 +27,20 @@ export function nextAllowedAt(instant: Date): Date {
   if (instant < opensToday) return opensToday;
   return new Date(istDayStart(addDays(day, 1)).getTime() + CONTACT_WINDOW_START_MIN * MINUTE_MS);
 }
+
+// Anti-harassment cap (A5): allowed contact attempts per loan per day.
+export const MAX_ATTEMPTS_PER_DAY = 3;
+
+export type ContactBlockReason = "OUTSIDE_CONTACT_WINDOW" | "CONTACT_PAUSED" | "DAILY_ATTEMPT_CAP";
+
+/** Whether a contact attempt may go ahead. Blocked attempts are still recorded. */
+export function checkContact(input: {
+  at: Date;
+  contactPaused: boolean;
+  allowedAttemptsToday: number;
+}): ContactBlockReason | null {
+  if (!isContactAllowed(input.at)) return "OUTSIDE_CONTACT_WINDOW";
+  if (input.contactPaused) return "CONTACT_PAUSED";
+  if (input.allowedAttemptsToday >= MAX_ATTEMPTS_PER_DAY) return "DAILY_ATTEMPT_CAP";
+  return null;
+}

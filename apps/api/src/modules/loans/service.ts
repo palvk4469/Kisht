@@ -1,10 +1,12 @@
 import type { LoanDetail } from "@kisht/contracts";
-import { fromDbDate, maskPhone } from "@kisht/domain";
+import { fromDbDate, istDayOf, istDayStart, maskPhone } from "@kisht/domain";
 import type { AppContext } from "../../context.js";
 import { notFound } from "../../http/errors.js";
 import type { AuthUser } from "../../http/guards.js";
 import { audit } from "../audit/audit.js";
 import { loanWhere, scopeOf } from "../auth/scope.js";
+import { toPriority, visiblePromise } from "../field/present.js";
+import { contactState } from "../field/today.js";
 
 export async function getLoanDetail(
   ctx: AppContext,
@@ -21,9 +23,41 @@ export async function getLoanDetail(
         where: { endedAt: null },
         include: { officer: { select: { id: true, name: true } } },
       },
+      scores: { orderBy: { asOfDate: "desc" }, take: 1 },
+      promises: {
+        where: { status: { not: "SUPERSEDED" } },
+        orderBy: { createdAt: "desc" },
+        take: 1,
+      },
+      outcomes: {
+        orderBy: { correctedAt: "desc" },
+        take: 8,
+        include: { officer: { select: { name: true } } },
+      },
     },
   });
   if (!loan) throw notFound("Loan");
+
+  const now = ctx.clock();
+  const today = istDayOf(now);
+  const officer = loan.assignments[0]?.officer ?? null;
+  const holdsLoan = user.role === "OFFICER" && officer?.id === user.id;
+  // The latest allowed attempt today that no outcome has answered yet.
+  const open = holdsLoan
+    ? await ctx.prisma.contactAttempt.findFirst({
+        where: {
+          loanId: loan.id,
+          officerId: user.id,
+          allowed: true,
+          correctedAt: { gte: istDayStart(today) },
+          outcomes: { none: {} },
+        },
+        orderBy: { correctedAt: "desc" },
+        select: { clientId: true },
+      })
+    : null;
+  const score = loan.scores[0];
+  const promise = loan.promises[0];
 
   const snapshot = loan.snapshots[0];
   return {
@@ -48,7 +82,20 @@ export async function getLoanDetail(
           dpd: snapshot.dpd,
         }
       : null,
-    officer: loan.assignments[0]?.officer ?? null,
+    officer,
+    phone: holdsLoan ? loan.borrower.phone : null,
+    priority: score ? toPriority(score) : null,
+    promise: promise ? visiblePromise(promise, today) : null,
+    contact: contactState(now),
+    openAttemptClientId: open?.clientId ?? null,
+    history: loan.outcomes.map((o) => ({
+      id: o.id,
+      type: o.type,
+      at: o.correctedAt.toISOString(),
+      amount: o.amount,
+      note: o.note,
+      officerName: o.officer.name,
+    })),
   };
 }
 
