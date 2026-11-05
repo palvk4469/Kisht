@@ -136,6 +136,7 @@ export function LoanScreen({ loanId }: { loanId: string }) {
           attemptsToday={loan.attemptsToday}
           now={clock.now}
           nextAllowedAt={clock.nextAllowedAt}
+          withReminder
         />
       </section>
 

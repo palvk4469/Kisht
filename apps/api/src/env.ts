@@ -13,6 +13,9 @@ const EnvSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  // AI reminder drafts (D31). Without a key, officers get the approved templates.
+  ANTHROPIC_API_KEY: z.string().optional(),
+  AI_DRAFT_MODEL: z.string().optional(),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

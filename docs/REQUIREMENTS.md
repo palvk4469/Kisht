@@ -27,20 +27,20 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 | ---------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------- |
 | Call and map buttons                                       | Done   | `tel:` and Maps link (D11)                                                          |
 | Promise-to-pay reminders to borrower and officer           | Done   | Approved templates only; held outside 8 am–7 pm; stop when settled or disputed      |
-| AI-drafted Hindi/English reminders from approved templates | Day 7  | Template-first; word filter; sent only on the officer's tap                         |
+| AI-drafted Hindi/English reminders from approved templates | Done   | Loan screen; rewords an approved template and never sees borrower details (D31)     |
 | Manager dashboard: roll rates and broken promises          | Done   | Screen 8; loans about to roll, broken promises by week, officers with CSV download  |
 | Officer activity log with visit locations                  | Done   | Activity screen; each visit checked against the borrower's address, with a map link |
 
 ## When the AI is wrong
 
-| Requirement                                 | Status  | Where / note                                                                           |
-| ------------------------------------------- | ------- | -------------------------------------------------------------------------------------- |
-| Score is advisory                           | Done    | Reasons and maths shown; nothing is blocked by a score                                 |
-| Managers can reorder lists                  | Done    | Screen 6; reason required, shown to the officer and audited                            |
-| Weekly back-test: scores vs actual payments | Done    | Runs on stored scores and later outcomes; on the dashboard and in [MODEL.md](MODEL.md) |
-| Drafts only from approved templates         | Partial | Reminders already use approved templates only; AI drafts day 7                         |
-| Word filter blocks threatening language     | Partial | Filter built and tested in `domain/wordFilter.ts`; applied to AI drafts on day 7       |
-| Nothing sends without the officer's tap     | Day 7   |                                                                                        |
+| Requirement                                 | Status | Where / note                                                                                                                     |
+| ------------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Score is advisory                           | Done   | Reasons and maths shown; nothing is blocked by a score                                                                           |
+| Managers can reorder lists                  | Done   | Screen 6; reason required, shown to the officer and audited                                                                      |
+| Weekly back-test: scores vs actual payments | Done   | Runs on stored scores and later outcomes; on the dashboard and in [MODEL.md](MODEL.md)                                           |
+| Drafts only from approved templates         | Done   | The AI gets the template; any other result falls back to the template itself                                                     |
+| Word filter blocks threatening language     | Done   | `domain/reminderDraft.ts` runs it on every AI draft, along with checks for invented numbers and links                            |
+| Nothing sends without the officer's tap     | Done   | Drafting sends nothing; only Send does, and the officer can't edit the text. Automatic promise reminders use fixed wording (A26) |
 
 ## Constraints
 
@@ -81,3 +81,4 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 | What                                                               | Why                                                                                                                                           |
 | ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | Sending the outbox while the app is fully closed (Background Sync) | It would duplicate the send logic inside the service worker, and officers have the app open all day. Everything sends the next time it opens. |
+| Drafting a reminder with no signal                                 | The server has to check every draft, so it needs a connection. Calls, visits and outcomes all work offline.                                   |

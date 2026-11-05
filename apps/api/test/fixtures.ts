@@ -95,6 +95,7 @@ export async function createFixture(prisma: PrismaClient): Promise<Fixture> {
     await prisma.listOverride.deleteMany({ where: { officerId: { in: userIds } } });
     await prisma.messageLog.deleteMany({ where: { reminderId: { not: null } } });
     await prisma.outcome.deleteMany({ where: { officerId: { in: userIds } } });
+    await prisma.reminderDraft.deleteMany({ where: { officerId: { in: userIds } } });
     await prisma.contactAttempt.deleteMany({ where: { officerId: { in: userIds } } });
     await prisma.loan.deleteMany({ where: { branchId: { in: branchIds } } });
     await prisma.borrower.deleteMany({ where: { id: { in: loans.map((l) => l.borrowerId) } } });

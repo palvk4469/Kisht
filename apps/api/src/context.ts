@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@kisht/db";
 import type { preHandlerAsyncHookHandler } from "fastify";
 import type { Auth } from "./modules/auth/auth.js";
+import type { ReminderDrafter } from "./modules/reminders/drafts.js";
 
 /** The server's notion of "now". Tests pin it; the demo clock (D13) replaces it. */
 export type Clock = () => Date;
@@ -26,4 +27,6 @@ export type AppContext = {
   config: AppConfig;
   /** preHandler that resolves the session into request.user (401 if none). */
   authenticate: preHandlerAsyncHookHandler;
+  /** Rewords approved templates. Null without an API key: officers get the templates. */
+  drafter: ReminderDrafter | null;
 };

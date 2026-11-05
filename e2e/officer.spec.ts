@@ -40,6 +40,36 @@ test("after 7 pm calling is blocked, explained and recorded", async ({ page }) =
   await expect(page.getByRole("button", { name: "भुगतान हुआ" })).toHaveCount(0);
 });
 
+test("a reminder is drafted on one tap and sent only on another", async ({ page }) => {
+  await signInAs(page, "vikas.rathore@kisht.example");
+  await page.getByTestId("loan-card").first().click();
+  await page.getByRole("button", { name: "रिमाइंडर भेजें" }).click();
+
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("स्वीकृत शब्द", { exact: true })).toBeVisible();
+  await expect(sheet.getByText(/नमस्ते/)).toBeVisible();
+
+  // The officer can read it in the other language before deciding.
+  await sheet.getByRole("button", { name: "English" }).click();
+  await expect(sheet.getByText(/^Hello/)).toBeVisible();
+  await expect(sheet.getByRole("button", { name: "English" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+
+  await sheet.getByRole("button", { name: "भेजें" }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page.getByRole("status").filter({ hasText: "रिमाइंडर भेजा गया" })).toBeVisible();
+});
+
+test("after 7 pm a reminder can't be drafted, and the try is recorded", async ({ page }) => {
+  await signInAs(page, "sunita.yadav@kisht.example", "20:00");
+  await page.getByTestId("loan-card").first().click();
+  await page.getByRole("button", { name: "रिमाइंडर भेजें" }).click();
+  await expect(page.getByText(/रोका गया और दर्ज हुआ/)).toBeVisible();
+  await expect(page.getByRole("dialog")).toHaveCount(0);
+});
+
 test("the demo button reopens the window when it is closed", async ({ page }) => {
   await signInAs(page, "rahul.chouhan@kisht.example", "20:00");
   await page.getByRole("button", { name: /डेमो: समय सुबह 11 बजे करें/ }).click();

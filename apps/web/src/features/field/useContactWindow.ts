@@ -1,7 +1,14 @@
 "use client";
 
-import { isContactAllowed, nextAllowedAt } from "@kisht/domain";
+import { type ContactBlockReason, isContactAllowed, nextAllowedAt } from "@kisht/domain";
 import { useEffect, useState } from "react";
+import type { MessageKey } from "@/lib/i18n";
+
+export const BLOCK_TEXT: Record<ContactBlockReason, MessageKey> = {
+  OUTSIDE_CONTACT_WINDOW: "contact.blockedWindow",
+  CONTACT_PAUSED: "contact.blockedPaused",
+  DAILY_ATTEMPT_CAP: "contact.blockedCap",
+};
 
 const TICK_MS = 15_000;
 

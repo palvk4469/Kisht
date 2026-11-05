@@ -148,3 +148,11 @@ A second review raised six points. Each was checked against the code first.
 - **Stale status lines. Real.** Fixed, and the requirements checklist no longer quotes test counts or assumption ranges, which go stale.
 - **`'unsafe-inline'` scripts. True, kept on purpose** (D30): nonces would cost the static shell that offline and weak-signal opening rely on.
 - **The model's edge is modest. True, and already stated** in [MODEL.md](MODEL.md). No change: tuning the model to win more simulated weeks would prove nothing about real loans.
+
+## AI reminder drafts (2026-11-05)
+
+The last unbuilt requirement. An officer taps Send reminder on a loan, reads the draft and taps Send. The AI only ever sees a template such as "Hello {borrowerName}, {amount} is overdue", so a borrower's details can't reach it. Each reply is checked for blocked words, changed placeholders, invented numbers, links, length and language, and anything that fails is replaced by the approved wording.
+
+**Browser tests caught a design mistake:** the button was first added to the shared call and map buttons, so it appeared on every card in the list. It now appears only on the loan screen.
+
+**Not tested against the live API:** no key was available, so the adapter is tested against a stand-in client. The first deployment with a key must confirm that drafts show as AI drafts. `reminder_draft.fallbackReason` records why any didn't.

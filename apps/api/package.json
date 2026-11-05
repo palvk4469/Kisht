@@ -10,6 +10,7 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "1.3.0",
     "@fastify/swagger": "9.9.2",
     "@fastify/swagger-ui": "6.1.2",
     "@kisht/contracts": "workspace:*",

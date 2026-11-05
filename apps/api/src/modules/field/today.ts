@@ -89,6 +89,8 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
         where: {
           officerId: user.id,
           allowed: true,
+          // A sent message isn't a conversation, so it opens nothing to log against.
+          channel: { not: "MESSAGE" },
           correctedAt: { gte: istDayStart(today) },
           outcomes: { none: {} },
         },

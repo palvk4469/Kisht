@@ -67,7 +67,7 @@ apps/api/src
     scoring/        scores a day's loans on import
     field/          today's list, sync (contact window, attempts, outcomes)
     manager/        officers' lists, pins, reassignment, disputes, promise tracker
-    reminders/      schedules and dispatches promise reminders (sending is mocked)
+    reminders/      promise reminders and AI drafts (sending is mocked)
     reports/        dashboard, weekly back-test, activity log and contact-rule record
     demo/           demo clock; only registered in demo mode
     health/ me/ loans/ imports/
@@ -125,6 +125,27 @@ sequenceDiagram
 ## The priority model
 
 `domain/scoring` holds the features, the model, the reasons and the back-test as pure code. `packages/db/scripts/trainModel.ts` trains on simulated worlds and tests on one it never saw, writing `model-v1.json` and its metrics. Scores are written on seed and on every import commit, then read by the list. Details and honest limits: [MODEL.md](MODEL.md).
+
+## AI reminder drafts
+
+```mermaid
+sequenceDiagram
+  participant O as Officer
+  participant A as API
+  participant C as Claude
+  participant D as Postgres
+
+  O->>A: Tap: draft a reminder for this loan
+  A->>C: Approved template with placeholders, language, situation
+  C-->>A: Reworded text
+  A->>A: Word filter, placeholders, numbers, links, length, language
+  Note over A: Any failure, outage or missing key: use the approved template
+  A->>D: Store the draft, with the real details filled in
+  A-->>O: The draft, labelled AI or approved wording
+  O->>A: Tap: send
+  A->>A: Contact window, dispute pause, daily limit
+  A->>D: Attempt always recorded. If allowed: message and audit entry
+```
 
 ## Offline logging
 

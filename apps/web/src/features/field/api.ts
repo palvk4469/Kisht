@@ -1,7 +1,14 @@
 "use client";
 
-import { type ContactChannel, type OutcomeEvent, TodayList } from "@kisht/contracts";
-import { useQuery } from "@tanstack/react-query";
+import {
+  type ContactChannel,
+  type Locale,
+  type OutcomeEvent,
+  ReminderDraft,
+  ReminderSendResult,
+  TodayList,
+} from "@kisht/contracts";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLiveQuery } from "dexie-react-hooks";
 import { useCallback, useMemo } from "react";
 import { ApiError, request } from "@/lib/api";
@@ -21,6 +28,8 @@ const REFRESH_MS = 60_000;
 const FETCH_TIMEOUT_MS = 8000;
 /** How long logging waits for a GPS fix before sending without one. */
 const GPS_WAIT_MS = 1500;
+/** The server gives the AI 10 seconds before it falls back to the approved wording. */
+const DRAFT_TIMEOUT_MS = 15_000;
 
 export type LoadedToday = {
   list: TodayList;
@@ -176,4 +185,36 @@ export function useFieldLog() {
   );
 
   return { recordAttempt, logOutcome };
+}
+
+/** Lang null means the borrower's preferred language. Needs signal: the server checks every draft. */
+export function useReminderDraft(loanId: string, lang: Locale | null) {
+  return useQuery({
+    queryKey: [...fieldKeys.all, "reminderDraft", loanId, lang],
+    queryFn: () =>
+      request(`/api/officer/loans/${loanId}/reminder-draft`, {
+        method: "POST",
+        schema: ReminderDraft,
+        body: { lang },
+        timeoutMs: DRAFT_TIMEOUT_MS,
+      }),
+    networkMode: "always",
+    retry: false,
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: 0,
+  });
+}
+
+export function useSendReminder() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    networkMode: "always",
+    mutationFn: (draftId: string) =>
+      request(`/api/officer/reminder-drafts/${draftId}/send`, {
+        method: "POST",
+        schema: ReminderSendResult,
+        timeoutMs: FETCH_TIMEOUT_MS,
+      }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: [...fieldKeys.all, "today"] }),
+  });
 }

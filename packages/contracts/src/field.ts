@@ -1,5 +1,6 @@
 import { IsoDaySchema } from "@kisht/domain";
 import { z } from "zod";
+import { Locale } from "./common.ts";
 
 // The officer's day: the prioritised list, and the events logged against it.
 
@@ -35,7 +36,7 @@ export type Priority = z.infer<typeof Priority>;
 export const OutcomeType = z.enum(["PAID", "PROMISE", "NOT_REACHABLE", "DISPUTE"]);
 export type OutcomeType = z.infer<typeof OutcomeType>;
 
-export const ContactChannel = z.enum(["CALL", "VISIT"]);
+export const ContactChannel = z.enum(["CALL", "VISIT", "MESSAGE"]);
 export type ContactChannel = z.infer<typeof ContactChannel>;
 
 export const PromiseSummary = z.object({
@@ -175,3 +176,25 @@ export const SyncResponse = z.object({
   outcomes: z.array(SyncItemResult),
 });
 export type SyncResponse = z.infer<typeof SyncResponse>;
+
+export const ReminderDraftRequest = z.object({
+  /** Null means the borrower's preferred language. */
+  lang: Locale.nullable(),
+});
+export type ReminderDraftRequest = z.infer<typeof ReminderDraftRequest>;
+
+export const ReminderDraft = z.object({
+  id: z.string(),
+  lang: Locale,
+  /** AI: reworded and passed every check. TEMPLATE: the approved wording itself. */
+  source: z.enum(["AI", "TEMPLATE"]),
+  body: z.string(),
+});
+export type ReminderDraft = z.infer<typeof ReminderDraft>;
+
+export const ReminderSendResult = z.object({
+  /** blocked: recorded as a blocked attempt, nothing sent. */
+  status: z.enum(["sent", "blocked", "already_sent"]),
+  reason: SyncReason.nullable(),
+});
+export type ReminderSendResult = z.infer<typeof ReminderSendResult>;

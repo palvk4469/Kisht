@@ -7,6 +7,8 @@ import { setClock, signInAs } from "./helpers";
 
 async function noViolations(page: Page, screen: string) {
   await page.waitForLoadState("networkidle");
+  // A fading colour is only ever measured halfway, so let it finish.
+  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
@@ -39,6 +41,10 @@ for (const colorScheme of ["light", "dark"] as const) {
       await noViolations(page, "loan");
       await page.getByRole("button", { name: "भुगतान का वादा" }).click();
       await noViolations(page, "outcome sheet");
+      await page.keyboard.press("Escape");
+      await page.getByRole("button", { name: "रिमाइंडर भेजें" }).click();
+      await expect(page.getByRole("dialog").getByText(/नमस्ते/)).toBeVisible();
+      await noViolations(page, "reminder sheet");
       await page.keyboard.press("Escape");
       await page.goto("/today/promises");
       await noViolations(page, "promises");

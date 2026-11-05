@@ -1,7 +1,7 @@
 "use client";
 
 import type { ActivityEntry, ActivityFilter } from "@kisht/contracts";
-import { MapPin, Phone, ShieldCheck } from "lucide-react";
+import { MapPin, MessageSquareText, Phone, ShieldCheck } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge, Card, cx, EmptyState, ErrorState, Skeleton, Stat } from "@/components/ui";
 import { LoanLink } from "@/features/manager/LoanView";
@@ -28,16 +28,19 @@ const OUTCOME_TONE = {
   DISPUTE: "risk",
 } as const;
 
+const CHANNELS = {
+  VISIT: { icon: MapPin, label: "activity.visit" },
+  CALL: { icon: Phone, label: "activity.call" },
+  MESSAGE: { icon: MessageSquareText, label: "activity.message" },
+} as const;
+
 function Entry({ e }: { e: ActivityEntry }) {
   const { t, locale } = useI18n();
-  const Icon = e.channel === "VISIT" ? MapPin : Phone;
+  const { icon: Icon, label } = CHANNELS[e.channel];
   const hasFix = e.lat !== null && e.lng !== null;
   return (
     <li className="flex flex-wrap items-start gap-x-3 gap-y-1 px-5 py-3 text-sm">
-      <Icon
-        className="mt-0.5 size-4 shrink-0 text-faint"
-        aria-label={t(e.channel === "VISIT" ? "activity.visit" : "activity.call")}
-      />
+      <Icon className="mt-0.5 size-4 shrink-0 text-faint" aria-label={t(label)} />
       <div className="min-w-48 flex-1">
         <LoanLink loanId={e.loanId} name={e.borrowerName} className="font-medium" />
         <p className="text-xs text-muted">

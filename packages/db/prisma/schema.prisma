@@ -40,6 +40,12 @@ enum ImportStatus {
 enum ContactChannel {
   CALL
   VISIT
+  MESSAGE
+}
+
+enum DraftSource {
+  AI
+  TEMPLATE
 }
 
 enum OutcomeType {
@@ -103,6 +109,7 @@ model User {
   assignmentsMade Assignment[]     @relation("AssignmentBy")
   contactAttempts ContactAttempt[]
   outcomes        Outcome[]
+  reminderDrafts  ReminderDraft[]
   listOverrides   ListOverride[]   @relation("OverrideOfficer")
   overridesMade   ListOverride[]   @relation("OverrideManager")
   imports         ImportBatch[]
@@ -239,6 +246,7 @@ model Loan {
   overrides       ListOverride[]
   contactAttempts ContactAttempt[]
   outcomes        Outcome[]
+  reminderDrafts  ReminderDraft[]
   promises        PromiseToPay[]
   payments        Payment[]
 
@@ -473,6 +481,29 @@ model Reminder {
 }
 
 // Stand-in for the SMS/WhatsApp gateway: every "sent" message lands here.
+// A reminder an officer asked for (D31). It goes out only when they tap send,
+// which is what sets sentAt. The officer can't edit it, so what passed the
+// checks is exactly what is sent.
+model ReminderDraft {
+  id             String      @id @default(cuid())
+  loanId         String
+  officerId      String
+  lang           Locale
+  template       String
+  source         DraftSource
+  body           String
+  /// Why the AI's wording wasn't used, when source is TEMPLATE.
+  fallbackReason String?
+  createdAt      DateTime
+  sentAt         DateTime?
+
+  loan    Loan @relation(fields: [loanId], references: [id])
+  officer User @relation(fields: [officerId], references: [id])
+
+  @@index([loanId, officerId, createdAt])
+  @@map("reminder_draft")
+}
+
 model MessageLog {
   id         String   @id @default(cuid())
   channel    String

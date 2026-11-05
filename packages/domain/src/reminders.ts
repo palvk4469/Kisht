@@ -5,7 +5,12 @@ import { addDays, type IsoDay, istDayOf, istDayStart } from "./dates.ts";
 // due outside 8 am–7 pm until the window opens.
 
 export type ReminderRecipient = "BORROWER" | "OFFICER";
-export type ReminderTemplate = "BORROWER_BEFORE" | "BORROWER_DUE" | "OFFICER_DUE";
+export type ReminderTemplate =
+  | "BORROWER_BEFORE"
+  | "BORROWER_DUE"
+  | "BORROWER_MISSED"
+  | "BORROWER_OVERDUE"
+  | "OFFICER_DUE";
 export type ReminderLang = "hi" | "en";
 
 export type PlannedReminder = {
@@ -27,7 +32,7 @@ export function planReminders(dueDate: IsoDay, madeAt: Date): PlannedReminder[] 
   return plan.filter((r) => r.at > madeAt && istDayOf(r.at) >= istDayOf(madeAt));
 }
 
-type Vars = { borrowerName: string; amount: string; date: string; loanNo: string };
+export type ReminderVars = { borrowerName: string; amount: string; date: string; loanNo: string };
 
 export const REMINDER_TEMPLATES: Record<ReminderTemplate, Record<ReminderLang, string>> = {
   BORROWER_BEFORE: {
@@ -38,17 +43,31 @@ export const REMINDER_TEMPLATES: Record<ReminderTemplate, Record<ReminderLang, s
     hi: "नमस्ते {borrowerName}, लोन {loanNo} के {amount} के भुगतान की तारीख आज है। यदि भुगतान हो चुका है तो कृपया इस संदेश को अनदेखा करें। धन्यवाद।",
     en: "Hello {borrowerName}, your payment of {amount} on loan {loanNo} is due today. If you have already paid, please ignore this message. Thank you.",
   },
+  BORROWER_MISSED: {
+    hi: "नमस्ते {borrowerName}, {date} को {amount} का भुगतान अभी तक हमें नहीं मिला है (लोन {loanNo})। यदि भुगतान हो चुका है तो कृपया इस संदेश को अनदेखा करें, अन्यथा अपने अधिकारी से बात करें। धन्यवाद।",
+    en: "Hello {borrowerName}, we have not yet received the payment of {amount} due on {date} (loan {loanNo}). If you have already paid, please ignore this message; otherwise please speak to your officer. Thank you.",
+  },
+  BORROWER_OVERDUE: {
+    hi: "नमस्ते {borrowerName}, लोन {loanNo} पर {amount} की किस्त बकाया है। भुगतान की तारीख तय करने के लिए कृपया अपने अधिकारी से बात करें। धन्यवाद।",
+    en: "Hello {borrowerName}, an instalment of {amount} on loan {loanNo} is overdue. Please speak to your officer to agree a payment date. Thank you.",
+  },
   OFFICER_DUE: {
     hi: "आज का वादा: {borrowerName}, लोन {loanNo}, {amount}।",
     en: "Promise due today: {borrowerName}, loan {loanNo}, {amount}.",
   },
 };
 
-export function renderReminder(template: ReminderTemplate, lang: ReminderLang, vars: Vars): string {
-  return REMINDER_TEMPLATES[template][lang].replace(
-    /\{(\w+)\}/g,
-    (_, key: keyof Vars) => vars[key],
-  );
+/** Fills the placeholders of an approved template or a checked draft. */
+export function fillPlaceholders(text: string, vars: ReminderVars): string {
+  return text.replace(/\{(\w+)\}/g, (_, key: keyof ReminderVars) => vars[key]);
+}
+
+export function renderReminder(
+  template: ReminderTemplate,
+  lang: ReminderLang,
+  vars: ReminderVars,
+): string {
+  return fillPlaceholders(REMINDER_TEMPLATES[template][lang], vars);
 }
 
 export function formatRupees(amount: number): string {

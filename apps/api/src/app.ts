@@ -21,6 +21,8 @@ import { registerImports } from "./modules/imports/routes.js";
 import { registerLoans } from "./modules/loans/routes.js";
 import { registerManager } from "./modules/manager/routes.js";
 import { registerMe } from "./modules/me/routes.js";
+import type { ReminderDrafter } from "./modules/reminders/drafts.js";
+import { registerReminders } from "./modules/reminders/routes.js";
 import { registerReports } from "./modules/reports/routes.js";
 
 export type BuildAppOptions = {
@@ -28,6 +30,7 @@ export type BuildAppOptions = {
   authSecret: string;
   config: Pick<AppConfig, "baseURL"> & Partial<AppConfig>;
   clock?: Clock;
+  drafter?: ReminderDrafter | null;
   logger?: FastifyServerOptions["logger"];
 };
 
@@ -39,6 +42,7 @@ const MODULES = [
   registerLoans,
   registerImports,
   registerField,
+  registerReminders,
   registerManager,
   registerReports,
 ];
@@ -64,6 +68,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     clock: demoClock.now,
     config,
     authenticate: makeAuthenticate(auth),
+    drafter: opts.drafter ?? null,
   };
 
   const app = Fastify({ logger: opts.logger ?? false });

@@ -1,6 +1,8 @@
+import Anthropic from "@anthropic-ai/sdk";
 import { getPrisma } from "@kisht/db";
 import { buildApp } from "./app.js";
 import { loadEnv } from "./env.js";
+import { createClaudeDrafter } from "./modules/reminders/claudeDrafter.js";
 
 const env = loadEnv();
 
@@ -14,6 +16,9 @@ const app = await buildApp({
     backgroundJobs: true,
     rateLimit: env.NODE_ENV === "production",
   },
+  drafter: env.ANTHROPIC_API_KEY
+    ? createClaudeDrafter(new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }), env.AI_DRAFT_MODEL)
+    : null,
   logger: true,
 });
 

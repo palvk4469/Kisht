@@ -42,6 +42,8 @@ describe("OpenAPI docs", () => {
       "/api/manager/lists/{officerId}/unpin",
       "/api/manager/promises",
       "/api/me",
+      "/api/officer/loans/{loanId}/reminder-draft",
+      "/api/officer/reminder-drafts/{draftId}/send",
       "/api/officer/today",
       "/api/sync",
       "/health",
