@@ -12,12 +12,6 @@ export type Locale = z.infer<typeof Locale>;
 
 export const IdParams = z.object({ id: z.string().min(1).max(64) });
 
-export const ErrorResponse = z.object({
-  error: z.string(),
-  issues: z.unknown().optional(),
-});
-export type ErrorResponse = z.infer<typeof ErrorResponse>;
-
 export const HealthResponse = z.object({
   status: z.literal("ok"),
   /** Clients use this to measure device clock skew (offline sync). */

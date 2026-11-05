@@ -61,7 +61,7 @@ The dashboard runs the same comparison every week on the scores actually given, 
 | First 4 weeks of history  | 52%   | 52%                     |
 | Last 8 weeks with results | 82%   | 67%                     |
 
-Single weeks range from 73% to 86%, and in one of those eight weeks the simple rule narrowly won (84% vs 83%). The model does worst early on, when loans have little history behind them. **Quote the conservative 68%, and expect week-to-week movement.**
+Single weeks range from 73% to 86%, and in one of those eight weeks the simple rule narrowly won (84% vs 83%). The model does worst early on, when loans have little history behind them. **The conservative figure is 68%, and expect week-to-week movement.**
 
 ## Limits
 

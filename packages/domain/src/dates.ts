@@ -7,8 +7,6 @@ import { z } from "zod";
 // `new Date("2026-11-02T00:00:00+05:30")` stores 2026-11-01. Always convert
 // through these helpers instead of passing Dates for days around.
 
-export const APP_TIMEZONE = "Asia/Kolkata";
-
 /** IST is UTC+05:30 all year (no daylight saving). */
 const IST_OFFSET_MS = 330 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;

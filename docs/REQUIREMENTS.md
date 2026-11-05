@@ -2,7 +2,7 @@
 
 Every requirement from brief 4 and the submission rules, with its status. Nothing is dropped silently: anything not built is listed under **Cut** with a reason, and appears in the TDD.
 
-Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planned) · **Cut**.
+Status: **Done** · **Partial** (what is missing is stated) · **Cut**.
 
 ## Core build (must work end to end)
 
@@ -44,13 +44,13 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 
 ## Constraints
 
-| Requirement                                          | Status  | Where / note                                                                                                                     |
-| ---------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| Block contact outside 8 am–7 pm                      | Done    | Blocked and explained in the UI with the next time; server re-checks                                                             |
-| Record every contact attempt, including blocked ones | Done    | `ContactAttempt` with `allowed` and `blockReason`; tested                                                                        |
-| DPDP: borrower data as personal data                 | Done    | Phones masked for managers, reveals audited, device data cleared on sign-out and expires; reports show no numbers                |
-| Offline on low-end phones, weak signal               | Done    | Service worker + IndexedDB; system fonts; first load 245 KB JS (over the 200 KB target, see the log), then served from the phone |
-| Hindi interface                                      | Partial | Every screen in Hindi and English; needs a native read. Server error messages are English only                                   |
+| Requirement                                          | Status  | Where / note                                                                                                        |
+| ---------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
+| Block contact outside 8 am–7 pm                      | Done    | Blocked and explained in the UI with the next time; server re-checks                                                |
+| Record every contact attempt, including blocked ones | Done    | `ContactAttempt` with `allowed` and `blockReason`; tested                                                           |
+| DPDP: borrower data as personal data                 | Done    | Phones masked for managers, reveals audited, device data cleared on sign-out and expires; reports show no numbers   |
+| Offline on low-end phones, weak signal               | Done    | Service worker + IndexedDB; system fonts; first load 245 KB JS (over the 200 KB target), then served from the phone |
+| Hindi interface                                      | Partial | Every screen in Hindi and English; needs a native read. Server error messages are English only                      |
 
 ## Design
 
@@ -64,17 +64,17 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 
 ## Submission rules
 
-| Requirement                                                                                                | Status         | Where / note                                                                |
-| ---------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------- |
-| Frontend, backend, database, sign-in                                                                       | Done           |                                                                             |
-| Tests for the most important logic                                                                         | Done (ongoing) | Unit, API and browser tests in CI; domain coverage ≥ 90% enforced           |
-| No secrets in the repo, validated inputs, access control                                                   | Done           | Contracts validate every input; `scope.ts`; CI-only throwaway values        |
-| No dead buttons                                                                                            | Ongoing        | Only built screens are linked                                               |
-| Every assumption labelled                                                                                  | Ongoing        | `docs/ASSUMPTIONS.md`, numbered and referenced from the code and docs       |
-| Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                                  |
-| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Partial        | `docs/TDD.pdf`, built by `pnpm tdd`; the live link goes in after deployment |
-| deployment.md: local run, deployment, env var names, demo logins                                           | Partial        | `deployment.md`; the live link goes in after deployment                     |
-| Live deployment                                                                                            | Partial        | One Azure VM behind Caddy (D32); see `deployment.md`                        |
+| Requirement                                                                                                | Status         | Where / note                                                          |
+| ---------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------- |
+| Frontend, backend, database, sign-in                                                                       | Done           |                                                                       |
+| Tests for the most important logic                                                                         | Done (ongoing) | Unit, API and browser tests in CI; domain coverage ≥ 90% enforced     |
+| No secrets in the repo, validated inputs, access control                                                   | Done           | Contracts validate every input; `scope.ts`; CI-only throwaway values  |
+| No dead buttons                                                                                            | Ongoing        | Only built screens are linked                                         |
+| Every assumption labelled                                                                                  | Ongoing        | `docs/ASSUMPTIONS.md`, numbered and referenced from the code and docs |
+| Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                            |
+| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Done           | `docs/TDD.pdf`, built by `pnpm tdd`                                   |
+| deployment.md: local run, deployment, env var names, demo logins                                           | Done           | `deployment.md`                                                       |
+| Live deployment                                                                                            | Done           | https://kist-collection.duckdns.org on one VM behind Caddy (D32)      |
 
 ## Cut
 

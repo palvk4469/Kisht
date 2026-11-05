@@ -1,6 +1,6 @@
 # Deployment
 
-Live app: LIVE_URL_PENDING
+Live app: https://kist-collection.duckdns.org
 
 ## Demo logins
 
@@ -78,7 +78,7 @@ docker compose up -d
 
 ### 3. Load the demo data
 
-Seed the local database, then copy it across. Seeded dates are relative to the day of the seed (A15), so repeat this shortly before a review.
+Seed the local database, then copy it across. Seeded dates are relative to the day of the seed (A15), so repeat this shortly before a review. A repeat first needs the old data cleared on the server, with `TRUNCATE` on every table except `_prisma_migrations`.
 
 ```bash
 pnpm db:seed

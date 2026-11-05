@@ -6,7 +6,7 @@ import type { AppContext } from "../../context.js";
  * so only the right-hand entries can be trusted: anything further left may be
  * invented by the client. Better Auth only accepts a single address.
  */
-export function clientAddress(forwarded: string | undefined, socket: string, hops: number): string {
+function clientAddress(forwarded: string | undefined, socket: string, hops: number): string {
   const chain = (forwarded ?? "")
     .split(",")
     .map((entry) => entry.trim())

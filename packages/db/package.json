@@ -15,7 +15,6 @@
     "seed": "tsx src/seed/index.ts",
     "typecheck": "tsc -p tsconfig.json",
     "test": "vitest run",
-    "sim:stats": "tsx scripts/simStats.ts",
     "model:train": "tsx scripts/trainModel.ts"
   },
   "devDependencies": {

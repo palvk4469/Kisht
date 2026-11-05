@@ -6,7 +6,7 @@ A field collections app for an MSME lender (an RBI-registered NBFC in Indore). E
 - **Offline first.** Outcomes and contact attempts go to an on-device outbox and sync when there's signal. Each event carries an idempotency key, so retries never create duplicates.
 - **Contact window.** RBI recovery rules allow contact only between 8 am and 7 pm, so the app blocks calls and visits outside that window. The server checks again using the time the action happened (corrected for device clock skew), and every attempt is recorded, blocked ones included.
 
-> **Status:** in active development (a 7-day build, 2026-11-02 to 2026-11-08). Done so far: sign-in and roles, the daily import, the priority model, the officer's list, three-tap logging, full offline use, promises and reminders, the manager's lists, and the roll-rate dashboard. Next: deployment, real-phone testing and refinement. The [engineering log](docs/ENGINEERING-LOG.md) tracks what's built and why.
+> **Live:** <https://kist-collection.duckdns.org>. Demo logins are in [deployment.md](deployment.md), and the design is in the [technical design document](docs/TDD.pdf).
 
 <p>
   <img src="docs/screenshots/officer-today.png" width="230" alt="An officer's list for the day, in Hindi, ordered by rupees at stake, each with its reason and big Call and Map buttons">
@@ -17,7 +17,7 @@ A field collections app for an MSME lender (an RBI-registered NBFC in Indore). E
   <img src="docs/screenshots/manager-dashboard.png" width="700" alt="The manager's dashboard: roll rate against the 16% target, by branch and week">
 </p>
 
-See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md), [docs/DECISIONS.md](docs/DECISIONS.md) and [docs/ENGINEERING-LOG.md](docs/ENGINEERING-LOG.md).
+See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md) and [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Stack
 
@@ -35,13 +35,14 @@ See [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md), [docs/DECISIONS.md](docs/DECISIO
 ```
 apps/
   api/        Fastify API: modules/{auth,imports,loans,me,...}, each routes.ts + service.ts
-  web/        Next.js app: features/{session,imports}; /api/* is rewritten to the API
+  web/        Next.js app: features/{session,field,offline,manager,...}; /api/* is rewritten to the API
 packages/
   domain/     Pure business rules (IST dates, contact window, promises, assignment,
               CSV parsing, import planning, roll rate). No I/O, shared by web and API.
   contracts/  Zod schemas for every API request and response (one wire format)
   db/         Prisma schema, migrations, client, provisioning, deterministic seed
-docs/         Architecture, assumptions, decisions, engineering log, TDD
+deploy/       Docker images, compose file and Caddy config for the server
+docs/         Architecture, assumptions, decisions, model card, requirements, TDD
 e2e/          Playwright tests (phone and desktop)
 ```
 
