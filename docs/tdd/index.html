@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kisht Collections: Technical Design Document</title>
+<style>
+  body { font: 10.5pt/1.5 "Noto Sans", "Segoe UI", Arial, "Noto Sans Devanagari", sans-serif; color: #1a1d23; }
+  h1 { font-size: 22pt; margin: 0 0 4pt; color: #2d3a8c; }
+  h2 { font-size: 14pt; margin: 20pt 0 6pt; color: #2d3a8c; break-after: avoid; }
+  h3 { font-size: 11pt; margin: 12pt 0 3pt; break-after: avoid; }
+  p, ul, ol { margin: 0 0 7pt; }
+  li { margin-bottom: 3pt; }
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 9.5pt; }
+  th { text-align: left; border-bottom: 1.5pt solid #2d3a8c; padding: 3pt 6pt; }
+  td { border-bottom: .5pt solid #d8dae0; padding: 3pt 6pt; vertical-align: top; }
+  tr { break-inside: avoid; }
+  td.id { white-space: nowrap; font-weight: 600; }
+  code { font: 9pt "Noto Sans Mono", Consolas, monospace; background: #f1f2f5; padding: 0 2pt; border-radius: 2pt; }
+  .meta { background: #eef0fa; border-radius: 6pt; padding: 8pt 12pt; margin: 8pt 0 12pt; }
+  .meta p { margin: 0 0 2pt; }
+  .note { background: #fdf4e3; border-radius: 6pt; padding: 7pt 10pt; font-size: 9.5pt; break-inside: avoid; }
+  figure { margin: 8pt 0 10pt; break-inside: avoid; }
+  figcaption { font-size: 8.5pt; color: #5b6070; margin-top: 3pt; }
+  svg { width: 100%; height: auto; }
+  svg text { font: 11px "Noto Sans", Arial, sans-serif; fill: #1a1d23; }
+  svg .small { font-size: 9.5px; fill: #5b6070; }
+  svg .box { fill: #f5f6fb; stroke: #2d3a8c; stroke-width: 1; }
+  svg .soft { fill: #fff; stroke: #b5b9c6; stroke-width: 1; stroke-dasharray: 4 3; }
+  svg .line { stroke: #2d3a8c; stroke-width: 1.2; fill: none; marker-end: url(#arrow); }
+  .shots { display: flex; gap: 10pt; }
+  .shots figure { flex: 1; margin: 0; }
+  .shots img { width: 100%; border: .5pt solid #d8dae0; border-radius: 4pt; }
+  .wide img { width: 100%; border: .5pt solid #d8dae0; border-radius: 4pt; }
+</style>
+</head>
+<body>
+
+<h1>Kisht Collections</h1>
+<p>Technical design document. Brief 4: field collections with AI prioritisation for an MSME lender in Indore.</p>
+<div class="meta">
+  <p><strong>GitHub:</strong> https://github.com/palvk4469/Kisht</p>
+  <p><strong>Live app:</strong> LIVE_URL_PENDING</p>
+  <p><strong>Demo logins and run steps:</strong> <code>deployment.md</code></p>
+  <p><strong>Labels:</strong> A# is an assumption (all listed in the appendix). D# is a decision, recorded with its reason in <code>docs/DECISIONS.md</code>.</p>
+</div>
+
+<h2>1. The problem</h2>
+<p>Company A's officers get names on WhatsApp each morning, and outcomes come back the same way. Promises live in notebooks, and head office rebuilds the picture in Excel every week. The head of collections cannot see what happened in between.</p>
+<p>The brief puts the cost at ₹1.63 crore a year: ₹1.134 crore from loans rolling past 30 days overdue, and ₹49.5 lakh of manual reporting. Success means the roll rate falling from 22% to 16% in four months, 95% of visits logged the same day, and the weekly Excel stopped.</p>
+<p>So the design rests on three things an officer or auditor would notice at once:</p>
+<ul>
+  <li><strong>The list must be trusted.</strong> Every loan says why it is there, in plain words, and a manager can overrule it.</li>
+  <li><strong>Logging must never fail in the field.</strong> Weak signal is the normal case, so the phone is the first place anything is saved.</li>
+  <li><strong>The contact rule must be provable.</strong> RBI limits contact to 8 am–7 pm, so the app blocks it and keeps a record of every attempt, including blocked ones.</li>
+</ul>
+
+<h2>2. What was built</h2>
+<table>
+  <tr><th style="width:34%">Brief</th><th>Built</th></tr>
+  <tr><td>Daily CSV import, auto-assignment</td><td>Preview first, with row-level errors, then commit. Assigned by pincode, then lowest workload, keeping a loan with its officer where possible (A3).</td></tr>
+  <tr><td>Officer list, call and map, outcomes with GPS</td><td>Ranked list with reasons. An outcome takes three taps. GPS is attached if it arrives within 1.5 seconds and never holds up logging.</td></tr>
+  <tr><td>Promise reminders</td><td>To borrower and officer, on approved wording, held outside 8 am–7 pm, stopped once the promise settles or the loan is disputed (A22).</td></tr>
+  <tr><td>AI priority score, top three reasons</td><td>A logistic regression. Reasons are real terms of the model's sum (section 6).</td></tr>
+  <tr><td>AI-drafted reminders</td><td>Claude rewords an approved template and never sees borrower details. Sent only on the officer's tap (section 6).</td></tr>
+  <tr><td>Manager dashboard, activity log</td><td>Roll rate by branch and week, broken promises, weekly back-test, and every attempt with its visit location checked against the borrower's address.</td></tr>
+  <tr><td>Hard parts</td><td>Offline logging with sync, and the contact block (section 7).</td></tr>
+  <tr><td>Hindi, minimal design, one hand</td><td>Every screen in Hindi and English, light and dark themes, 48 px targets, WCAG 2.1 AA checked in CI (section 9).</td></tr>
+</table>
+<p>Everything in "Must have" was built, beyond the required core slice. Payments, messages and outside systems are mocked as the brief allows: a "sent" message is written to <code>MessageLog</code> and labelled as simulated on screen (D11).</p>
+
+<h2>3. Architecture</h2>
+<p>A modular monolith: one API, one web app and three small packages with one job each. An eight-week project with one team does not need microservices, and a lender's auditor benefits from having a single place to read each rule.</p>
+<figure>
+<svg viewBox="0 0 700 262" role="img" aria-label="System and package diagram">
+  <defs><marker id="arrow" viewBox="0 0 8 8" refX="7" refY="4" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 8 4 0 8z" fill="#2d3a8c"/></marker></defs>
+  <rect class="soft" x="5" y="20" width="130" height="46" rx="6"/><text x="70" y="40" text-anchor="middle">Field officer</text><text x="70" y="55" text-anchor="middle" class="small">phone, weak signal</text>
+  <rect class="soft" x="5" y="100" width="130" height="46" rx="6"/><text x="70" y="120" text-anchor="middle">Manager / head</text><text x="70" y="135" text-anchor="middle" class="small">desktop or phone</text>
+  <rect class="box" x="190" y="50" width="150" height="66" rx="6"/><text x="265" y="72" text-anchor="middle">apps/web</text><text x="265" y="88" text-anchor="middle" class="small">Next.js PWA, screens,</text><text x="265" y="101" text-anchor="middle" class="small">IndexedDB outbox</text>
+  <rect class="box" x="395" y="50" width="150" height="66" rx="6"/><text x="470" y="72" text-anchor="middle">apps/api</text><text x="470" y="88" text-anchor="middle" class="small">Fastify, access scope,</text><text x="470" y="101" text-anchor="middle" class="small">transactions</text>
+  <rect class="box" x="595" y="60" width="100" height="46" rx="6"/><text x="645" y="88" text-anchor="middle">PostgreSQL</text>
+  <rect class="soft" x="595" y="130" width="100" height="46" rx="6"/><text x="645" y="150" text-anchor="middle">Claude API</text><text x="645" y="165" text-anchor="middle" class="small">placeholders only</text>
+  <rect class="box" x="190" y="195" width="150" height="56" rx="6"/><text x="265" y="217" text-anchor="middle">packages/contracts</text><text x="265" y="233" text-anchor="middle" class="small">zod: every request, response</text>
+  <rect class="box" x="395" y="195" width="150" height="56" rx="6"/><text x="470" y="217" text-anchor="middle">packages/domain</text><text x="470" y="233" text-anchor="middle" class="small">pure rules, same on both sides</text>
+  <path class="line" d="M135 43 188 70"/><path class="line" d="M135 123 188 96"/>
+  <path class="line" d="M340 83 393 83"/><text x="366" y="74" text-anchor="middle" class="small">/api/*</text>
+  <path class="line" d="M545 83 593 83"/><path class="line" d="M545 105 593 145"/>
+  <path class="line" d="M265 116 265 193"/><path class="line" d="M300 116 430 193"/><path class="line" d="M440 116 310 193"/><path class="line" d="M470 116 470 193"/>
+  <path class="line" d="M340 223 393 223"/>
+</svg>
+<figcaption>Solid boxes are ours. The web app may not import the database: Biome fails CI if it tries.</figcaption>
+</figure>
+<table>
+  <tr><th style="width:36%">Decision</th><th>Why</th></tr>
+  <tr><td>Rules live in a pure <code>domain</code> package (D1, D9)</td><td>The button greyed out on the phone and the rejection on the server run the same code, so they cannot disagree.</td></tr>
+  <tr><td>One <code>contracts</code> package (D16)</td><td>Fastify validates and serialises through the same zod schemas the web parses with. A field not in the contract, such as a phone number, cannot leak. OpenAPI docs are generated from them.</td></tr>
+  <tr><td>One access-control module (D6, D17)</td><td>Every loan, officer and batch query takes its filter from <code>scope.ts</code>. Out of scope returns 404, so IDs cannot be probed.</td></tr>
+  <tr><td>Next.js proxies <code>/api/*</code> (D3)</td><td>The browser only talks to one origin, so cookies stay first-party and the API needs no CORS.</td></tr>
+  <tr><td>Boundaries enforced in CI (D18)</td><td>A dependency rule that is only a convention erodes. Lint fails on a wrong import, and business rules must keep 90% test coverage.</td></tr>
+</table>
+
+<h2>4. Data model</h2>
+<p>PostgreSQL through Prisma. Three properties do most of the work: facts are appended and never edited, each day's list is a snapshot, and uniqueness is enforced by the database.</p>
+<table>
+  <tr><th style="width:30%">Table</th><th>Holds</th><th style="width:36%">Why it matters</th></tr>
+  <tr><td><code>Borrower</code>, <code>Loan</code></td><td>Who owes, in which branch, EMI, contact paused</td><td>The borrower's preferred language drives reminders</td></tr>
+  <tr><td><code>ImportBatch</code>, <code>LoanSnapshot</code></td><td>Each upload; each loan's outstanding and days overdue per day</td><td>Roll rate needs daily history (D10)</td></tr>
+  <tr><td><code>Assignment</code></td><td>Which officer, from when to when</td><td>A partial unique index allows one current officer per loan</td></tr>
+  <tr><td><code>PriorityScore</code></td><td>Probability, rupees at stake, reasons, model version, per day</td><td>The back-test judges the scores actually given</td></tr>
+  <tr><td><code>ContactAttempt</code></td><td>Channel, device and corrected time, GPS, allowed, block reason; client UUID unique</td><td>The RBI record. A retry cannot store twice</td></tr>
+  <tr><td><code>Outcome</code>, <code>PromiseToPay</code></td><td>Paid, promise, not reachable, dispute; promise date, amount, status</td><td>A partial unique index allows one pending promise per loan</td></tr>
+  <tr><td><code>Payment</code></td><td>Detected from each import (A8)</td><td>Decides whether a promise was kept (A7)</td></tr>
+  <tr><td><code>ListOverride</code></td><td>A manager's move, with its reason</td><td>Shown to the officer and audited</td></tr>
+  <tr><td><code>Reminder</code>, <code>ReminderDraft</code>, <code>MessageLog</code></td><td>Scheduled reminders, officer drafts, what was "sent"</td><td>Each draft records why any AI wording was rejected</td></tr>
+  <tr><td><code>BacktestRun</code>, <code>AuditLog</code></td><td>Finished weekly results; sensitive actions</td><td>A finished week never changes (D26)</td></tr>
+</table>
+
+<h2>5. Main flows</h2>
+<h3>Morning import</h3>
+<ol>
+  <li>A manager uploads the CSV and sees what it will change, with errors listed by Excel row number. Nothing is written yet.</li>
+  <li>On commit, a transaction claims the batch, so a double submit does nothing, and plans again from the current database.</li>
+  <li>Loans, snapshots, payments, assignments and scores are written, and open promises are resolved as kept, partial or broken.</li>
+</ol>
+<h3>An officer's day</h3>
+<ol>
+  <li>The list opens at once from the phone's copy and refreshes behind it (D27). The whole day is one payload, so every loan opens with no signal (D22).</li>
+  <li>Tap a loan, tap what happened, confirm: three taps. A promise's date chip is itself the confirmation.</li>
+  <li>The event is saved on the phone first and sent when it can be.</li>
+</ol>
+<h3>Promises and reminders</h3>
+<p>A promise schedules reminders for 10 am the day before and 9 am on the day to the borrower, and 8:30 am to the officer (A22). The next import decides whether it was kept. A dispute stops all contact until a manager clears it (A12).</p>
+<h3>Managers</h3>
+<p>Managers open the dashboard rather than waiting for Friday. They can reorder a list or reassign a loan, each with a reason the officer sees and an audit entry, and they can inspect any attempt in the activity log.</p>
+
+<h2>6. How the AI works</h2>
+<h3>Priority score: a model, on purpose</h3>
+<p>A lender must be able to explain why one borrower was chased before another, so scoring uses a logistic regression, not an LLM (D8). It is deterministic, its coefficients are versioned in the repo, and it runs in the same TypeScript as everything else.</p>
+<ul>
+  <li><strong>Inputs:</strong> days overdue, outstanding, days since last payment, earlier lateness, broken and kept promises, open promise, days since last contact, times not reachable. All are point-in-time, and tests enforce that nothing after the scored day leaks in.</li>
+  <li><strong>Ranking (A18):</strong> loans at 1–30 days come first, because those can still be stopped from rolling. Within each group, most rupees at stake: probability × outstanding × 0.20 × 0.35, using the brief's NPA and loss rates (A10).</li>
+  <li><strong>Reasons:</strong> each is a real term of the model's sum, measured against a clean loan, so a reason is never shown for a fact that is not there. A loan with little history says so.</li>
+</ul>
+<p>The first version mixed all stages and lost to a one-line rule, 59% to 88%. That back-test is why the stage ordering exists (D21). Results on a simulated world the model never saw (share of the rupees that rolled, inside each officer's first loans of the day):</p>
+<table>
+  <tr><th>First…</th><th>Model</th><th>Oldest first, 1–30 only</th><th>Oldest first (today's practice)</th></tr>
+  <tr><td>5 loans</td><td><strong>68.3%</strong></td><td>59.2%</td><td>0%</td></tr>
+  <tr><td>10 loans</td><td><strong>91.8%</strong></td><td>88.5%</td><td>16.7%</td></tr>
+</table>
+<div class="note"><strong>Limits, stated plainly.</strong> The data is synthetic (A9), so these figures show the method works on a simulation, not what it will do for this lender. It must be retrained on real history before go-live. Most of the gain comes from the stage rule; the model's own lead over that rule is real but modest. In the weekly back-test, the simple rule narrowly won one of the last eight weeks (84% vs 83%). The back-test shows the model targets the right loans. It does not prove a call would save them, which is why roll rate stays on the dashboard.</div>
+<p><strong>When the score is wrong:</strong> it is advisory and blocks nothing, the maths is on the loan screen, managers can reorder, and the dashboard's weekly back-test compares scores given with what those loans did thirty days later.</p>
+<h3>Reminder drafts: an LLM, fenced in</h3>
+<ol>
+  <li>On the officer's tap, the server picks the approved template that fits the loan's latest promise.</li>
+  <li>Claude receives only that template with its placeholders (such as <code>{borrowerName}</code>), the language and the situation. No name, number or note ever leaves, so there is no personal data to leak (DPDP) and no outside text to inject.</li>
+  <li>The reply must pass every check: word filter in English and Hindi, exactly the same placeholders, no invented numbers or links, length and language. Any failure, outage or missing key gives the officer the approved wording instead, labelled as such.</li>
+  <li>The officer reads it and taps Send. They cannot edit it, so what passed the checks is what goes out. Sending obeys the contact window and the daily limit, and every try is recorded (A27).</li>
+</ol>
+<p>One AI call per loan, language and day keeps the cost bounded. The model defaults to Claude Opus 5.5 and is set by an environment variable.</p>
+<div class="note"><strong>Not yet exercised against the live API.</strong> No key was available during the build, so the adapter is tested against a stand-in client. The first deployment with a key must confirm drafts arrive labelled as AI; <code>reminder_draft.fallbackReason</code> records why any did not.</div>
+
+<h2>7. The hard parts</h2>
+<h3>Offline logging with sync</h3>
+<ul>
+  <li><strong>Append-only events with client UUIDs (D7).</strong> Nothing is edited, so nothing needs merging. A retry stores nothing twice, including retries arriving at the same moment, which the database settles.</li>
+  <li><strong>The screen tells the truth.</strong> The list is the last server copy plus unsent events, so logged work shows at once and survives a reload. Anything the server later refuses stays visible with the reason. One invalid entry cannot jam the rest.</li>
+  <li><strong>The app itself is cached</strong> by a service worker, network-first with a 3-second timeout, because weak signal hangs rather than fails.</li>
+  <li><strong>Personal data on the phone</strong> stays in IndexedDB, scoped to the user, cleared on sign-out and expired after 7 days. Unsent work survives sign-out, because it is the only copy.</li>
+</ul>
+<h3>The 8 am–7 pm contact block</h3>
+<ul>
+  <li><strong>Judged by when it happened (D9).</strong> A call at 18:50 synced at 21:00 is legitimate.</li>
+  <li><strong>A wrong phone clock can't cheat (D20).</strong> Each batch states what the phone's clock reads now, and the server corrects by the gap. Setting a phone back shifts both readings equally, so it changes nothing.</li>
+  <li><strong>Blocked, explained, recorded.</strong> A blocked tap tells the officer why and when contact opens, and is stored with its reason. An outcome can only stand on an allowed attempt.</li>
+  <li><strong>The server has the final say,</strong> along with a limit of 3 contacts per loan per day (A5).</li>
+</ul>
+
+<h2>8. Security and compliance</h2>
+<ul>
+  <li><strong>Access:</strong> scoped per role in one module and tested per role. Sign-up is closed, and sign-in is rate-limited per IP in Postgres (D29).</li>
+  <li><strong>DPDP:</strong> managers see masked phone numbers, and revealing one is audited. Officers get full numbers only for loans they hold (D19), because calls often work when data does not. Uncommitted import previews are deleted after 24 hours (A24), and the AI sees no personal data.</li>
+  <li><strong>Web:</strong> an origin check on every change, every input validated by contract, and a Content-Security-Policy with nothing loading from elsewhere. It allows inline scripts: nonces would mean rendering every page per request, giving up the static shell that offline opening relies on (D30).</li>
+  <li><strong>Repository:</strong> no secrets and no real personal data. Borrowers are placeholders with fake numbers (A14).</li>
+</ul>
+
+<h2>9. UI and design decisions</h2>
+<div class="shots">
+  <figure><img src="../screenshots/officer-today.png" alt="Officer's list"><figcaption>The list: why each loan is there, with Call and Map one tap away.</figcaption></figure>
+  <figure><img src="../screenshots/officer-loan.png" alt="Loan screen"><figcaption>The loan: contact first, then four large outcome buttons within thumb reach.</figcaption></figure>
+  <figure><img src="../screenshots/officer-reminder.png" alt="Reminder sheet"><figcaption>The reminder: read it, choose a language, then decide.</figcaption></figure>
+</div>
+<ul style="margin-top:8pt">
+  <li><strong>One hand.</strong> 48 px targets, bottom sheets instead of new pages, and a date chip that doubles as confirmation.</li>
+  <li><strong>Restraint.</strong> One accent colour, with status colours kept for meaning. Each colour also has words, so nothing relies on colour alone.</li>
+  <li><strong>Low-end phones.</strong> System fonts instead of web fonts saved 415 KB, more than all our code (D23). Charts are small hand-written SVGs with a table view (D25).</li>
+  <li><strong>Hindi first for officers (A16),</strong> with English one tap away, using a small typed dictionary that checks every key exists in both languages (D15).</li>
+  <li><strong>Reviewers open apps at night,</strong> when the rules block all contact. A clearly bannered demo clock, present only in demo mode, handles that (D13).</li>
+</ul>
+<figure class="wide"><img src="../screenshots/manager-dashboard.png" alt="Manager dashboard"><figcaption>The head's question, answered: roll rate by branch against the 16% target, without waiting for Friday.</figcaption></figure>
+
+<h2>10. Testing</h2>
+<table>
+  <tr><th style="width:30%">Layer</th><th style="width:12%">Count</th><th>What it proves</th></tr>
+  <tr><td>Business rules</td><td>133</td><td>Boundaries such as 18:59:59 vs 19:00:00 and the 90% promise line; threats in two languages. Coverage of at least 90% is enforced.</td></tr>
+  <tr><td>API integration</td><td>114</td><td>Access per role, CSRF, contracts, import re-uploads, sync retries at the same moment, an AI that misbehaves.</td></tr>
+  <tr><td>Database and seed</td><td>9</td><td>Partial unique indexes; the brief's sample rows exactly; roll rate near 22%.</td></tr>
+  <tr><td>Web units</td><td>9</td><td>The offline overlay.</td></tr>
+  <tr><td>Browser (phone and desktop)</td><td>74</td><td>Real offline work reaching a manager, three-tap logging, the 7 pm block, and WCAG AA on every screen in both themes.</td></tr>
+</table>
+<p>CI runs lint, strict types, all of the above and a production build on every push. Lighthouse measured accessibility at 100, and performance at 99 on sign-in and 83 on the officer's list on a slow first visit, after which it opens from the phone.</p>
+
+<h2>11. What was cut, and what's next</h2>
+<table>
+  <tr><th style="width:42%">Cut</th><th>Why</th></tr>
+  <tr><td>Sending the outbox while the app is fully closed</td><td>It would duplicate the send logic in the service worker, and officers keep the app open. Everything sends the next time it opens (A13).</td></tr>
+  <tr><td>Drafting a reminder with no signal</td><td>The server has to check every draft. Calls, visits and outcomes all work offline.</td></tr>
+  <tr><td>Cash receipts, legal notices, auto-dialling</td><td>Out of scope in the brief.</td></tr>
+</table>
+<h3>Known limits</h3>
+<ul>
+  <li>Not yet tried on a real low-end Android phone, and the Hindi needs a native speaker's read. Server error messages are in English only.</li>
+  <li>First load is 245 KB of JavaScript against a 200 KB target. Replacing the storage library would save about 33 KB at the cost of hand-written code in the riskiest part of the app.</li>
+  <li>Two moderate advisories in the API docs page's dependencies wait on a patched release clearing our supply-chain age rule.</li>
+</ul>
+<h3>Next, within the brief's eight weeks</h3>
+<ol>
+  <li>Retrain the model on the lender's real repayment history, and recheck against the back-test.</li>
+  <li>Pilot with one branch, measuring roll rate and same-day logging against the targets.</li>
+  <li>Connect a real SMS or WhatsApp gateway, which changes one function (D24), and have compliance approve the templates (A25).</li>
+  <li>Replace the CSV upload with a direct feed from the loan system once the pilot proves the workflow.</li>
+</ol>
+
+<h2>Appendix: every assumption</h2>
+<table>
+  <tr><th style="width:8%">#</th><th>Assumption</th></tr>
+<!-- ASSUMPTIONS -->
+</table>
+
+</body>
+</html>

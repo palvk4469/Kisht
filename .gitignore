@@ -21,3 +21,4 @@ packages/db/src/generated/
 .vscode/*
 !.vscode/extensions.json
 .idea/
+docs/tdd/.built.html

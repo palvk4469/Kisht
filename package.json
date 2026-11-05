@@ -13,6 +13,7 @@
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
+    "tdd": "node scripts/build-tdd.mjs",
     "db:up": "docker compose up -d --wait postgres",
     "db:migrate": "pnpm --filter @kisht/db migrate:deploy",
     "db:migrate:dev": "pnpm --filter @kisht/db migrate",

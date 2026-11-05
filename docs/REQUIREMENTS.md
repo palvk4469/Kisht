@@ -64,17 +64,17 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 
 ## Submission rules
 
-| Requirement                                                                                                | Status         | Where / note                                                          |
-| ---------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------- |
-| Frontend, backend, database, sign-in                                                                       | Done           |                                                                       |
-| Tests for the most important logic                                                                         | Done (ongoing) | Unit, API and browser tests in CI; domain coverage ≥ 90% enforced     |
-| No secrets in the repo, validated inputs, access control                                                   | Done           | Contracts validate every input; `scope.ts`; CI-only throwaway values  |
-| No dead buttons                                                                                            | Ongoing        | Only built screens are linked                                         |
-| Every assumption labelled                                                                                  | Ongoing        | `docs/ASSUMPTIONS.md`, numbered and referenced from the code and docs |
-| Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                            |
-| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Day 7          | Skeleton in `docs/TDD.md`; architecture written                       |
-| deployment.md: local run, deployment, env var names, demo logins                                           | Day 7          |                                                                       |
-| Live deployment                                                                                            | Day 7          | Vercel + Render + Neon                                                |
+| Requirement                                                                                                | Status         | Where / note                                                                |
+| ---------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------------- |
+| Frontend, backend, database, sign-in                                                                       | Done           |                                                                             |
+| Tests for the most important logic                                                                         | Done (ongoing) | Unit, API and browser tests in CI; domain coverage ≥ 90% enforced           |
+| No secrets in the repo, validated inputs, access control                                                   | Done           | Contracts validate every input; `scope.ts`; CI-only throwaway values        |
+| No dead buttons                                                                                            | Ongoing        | Only built screens are linked                                               |
+| Every assumption labelled                                                                                  | Ongoing        | `docs/ASSUMPTIONS.md`, numbered and referenced from the code and docs       |
+| Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                                  |
+| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Partial        | `docs/TDD.pdf`, built by `pnpm tdd`; the live link goes in after deployment |
+| deployment.md: local run, deployment, env var names, demo logins                                           | Partial        | `deployment.md`; the live link goes in after deployment                     |
+| Live deployment                                                                                            | Day 7          | Vercel + Render + Neon                                                      |
 
 ## Cut
 
