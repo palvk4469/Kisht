@@ -18,7 +18,10 @@ const app = await buildApp({
     trustedProxyHops: env.TRUSTED_PROXY_HOPS,
   },
   drafter: env.ANTHROPIC_API_KEY
-    ? createClaudeDrafter(new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }), env.AI_DRAFT_MODEL)
+    ? createClaudeDrafter(
+        new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }),
+        env.AI_DRAFT_MODEL || undefined,
+      )
     : null,
   logger: true,
 });

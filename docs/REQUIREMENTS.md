@@ -74,7 +74,7 @@ Status: **Done** · **Partial** (what is missing is stated) · **Day N** (planne
 | Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                                  |
 | TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Partial        | `docs/TDD.pdf`, built by `pnpm tdd`; the live link goes in after deployment |
 | deployment.md: local run, deployment, env var names, demo logins                                           | Partial        | `deployment.md`; the live link goes in after deployment                     |
-| Live deployment                                                                                            | Day 7          | Vercel + Render + Neon                                                      |
+| Live deployment                                                                                            | Partial        | One Azure VM behind Caddy (D32); see `deployment.md`                        |
 
 ## Cut
 

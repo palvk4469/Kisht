@@ -1,0 +1,8 @@
+**/node_modules
+**/.next
+.git
+.env
+docs
+e2e
+test-results
+playwright-report

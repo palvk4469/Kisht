@@ -46,67 +46,96 @@ Run the checks with `pnpm lint`, `pnpm typecheck` and `pnpm test`. Browser tests
 
 ## How it's deployed
 
-| Part          | Host                 | Why                                                                           |
-| ------------- | -------------------- | ----------------------------------------------------------------------------- |
-| Web (Next.js) | Vercel               | Serves the static shell and proxies `/api/*` to the API (D3)                  |
-| API (Fastify) | Render web service   | A long-running process, because the reminder dispatcher runs on a timer (D24) |
-| Database      | Neon (PostgreSQL 16) | Managed Postgres                                                              |
+One small Azure VM (2 vCPU, 836 MB RAM, Ubuntu 24.04) runs Kisht with Docker Compose, beside another project (D32). That project's Caddy holds ports 80 and 443 and provides HTTPS. A DuckDNS name points at the VM.
 
-### Database
+```text
+Internet -> Caddy (HTTPS) -> web (Next.js) -> api (Fastify) -> db (PostgreSQL 16)
+```
 
-1. Create a Neon project and copy its connection string.
-2. From your machine, with `DATABASE_URL` set to it and `DEMO_PASSWORD` set, run `pnpm db:migrate` and then `pnpm db:seed`.
+Only `web` joins Caddy's Docker network. The API and database have no public route. Memory is capped per container (`deploy/docker-compose.yml`).
 
-### API on Render
+The VM is too small to build images or generate the demo data, so both happen on a developer machine.
 
-- **Build command:** `pnpm install --frozen-lockfile --prod=false`. Dev dependencies are needed because the service runs on `tsx`, and `prisma generate` runs on install.
-- **Start command:** `pnpm --filter @kisht/api start`
-- **Health check path:** `/health`
+### 1. Build and ship the images
 
-### Web on Vercel
+```bash
+docker build -f deploy/Dockerfile --target api -t kisht-api:latest .
+docker build -f deploy/Dockerfile --target web --build-arg NEXT_PUBLIC_DEMO_PASSWORD=<demo password> -t kisht-web:latest .
+docker save kisht-api:latest kisht-web:latest | gzip -1 | ssh <server> 'gunzip | docker load'
+```
 
-- **Root directory:** `apps/web`, with "include files outside the root directory" on, because it uses the shared packages.
-- **Framework preset:** Next.js. The defaults for build and output work.
+### 2. Configure and start
+
+On the server, in `~/kisht`, place `docker-compose.yml` and a `.env` holding the variables listed below (`chmod 600`). Then:
+
+```bash
+docker compose up -d db
+docker compose run --rm -T api pnpm --filter @kisht/db migrate:deploy
+docker compose up -d
+```
+
+### 3. Load the demo data
+
+Seed the local database, then copy it across. Seeded dates are relative to the day of the seed (A15), so repeat this shortly before a review.
+
+```bash
+pnpm db:seed
+docker exec kisht-postgres pg_dump -U kisht -d kisht --data-only --exclude-table=_prisma_migrations -Fc \
+  | ssh <server> 'cd ~/kisht && docker compose exec -T db pg_restore -U kisht -d kisht --data-only --disable-triggers'
+```
+
+### 4. Route the domain
+
+Add this block to the Caddyfile that serves ports 80 and 443, then reload Caddy, which does not drop connections:
+
+```text
+<your-name>.duckdns.org {
+	encode zstd gzip
+	reverse_proxy kisht-web:3000
+}
+```
+
+```bash
+docker exec <caddy container> caddy reload --config /etc/caddy/Caddyfile
+```
 
 ### After deploying
 
-1. Set `BETTER_AUTH_URL` on the API to the final Vercel URL.
-2. Set `API_URL` on the web app to the Render URL, and redeploy.
-3. Sign in and log an outcome.
-4. Set the sign-in limit's proxy count. Enter a wrong password once, then read the newest `key` in the `rateLimit` table. It should hold your own address. If it holds a proxy's, raise `TRUSTED_PROXY_HOPS` by one and try again. Vercel to Render is expected to need 2 or 3. Then repeat the wrong password with a made-up `x-forwarded-for` header, and confirm the key still shows your real address.
-5. Open a loan and tap Send reminder. If a key is set, the draft should be labelled as an AI draft. If not, check `fallbackReason` in the `reminder_draft` table.
+1. Sign in and log an outcome.
+2. Enter a wrong password with a made-up `x-forwarded-for` header, then read the newest `key` in the `rateLimit` table. It should hold your real address, because Caddy replaces that header. Caddy, then Next.js, leaves one address, so `TRUSTED_PROXY_HOPS` stays at its default of 1.
+3. Open a loan and tap Send reminder. With a key set, the draft should be labelled as an AI draft. If not, check `fallbackReason` in the `reminder_draft` table.
 
 ## Environment variables
 
 Names only. Values are never committed; `.env.example` shows the format for local use.
 
-**API (Render)**
+**Server (`~/kisht/.env`)**
 
-| Name                   | Required | Purpose                                                                              |
-| ---------------------- | -------- | ------------------------------------------------------------------------------------ |
-| `DATABASE_URL`         | Yes      | Postgres connection                                                                  |
-| `BETTER_AUTH_SECRET`   | Yes      | Signs sessions, 32 characters or more                                                |
-| `BETTER_AUTH_URL`      | Yes      | Public web URL; also the origin check                                                |
-| `NODE_ENV`             | Yes      | `production` turns on the sign-in rate limit                                         |
-| `TRUSTED_PROXY_HOPS`   | No       | Proxies in front of the API, for the sign-in limit; default 1. See "After deploying" |
-| `DEMO_MODE`            | No       | Demo clock, sample export and API docs                                               |
-| `ANTHROPIC_API_KEY`    | No       | AI drafts; without it officers get the approved templates                            |
-| `AI_DRAFT_MODEL`       | No       | Overrides the default model                                                          |
-| `API_HOST`, `API_PORT` | No       | Default `0.0.0.0` and `4000`                                                         |
+| Name                 | Required | Purpose                                                   |
+| -------------------- | -------- | --------------------------------------------------------- |
+| `POSTGRES_PASSWORD`  | Yes      | Database password                                         |
+| `BETTER_AUTH_SECRET` | Yes      | Signs sessions, 32 characters or more                     |
+| `BETTER_AUTH_URL`    | Yes      | Public HTTPS address; also the origin check               |
+| `DEMO_PASSWORD`      | Yes      | Password of the seeded accounts                           |
+| `CADDY_NETWORK`      | Yes      | Docker network of the Caddy that holds 80 and 443         |
+| `ANTHROPIC_API_KEY`  | No       | AI drafts; without it officers get the approved templates |
+| `AI_DRAFT_MODEL`     | No       | Overrides the default model                               |
 
-**Web (Vercel)**
+**Set by the compose file:** `DATABASE_URL`, `DEMO_MODE`, `NODE_OPTIONS`, `TZ`.
 
-| Name                        | Required | Purpose                                             |
-| --------------------------- | -------- | --------------------------------------------------- |
-| `API_URL`                   | Yes      | Where `/api/*` is proxied to                        |
-| `NEXT_PUBLIC_DEMO_MODE`     | No       | One-tap logins and the demo clock bar               |
-| `NEXT_PUBLIC_DEMO_PASSWORD` | No       | Password for the one-tap logins                     |
-| `NEXT_PUBLIC_BUILD_ID`      | No       | Names the offline cache; defaults to the build time |
+**Build arguments for the web image**
 
-**Seed and tests only**
+| Name                        | Purpose                                                       |
+| --------------------------- | ------------------------------------------------------------- |
+| `API_URL`                   | Where `/api/*` is proxied to; defaults to the compose service |
+| `NEXT_PUBLIC_DEMO_MODE`     | One-tap logins and the demo clock bar                         |
+| `NEXT_PUBLIC_DEMO_PASSWORD` | Password for the one-tap logins                               |
 
-| Name                | Purpose                             |
-| ------------------- | ----------------------------------- |
-| `DEMO_PASSWORD`     | Password given to seeded accounts   |
-| `TEST_DATABASE_URL` | Database for the test suite         |
-| `POSTGRES_PORT`     | Host port for local Docker Postgres |
+**API, optional**
+
+| Name                   | Purpose                                                       |
+| ---------------------- | ------------------------------------------------------------- |
+| `TRUSTED_PROXY_HOPS`   | Proxies in front of the API, for the sign-in limit; default 1 |
+| `API_HOST`, `API_PORT` | Default `0.0.0.0` and `4000`                                  |
+
+**Local and tests only:** `TEST_DATABASE_URL`, `POSTGRES_PORT`.

@@ -16,6 +16,13 @@ loadEnvConfig(
 const apiUrl = process.env.API_URL ?? "http://localhost:4000";
 
 const nextConfig: NextConfig = {
+  // Docker only (deploy/Dockerfile): a small self-contained server for a small machine.
+  ...(process.env.NEXT_OUTPUT === "standalone"
+    ? {
+        output: "standalone" as const,
+        outputFileTracingRoot: fileURLToPath(new URL("../..", import.meta.url)),
+      }
+    : {}),
   transpilePackages: ["@kisht/domain", "@kisht/contracts"],
   // Inlined explicitly so values from the root .env reach the client bundle.
   env: {
