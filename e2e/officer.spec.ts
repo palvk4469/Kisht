@@ -62,6 +62,20 @@ test("a reminder is drafted on one tap and sent only on another", async ({ page 
   await expect(page.getByRole("status").filter({ hasText: "रिमाइंडर भेजा गया" })).toBeVisible();
 });
 
+test("a draft says plainly whether it came from the AI", async ({ page }) => {
+  await signInAs(page, "imran.qureshi@kisht.example");
+  await page.route("**/reminder-draft", (route) =>
+    route.fulfill({
+      json: { id: "draft-1", lang: "hi", source: "AI", body: "नमस्ते, यह AI का मसौदा है।" },
+    }),
+  );
+  await page.getByTestId("loan-card").first().click();
+  await page.getByRole("button", { name: "रिमाइंडर भेजें" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText("AI मसौदा, जाँचा हुआ")).toBeVisible();
+  await expect(sheet.getByText("स्वीकृत शब्द", { exact: true })).toHaveCount(0);
+});
+
 test("after 7 pm a reminder can't be drafted, and the try is recorded", async ({ page }) => {
   await signInAs(page, "sunita.yadav@kisht.example", "20:00");
   await page.getByTestId("loan-card").first().click();

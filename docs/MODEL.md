@@ -65,6 +65,7 @@ Single weeks range from 73% to 86%, and in one of those eight weeks the simple r
 
 ## Limits
 
+- **What "rolled" means.** 31+ days overdue on day D+30, which is the brief's 31–60: days overdue rise at most one a day, so a loan at 30 or under on day D can't pass 60 by then. The demo history confirms it: all 2,869 rolled loans are in 31–60.
 - **The data is synthetic (A9).** These numbers show the method works on a simulation built to match the brief (roll rate about 22%). They are not a forecast for this lender. It must be retrained on real repayment history before go-live.
 - **Targeting, not causation.** The back-test shows the model puts rolling loans first. It does not prove a call would have saved them. Only live results can show that, which is why roll rate stays on the manager's dashboard.
 - **Most of the gain is the stage rule.** The first version mixed 31+ loans into the ranking and lost to a one-line rule (oldest first, 1–30 only): 59% vs 88%. Putting 1–30 loans first fixed that. The model's own lead over that rule is real but modest.

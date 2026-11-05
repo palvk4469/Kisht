@@ -139,6 +139,20 @@ describe("drafting", () => {
     ["a threat", async () => `${REWORDED} Or the police will come.`, "CHECK_FAILED:BLOCKED_WORD"],
     ["an invented amount", async () => `${REWORDED} Add ₹500.`, "CHECK_FAILED:INVENTED_NUMBER"],
     ["no answer", async () => null, "AI_NO_ANSWER"],
+    ["a link", async () => `${REWORDED} Pay at www.pay-now.example.`, "CHECK_FAILED:LINK"],
+    [
+      "a changed placeholder",
+      async () => REWORDED.replace("{amount}", "{total}"),
+      "CHECK_FAILED:PLACEHOLDERS",
+    ],
+    ["the wrong language", async () => `${REWORDED} धन्यवाद`, "CHECK_FAILED:WRONG_LANGUAGE"],
+    [
+      "a timeout",
+      async () => {
+        throw new DOMException("too slow", "TimeoutError");
+      },
+      "AI_ERROR:TimeoutError",
+    ],
     [
       "an outage",
       async () => {

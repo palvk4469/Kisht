@@ -64,17 +64,17 @@ Status: **Done** · **Partial** (what is missing is stated) · **Cut**.
 
 ## Submission rules
 
-| Requirement                                                                                                | Status         | Where / note                                                          |
-| ---------------------------------------------------------------------------------------------------------- | -------------- | --------------------------------------------------------------------- |
-| Frontend, backend, database, sign-in                                                                       | Done           |                                                                       |
-| Tests for the most important logic                                                                         | Done (ongoing) | Unit, API and browser tests in CI; domain coverage ≥ 90% enforced     |
-| No secrets in the repo, validated inputs, access control                                                   | Done           | Contracts validate every input; `scope.ts`; CI-only throwaway values  |
-| No dead buttons                                                                                            | Ongoing        | Only built screens are linked                                         |
-| Every assumption labelled                                                                                  | Ongoing        | `docs/ASSUMPTIONS.md`, numbered and referenced from the code and docs |
-| Keep the commit history                                                                                    | Ongoing        | Small conventional commits                                            |
-| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Done           | `docs/TDD.pdf`, built by `pnpm tdd`                                   |
-| deployment.md: local run, deployment, env var names, demo logins                                           | Done           | `deployment.md`                                                       |
-| Live deployment                                                                                            | Done           | https://kist-collection.duckdns.org on one VM behind Caddy (D32)      |
+| Requirement                                                                                                | Status | Where / note                                                          |
+| ---------------------------------------------------------------------------------------------------------- | ------ | --------------------------------------------------------------------- |
+| Frontend, backend, database, sign-in                                                                       | Done   |                                                                       |
+| Tests for the most important logic                                                                         | Done   | Unit, API and browser tests in CI; domain coverage ≥ 90% enforced     |
+| No secrets in the repo, validated inputs, access control                                                   | Done   | Contracts validate every input; `scope.ts`; CI-only throwaway values  |
+| No dead buttons                                                                                            | Done   | Only built screens are linked                                         |
+| Every assumption labelled                                                                                  | Done   | `docs/ASSUMPTIONS.md`, numbered and referenced from the code and docs |
+| Keep the commit history                                                                                    | Done   | Small conventional commits                                            |
+| TDD: GitHub URL and live link at the top; architecture; data model; flows; AI; UI decisions; cuts and next | Done   | `docs/TDD.pdf`, built by `pnpm tdd`                                   |
+| deployment.md: local run, deployment, env var names, demo logins                                           | Done   | `deployment.md`                                                       |
+| Live deployment                                                                                            | Done   | https://kist-collection.duckdns.org on one VM behind Caddy (D32)      |
 
 ## Cut
 

@@ -18,7 +18,19 @@ The password for every account is `Kisht@Demo2026`. These are seeded test accoun
 
 Contact is blocked outside 8 am to 7 pm IST, as the rules require. If you're testing outside those hours, use the "Demo time" button shown on screen.
 
-## Run locally
+## A short tour for reviewers
+
+About ten minutes on the live app. Each step uses the one-tap logins on the sign-in page.
+
+1. **The head's question.** Sign in as Sanjay Joshi. The dashboard shows roll rate by week against the 16% target, loans about to roll, and broken promises.
+2. **The morning import.** Open Daily import, download today's sample and check it. It has one bad row on purpose: it is reported, and its loan is left alone. Then commit it. To see the safety check, upload a file with only a few rows: the app warns that loans are missing and won't commit until you confirm.
+3. **An officer's day.** Sign in as Rahul Chouhan (Hindi by default; the language button switches to English). Each loan says why it is on the list. Outside 8 am to 7 pm calling is blocked and recorded, so tap "Demo: set the time to 11 am" to continue. Log an outcome: open a loan, tap what happened, confirm.
+4. **No signal.** Turn off your connection, log another outcome and reload: it is still there, marked as not sent. Reconnect and it sends itself.
+5. **A reminder.** On a loan, tap Send reminder and switch language. The label says whether the AI or the approved wording wrote it, and nothing goes out until you tap Send.
+6. **What the manager sees.** Sign back in as Sanjay Joshi and open Activity: every attempt, including blocked ones, with where it happened.
+
+Demo time is shared by everyone using the demo, resets after 30 minutes, and can be cleared with "Back to real time".
+
 
 Requirements: Node 22, pnpm 12, Docker.
 

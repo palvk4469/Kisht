@@ -157,6 +157,16 @@ describe("contact window at the server (RBI 8 am to 7 pm)", () => {
     expect(res.outcomes[0]?.status).toBe("recorded");
   });
 
+  it("blocks a call made at 19:05 and synced the next morning", async () => {
+    const loanId = await makeLoan({ dpd: 10, expectedLoss: 100 });
+    now = ist("2026-11-05T09:00:00");
+    const a = attempt(loanId, ist(`${DAY}T19:05:00`).toISOString());
+    const res = await sync({ attempts: [a] });
+    expect(res.attempts[0]).toMatchObject({ status: "blocked", reason: "OUTSIDE_CONTACT_WINDOW" });
+    const row = await prisma.contactAttempt.findUniqueOrThrow({ where: { clientId: a.clientId } });
+    expect(row).toMatchObject({ allowed: false, blockReason: "OUTSIDE_CONTACT_WINDOW" });
+  });
+
   it("sees through a phone clock set back to look inside the window", async () => {
     const loanId = await makeLoan({ dpd: 10, expectedLoss: 100 });
     now = ist(`${DAY}T21:00:00`);
