@@ -1,5 +1,4 @@
-# Runs beside another project on a small server: memory is capped, the database is
-# private, and only the web app joins the network of the Caddy that holds 80 and 443.
+# Runs on a small server: memory is capped, and only Caddy is reachable from outside.
 name: kisht
 
 services:
@@ -33,10 +32,10 @@ services:
       NODE_OPTIONS: --max-old-space-size=180
       DATABASE_URL: postgresql://kisht:${POSTGRES_PASSWORD:?}@db:5432/kisht
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
-      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?}
+      BETTER_AUTH_URL: https://${DOMAIN:?}
       DEMO_MODE: "true"
       DEMO_PASSWORD: ${DEMO_PASSWORD:?}
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       AI_DRAFT_MODEL: ${AI_DRAFT_MODEL:-}
       TZ: Asia/Kolkata
     healthcheck:
@@ -59,16 +58,22 @@ services:
       - api
     environment:
       NODE_OPTIONS: --max-old-space-size=128
-    networks:
-      default:
-      caddy:
-        aliases:
-          - kisht-web
 
-networks:
   caddy:
-    external: true
-    name: ${CADDY_NETWORK:?}
+    image: caddy:2-alpine
+    restart: unless-stopped
+    mem_limit: 64m
+    depends_on:
+      - web
+    environment:
+      DOMAIN: ${DOMAIN:?}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
 
 volumes:
   pgdata:
+  caddy_data:

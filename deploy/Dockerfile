@@ -1,5 +1,4 @@
-# Images are built on a developer machine and shipped to the server, which is too
-# small to build them. API_URL is baked into the web image by Next's rewrites.
+# Built on the server itself, from a copy of the repo. API_URL is baked into the web image by Next's rewrites.
 FROM node:22-slim AS base
 RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends openssl ca-certificates \
   && rm -rf /var/lib/apt/lists/* && npm install -g pnpm@12.5.1
@@ -8,7 +7,12 @@ COPY . .
 
 # The API runs its TypeScript through tsx, and also carries the migrate and seed tools.
 FROM base AS api
-RUN pnpm install --frozen-lockfile --filter "@kisht/api..." && pnpm --filter @kisht/db generate
+# In one step so the deletions really shrink the image. These arrive as optional peers
+# or through the workspace root; nothing in this image runs them.
+RUN pnpm install --frozen-lockfile --filter "@kisht/api..." && pnpm --filter @kisht/db generate \
+  && cd /repo/node_modules/.pnpm \
+  && rm -rf next@* @next+swc* @biomejs+cli* @electric-sql+pglite* @prisma+studio-core* \
+  && rm -rf /repo/apps/web /repo/e2e "$(pnpm store path)"
 ENV NODE_ENV=production
 WORKDIR /repo/apps/api
 CMD ["node", "--import", "tsx", "src/server.ts"]

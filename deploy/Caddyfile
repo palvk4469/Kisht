@@ -1,0 +1,6 @@
+# HTTPS from Let's Encrypt, then everything goes to the web app, which proxies /api.
+# Caddy replaces any x-forwarded-for a client sends, so addresses can't be faked.
+{$DOMAIN} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}

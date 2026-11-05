@@ -1,12 +1,11 @@
-import type Anthropic from "@anthropic-ai/sdk";
 import type { ReminderDraft, ReminderSendResult } from "@kisht/contracts";
 import { createTestPrisma } from "@kisht/db/testing";
 import { REMINDER_TEMPLATES, toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
-import { createClaudeDrafter } from "../src/modules/reminders/claudeDrafter.js";
 import type { DraftInput, ReminderDrafter } from "../src/modules/reminders/drafts.js";
+import { createOpenRouterDrafter } from "../src/modules/reminders/openRouterDrafter.js";
 import { createFixture, type Fixture, signIn, TEST_ORIGIN, TEST_SECRET } from "./fixtures.js";
 
 const prisma = createTestPrisma();
@@ -316,53 +315,52 @@ describe("sending", () => {
   });
 });
 
-describe("the Claude adapter", () => {
-  const fakeClient = (reply: object, capture: unknown[] = []) =>
-    ({
-      beta: {
-        messages: {
-          create: async (body: unknown) => {
-            capture.push(body);
-            return reply;
-          },
-        },
-      },
-    }) as unknown as Anthropic;
+describe("the OpenRouter adapter", () => {
   const input: DraftInput = { template: "Hello {borrowerName}", lang: "hi", situation: "Overdue." };
-  const textReply = (text: string) => ({
-    stop_reason: "end_turn",
-    content: [{ type: "text", text }],
-  });
+  const reply = (body: object, status = 200) => new Response(JSON.stringify(body), { status });
+  const answer = (content: unknown, finish_reason = "stop") =>
+    reply({ choices: [{ finish_reason, message: { content } }] });
+  const drafterWith = (response: Response, sent: RequestInit[] = []) =>
+    createOpenRouterDrafter({
+      apiKey: "test-key",
+      fetch: async (_url, init) => {
+        sent.push(init as RequestInit);
+        return response;
+      },
+    });
 
-  it("reads the message and asks for the placeholders to be kept", async () => {
-    const capture: { system: string; messages: { content: string }[]; model: string }[] = [];
-    const drafted = createClaudeDrafter(
-      fakeClient(textReply('{"message":"Namaste {borrowerName}"}'), capture),
-    );
+  it("sends the template and returns the trimmed reply", async () => {
+    const sent: RequestInit[] = [];
+    const drafted = drafterWith(answer("  Namaste {borrowerName}\n"), sent);
     expect(await drafted(input)).toBe("Namaste {borrowerName}");
-    expect(capture[0]?.model).toBe("claude-opus-5-5");
-    expect(capture[0]?.messages[0]?.content).toContain("Hindi");
-    expect(capture[0]?.messages[0]?.content).toContain("{borrowerName}");
+    const body = JSON.parse(String(sent[0]?.body));
+    expect(body.model).toBe("openrouter/free");
+    expect(JSON.stringify(body.messages)).toContain("{borrowerName}");
+    expect(JSON.stringify(body.messages)).toContain("Hindi");
+    expect(new Headers(sent[0]?.headers).get("authorization")).toBe("Bearer test-key");
   });
 
-  it("gives up on a refusal or a cut-off reply", async () => {
-    for (const stop_reason of ["refusal", "max_tokens"]) {
-      const drafted = createClaudeDrafter(
-        fakeClient({ stop_reason, content: [{ type: "text", text: '{"message":"x"}' }] }),
-      );
-      expect(await drafted(input)).toBeNull();
-    }
+  it("gives up on a cut-off reply or one with no text", async () => {
+    expect(await drafterWith(answer("Half a mess", "length"))(input)).toBeNull();
+    expect(await drafterWith(answer(null))(input)).toBeNull();
+    expect(await drafterWith(reply({ choices: [] }))(input)).toBeNull();
   });
 
-  it("gives up when there is no usable text", async () => {
-    const empty = createClaudeDrafter(fakeClient({ stop_reason: "end_turn", content: [] }));
-    expect(await empty(input)).toBeNull();
-    const wrongShape = createClaudeDrafter(fakeClient(textReply('{"message":1}')));
-    expect(await wrongShape(input)).toBeNull();
+  it("surfaces an HTTP failure with its status, so the service can record it", async () => {
+    await expect(drafterWith(reply({}, 429))(input)).rejects.toMatchObject({ status: 429 });
   });
 
-  it("lets bad JSON surface, so the service falls back", async () => {
-    const broken = createClaudeDrafter(fakeClient(textReply("not json")));
-    await expect(broken(input)).rejects.toThrow();
+  it("uses the model it's configured with", async () => {
+    const sent: RequestInit[] = [];
+    const drafted = createOpenRouterDrafter({
+      apiKey: "k",
+      model: "some/model",
+      fetch: async (_url, init) => {
+        sent.push(init as RequestInit);
+        return answer("x");
+      },
+    });
+    await drafted(input);
+    expect(JSON.parse(String(sent[0]?.body)).model).toBe("some/model");
   });
 });

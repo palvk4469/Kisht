@@ -61,7 +61,7 @@
   <tr><td>Officer list, call and map, outcomes with GPS</td><td>Ranked list with reasons. An outcome takes three taps. GPS is attached if it arrives within 1.5 seconds and never holds up logging.</td></tr>
   <tr><td>Promise reminders</td><td>To borrower and officer, on approved wording, held outside 8 am–7 pm, stopped once the promise settles or the loan is disputed (A22).</td></tr>
   <tr><td>AI priority score, top three reasons</td><td>A logistic regression. Reasons are real terms of the model's sum (section 6).</td></tr>
-  <tr><td>AI-drafted reminders</td><td>Claude rewords an approved template and never sees borrower details. Sent only on the officer's tap (section 6).</td></tr>
+  <tr><td>AI-drafted reminders</td><td>A model reached through OpenRouter rewords an approved template and never sees borrower details. Sent only on the officer's tap (section 6).</td></tr>
   <tr><td>Manager dashboard, activity log</td><td>Roll rate by branch and week, broken promises, weekly back-test, and every attempt with its visit location checked against the borrower's address.</td></tr>
   <tr><td>Hard parts</td><td>Offline logging with sync, and the contact block (section 7).</td></tr>
   <tr><td>Hindi, minimal design, one hand</td><td>Every screen in Hindi and English, light and dark themes, 48 px targets, WCAG 2.1 AA checked in CI (section 9).</td></tr>
@@ -78,7 +78,7 @@
   <rect class="box" x="190" y="50" width="150" height="66" rx="6"/><text x="265" y="72" text-anchor="middle">apps/web</text><text x="265" y="88" text-anchor="middle" class="small">Next.js PWA, screens,</text><text x="265" y="101" text-anchor="middle" class="small">IndexedDB outbox</text>
   <rect class="box" x="395" y="50" width="150" height="66" rx="6"/><text x="470" y="72" text-anchor="middle">apps/api</text><text x="470" y="88" text-anchor="middle" class="small">Fastify, access scope,</text><text x="470" y="101" text-anchor="middle" class="small">transactions</text>
   <rect class="box" x="595" y="60" width="100" height="46" rx="6"/><text x="645" y="88" text-anchor="middle">PostgreSQL</text>
-  <rect class="soft" x="595" y="130" width="100" height="46" rx="6"/><text x="645" y="150" text-anchor="middle">Claude API</text><text x="645" y="165" text-anchor="middle" class="small">placeholders only</text>
+  <rect class="soft" x="595" y="130" width="100" height="46" rx="6"/><text x="645" y="150" text-anchor="middle">AI model</text><text x="645" y="165" text-anchor="middle" class="small">placeholders only</text>
   <rect class="box" x="190" y="195" width="150" height="56" rx="6"/><text x="265" y="217" text-anchor="middle">packages/contracts</text><text x="265" y="233" text-anchor="middle" class="small">zod: every request, response</text>
   <rect class="box" x="395" y="195" width="150" height="56" rx="6"/><text x="470" y="217" text-anchor="middle">packages/domain</text><text x="470" y="233" text-anchor="middle" class="small">pure rules, same on both sides</text>
   <path class="line" d="M135 43 188 70"/><path class="line" d="M135 123 188 96"/>
@@ -151,12 +151,11 @@
 <h3>Reminder drafts: an LLM, fenced in</h3>
 <ol>
   <li>On the officer's tap, the server picks the approved template that fits the loan's latest promise.</li>
-  <li>Claude receives only that template with its placeholders (such as <code>{borrowerName}</code>), the language and the situation. No name, number or note ever leaves, so there is no personal data to leak (DPDP) and no outside text to inject.</li>
+  <li>The model receives only that template with its placeholders (such as <code>{borrowerName}</code>), the language and the situation. No name, number or note ever leaves, so there is no personal data to leak (DPDP) and no outside text to inject.</li>
   <li>The reply must pass every check: word filter in English and Hindi, exactly the same placeholders, no invented numbers or links, length and language. Any failure, outage or missing key gives the officer the approved wording instead, labelled as such.</li>
   <li>The officer reads it and taps Send. They cannot edit it, so what passed the checks is what goes out. Sending obeys the contact window and the daily limit, and every try is recorded (A27).</li>
 </ol>
-<p>One AI call per loan, language and day keeps the cost bounded. The model defaults to Claude Opus 5.5 and is set by an environment variable.</p>
-<div class="note"><strong>Not yet exercised against the live API.</strong> No key was available during the build, so the adapter is tested against a stand-in client. The first deployment with a key must confirm drafts arrive labelled as AI; <code>reminder_draft.fallbackReason</code> records why any did not.</div>
+<p>The call goes through OpenRouter, so the model is an environment variable, defaulting to its free router. Because no personal data is sent, a free model that keeps prompts is acceptable. One AI call per loan, language and day keeps usage bounded, and a slow or rate-limited model only means the officer gets the approved wording.</p>
 
 <h2>7. The hard parts</h2>
 <h3>Offline logging with sync</h3>

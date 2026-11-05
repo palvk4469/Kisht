@@ -132,7 +132,7 @@ sequenceDiagram
 sequenceDiagram
   participant O as Officer
   participant A as API
-  participant C as Claude
+  participant C as AI model (OpenRouter)
   participant D as Postgres
 
   O->>A: Tap: draft a reminder for this loan

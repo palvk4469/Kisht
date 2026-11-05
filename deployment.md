@@ -46,27 +46,29 @@ Run the checks with `pnpm lint`, `pnpm typecheck` and `pnpm test`. Browser tests
 
 ## How it's deployed
 
-One small Azure VM (2 vCPU, 836 MB RAM, Ubuntu 24.04) runs Kisht with Docker Compose, beside another project (D32). That project's Caddy holds ports 80 and 443 and provides HTTPS. A DuckDNS name points at the VM.
+One small Azure VM (2 vCPU, 836 MB RAM, Ubuntu 24.04) runs Kisht with Docker Compose (D32). Caddy provides HTTPS, and a DuckDNS name points at the VM.
 
 ```text
 Internet -> Caddy (HTTPS) -> web (Next.js) -> api (Fastify) -> db (PostgreSQL 16)
 ```
 
-Only `web` joins Caddy's Docker network. The API and database have no public route. Memory is capped per container (`deploy/docker-compose.yml`).
+Only Caddy publishes ports. The API and database have no public route. Memory is capped per container (`deploy/docker-compose.yml`).
 
-The VM is too small to build images or generate the demo data, so both happen on a developer machine.
+The demo data is generated on a developer machine and copied over, because seeding needs more memory than the API container is allowed. Images are built on the VM, which takes a while but needs no upload.
 
-### 1. Build and ship the images
+### 1. Build the images
 
 ```bash
+git archive HEAD | ssh <server> 'mkdir -p ~/kisht/src && tar -x -C ~/kisht/src'
+ssh <server>
+cd ~/kisht/src
 docker build -f deploy/Dockerfile --target api -t kisht-api:latest .
 docker build -f deploy/Dockerfile --target web --build-arg NEXT_PUBLIC_DEMO_PASSWORD=<demo password> -t kisht-web:latest .
-docker save kisht-api:latest kisht-web:latest | gzip -1 | ssh <server> 'gunzip | docker load'
 ```
 
 ### 2. Configure and start
 
-On the server, in `~/kisht`, place `docker-compose.yml` and a `.env` holding the variables listed below (`chmod 600`). Then:
+On the server, in `~/kisht`, place `docker-compose.yml`, `Caddyfile` and a `.env` holding the variables listed below (`chmod 600`). Then:
 
 ```bash
 docker compose up -d db
@@ -81,22 +83,7 @@ Seed the local database, then copy it across. Seeded dates are relative to the d
 ```bash
 pnpm db:seed
 docker exec kisht-postgres pg_dump -U kisht -d kisht --data-only --exclude-table=_prisma_migrations -Fc \
-  | ssh <server> 'cd ~/kisht && docker compose exec -T db pg_restore -U kisht -d kisht --data-only --disable-triggers'
-```
-
-### 4. Route the domain
-
-Add this block to the Caddyfile that serves ports 80 and 443, then reload Caddy, which does not drop connections:
-
-```text
-<your-name>.duckdns.org {
-	encode zstd gzip
-	reverse_proxy kisht-web:3000
-}
-```
-
-```bash
-docker exec <caddy container> caddy reload --config /etc/caddy/Caddyfile
+  | ssh <server> 'cd ~/kisht && docker compose exec -T db pg_restore -U kisht -d kisht --data-only --disable-triggers --single-transaction'
 ```
 
 ### After deploying
@@ -117,11 +104,10 @@ Names only. Values are never committed; `.env.example` shows the format for loca
 | `BETTER_AUTH_SECRET` | Yes      | Signs sessions, 32 characters or more                     |
 | `BETTER_AUTH_URL`    | Yes      | Public HTTPS address; also the origin check               |
 | `DEMO_PASSWORD`      | Yes      | Password of the seeded accounts                           |
-| `CADDY_NETWORK`      | Yes      | Docker network of the Caddy that holds 80 and 443         |
-| `ANTHROPIC_API_KEY`  | No       | AI drafts; without it officers get the approved templates |
-| `AI_DRAFT_MODEL`     | No       | Overrides the default model                               |
+| `OPENROUTER_API_KEY` | No       | AI drafts; without it officers get the approved templates |
+| `AI_DRAFT_MODEL`     | No       | OpenRouter model; defaults to `openrouter/free`           |
 
-**Set by the compose file:** `DATABASE_URL`, `DEMO_MODE`, `NODE_OPTIONS`, `TZ`.
+**Set by the compose file:** `DATABASE_URL`, `BETTER_AUTH_URL`, `DEMO_MODE`, `NODE_OPTIONS`, `TZ`.
 
 **Build arguments for the web image**
 

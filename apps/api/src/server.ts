@@ -1,8 +1,7 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { getPrisma } from "@kisht/db";
 import { buildApp } from "./app.js";
 import { loadEnv } from "./env.js";
-import { createClaudeDrafter } from "./modules/reminders/claudeDrafter.js";
+import { createOpenRouterDrafter } from "./modules/reminders/openRouterDrafter.js";
 
 const env = loadEnv();
 
@@ -17,11 +16,11 @@ const app = await buildApp({
     rateLimit: env.NODE_ENV === "production",
     trustedProxyHops: env.TRUSTED_PROXY_HOPS,
   },
-  drafter: env.ANTHROPIC_API_KEY
-    ? createClaudeDrafter(
-        new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }),
-        env.AI_DRAFT_MODEL || undefined,
-      )
+  drafter: env.OPENROUTER_API_KEY
+    ? createOpenRouterDrafter({
+        apiKey: env.OPENROUTER_API_KEY,
+        model: env.AI_DRAFT_MODEL || undefined,
+      })
     : null,
   logger: true,
 });

@@ -155,7 +155,7 @@ The last unbuilt requirement. An officer taps Send reminder on a loan, reads the
 
 **Browser tests caught a design mistake:** the button was first added to the shared call and map buttons, so it appeared on every card in the list. It now appears only on the loan screen.
 
-**Not tested against the live API:** no key was available, so the adapter is tested against a stand-in client. The first deployment with a key must confirm that drafts show as AI drafts. `reminder_draft.fallbackReason` records why any didn't.
+The adapter now calls OpenRouter, with its free router as the default model. Because the model sees no personal data, a free model that keeps prompts is acceptable, and because every reply is checked, a weak one can only cost an AI draft, never send a bad message. `reminder_draft.fallbackReason` records why any draft fell back.
 
 ## Production dry run (2026-11-05)
 
