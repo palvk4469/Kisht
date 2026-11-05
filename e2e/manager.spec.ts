@@ -136,6 +136,12 @@ test("every manager screen fits, with no sideways scrolling", async ({ page }) =
     await fits(page, path);
 });
 
+test("the current tab is on screen, even at the end of the row", async ({ page }) => {
+  await signInManager(page);
+  await page.goto("/manager/import");
+  await expect(page.locator('nav [aria-current="page"]')).toBeInViewport({ ratio: 1 });
+});
+
 test("every officer screen fits, with no sideways scrolling", async ({ page }) => {
   await signInAs(page, "priya.malviya@kisht.example");
   const href = (await page.getByTestId("loan-card").first().getAttribute("href")) ?? "/today";

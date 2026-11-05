@@ -4,7 +4,7 @@ import type { Me } from "@kisht/contracts";
 import { LogOut } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { DemoClockBar } from "@/features/demo/DemoClockBar";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import { LanguageToggle } from "./LanguageToggle";
@@ -25,6 +25,15 @@ export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) 
   const { t } = useI18n();
   const pathname = usePathname();
   const signOut = useSignOut(me.id);
+  const nav = useRef<HTMLElement>(null);
+  // On a phone the tabs scroll sideways; the current one must never be off-screen.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs whenever the page changes.
+  useEffect(() => {
+    nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView({
+      block: "nearest",
+      inline: "nearest",
+    });
+  }, [pathname]);
   return (
     <div className="min-h-dvh bg-surface">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 backdrop-blur">
@@ -35,7 +44,10 @@ export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) 
             </span>
             <span className="hidden sm:inline">{t("app.name")}</span>
           </Link>
-          <nav className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto pt-1 sm:order-none sm:mx-0 sm:w-auto sm:pt-0">
+          <nav
+            ref={nav}
+            className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto pt-1 sm:order-none sm:mx-0 sm:w-auto sm:pt-0"
+          >
             {NAV.map((n) => (
               <Link
                 key={n.href}

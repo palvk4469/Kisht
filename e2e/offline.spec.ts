@@ -89,6 +89,51 @@ test("works with no signal, survives a reload, and sends once when signal return
   expect(todayHistory(await serverItem(page, second)).map((h) => h.type)).toEqual(["PROMISE"]);
 });
 
+test("a day's work done offline reaches the manager, with the reminder sent after", async ({
+  page,
+  context,
+  browser,
+}) => {
+  await signInAs(page, "priya.malviya@kisht.example");
+  await offlineReady(page);
+  const card = page.getByTestId("loan-card").first();
+  const name = (await card.locator("h2").textContent()) ?? "";
+  const loanId = await firstLoanId(page);
+
+  await goOffline(context);
+  await card.click();
+  await page.getByRole("button", { name: "भुगतान का वादा" }).click();
+  await page.getByRole("button", { name: /3 दिन में/ }).click();
+  await expect(page.getByRole("status").filter({ hasText: "ऑफ़लाइन" })).toContainText("1");
+
+  // Signal returns: it sends itself, and the officer follows up with a reminder.
+  await goOnline(page, context);
+  await expect(page.getByRole("status").filter({ hasText: /भेजे जा रहे|ऑफ़लाइन/ })).toHaveCount(0, {
+    timeout: 15_000,
+  });
+  await page.goto(`/today/loan?id=${loanId}`);
+  await page.getByRole("button", { name: "रिमाइंडर भेजें" }).click();
+  const sheet = page.getByRole("dialog");
+  await expect(sheet.getByText(/वादा/)).toBeVisible();
+  await sheet.getByRole("button", { name: "भेजें" }).click();
+  await expect(sheet).toBeHidden();
+
+  // The manager, on another device, sees all of it.
+  const office = await browser.newContext();
+  const desk = await office.newPage();
+  await desk.goto("/login");
+  await desk.getByRole("button", { name: "English" }).click();
+  await desk.getByText("Sanjay Joshi").click();
+  await expect(desk).toHaveURL(/\/manager\/dashboard$/);
+  await desk.goto("/manager/promises");
+  await expect(desk.getByText(name).locator("visible=true").first()).toBeVisible();
+  await desk.goto("/manager/activity");
+  const entries = desk.locator("li").filter({ hasText: name });
+  await expect(entries.getByLabel("Message")).toBeVisible();
+  await expect(entries.getByLabel("Visit")).toBeVisible();
+  await office.close();
+});
+
 test("a response lost on the way back doesn't create a duplicate", async ({ page }) => {
   await signInAs(page, "vikas.rathore@kisht.example");
   const loanId = await firstLoanId(page);
