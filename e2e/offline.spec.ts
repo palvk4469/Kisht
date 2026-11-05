@@ -43,8 +43,11 @@ async function logNotReachable(page: Page) {
   await expect(page).toHaveURL(/\/today$/);
 }
 
-const todayHistory = (item: Awaited<ReturnType<typeof serverItem>>) =>
-  (item?.history ?? []).filter((h) => Date.now() - new Date(h.at).getTime() < 24 * 3_600_000);
+type Item = Awaited<ReturnType<typeof serverItem>>;
+const historyIds = (item: Item) => (item?.history ?? []).map((h) => h.id);
+/** What the server added since. The seeded history varies with the day it was made. */
+const addedSince = (item: Item, before: string[]) =>
+  (item?.history ?? []).filter((h) => !before.includes(h.id)).map((h) => h.type);
 
 test.afterEach(async ({ page, context }) => {
   await context.unroute("**/api/**");
@@ -59,6 +62,7 @@ test("works with no signal, survives a reload, and sends once when signal return
   await signInAs(page, "neha.solanki@kisht.example");
   await offlineReady(page);
   const first = await firstLoanId(page);
+  const firstBefore = historyIds(await serverItem(page, first));
 
   await goOffline(context);
   await page.reload();
@@ -69,6 +73,7 @@ test("works with no signal, survives a reload, and sends once when signal return
   await expect(page.getByRole("heading", { name: /आज पूरे हुए/ })).toBeVisible();
 
   const second = await firstLoanId(page);
+  const secondBefore = historyIds(await serverItem(page, second));
   await page.getByTestId("loan-card").first().click();
   await page.getByRole("button", { name: "भुगतान का वादा" }).click();
   await page.getByRole("button", { name: /3 दिन में/ }).click();
@@ -77,7 +82,7 @@ test("works with no signal, survives a reload, and sends once when signal return
   // Killing the page loses nothing: the outbox is on disk.
   await page.reload();
   await expect(page.getByRole("status").filter({ hasText: "ऑफ़लाइन" })).toContainText("2 भेजने बाकी");
-  expect(todayHistory(await serverItem(page, first))).toHaveLength(0);
+  expect(addedSince(await serverItem(page, first), firstBefore)).toEqual([]);
 
   await goOnline(page, context);
   await expect(page.getByRole("status").filter({ hasText: "भेजने बाकी" })).toHaveCount(0, {
@@ -85,8 +90,8 @@ test("works with no signal, survives a reload, and sends once when signal return
   });
 
   await expect.poll(async () => (await serverItem(page, first))?.state).toBe("done");
-  expect(todayHistory(await serverItem(page, first)).map((h) => h.type)).toEqual(["NOT_REACHABLE"]);
-  expect(todayHistory(await serverItem(page, second)).map((h) => h.type)).toEqual(["PROMISE"]);
+  expect(addedSince(await serverItem(page, first), firstBefore)).toEqual(["NOT_REACHABLE"]);
+  expect(addedSince(await serverItem(page, second), secondBefore)).toEqual(["PROMISE"]);
 });
 
 test("a day's work done offline reaches the manager, with the reminder sent after", async ({
@@ -137,6 +142,7 @@ test("a day's work done offline reaches the manager, with the reminder sent afte
 test("a response lost on the way back doesn't create a duplicate", async ({ page }) => {
   await signInAs(page, "vikas.rathore@kisht.example");
   const loanId = await firstLoanId(page);
+  const before = historyIds(await serverItem(page, loanId));
 
   // The server stores the batch, but the phone never hears back.
   let lost = 0;
@@ -155,15 +161,14 @@ test("a response lost on the way back doesn't create a duplicate", async ({ page
     timeout: 20_000,
   });
   expect(lost).toBe(1);
-  expect(todayHistory(await serverItem(page, loanId)).map((h) => h.type)).toEqual([
-    "NOT_REACHABLE",
-  ]);
+  expect(addedSince(await serverItem(page, loanId), before)).toEqual(["NOT_REACHABLE"]);
 });
 
 test("a log the server refuses later is shown, not silently lost", async ({ page, context }) => {
   await signInAs(page, "sunita.yadav@kisht.example");
   await offlineReady(page);
   const loanId = await firstLoanId(page);
+  const before = historyIds(await serverItem(page, loanId));
 
   await goOffline(context);
   await logNotReachable(page);
@@ -176,7 +181,7 @@ test("a log the server refuses later is shown, not silently lost", async ({ page
   await expect(page.getByRole("alert").filter({ hasText: "दर्ज नहीं हुआ" })).toBeVisible({
     timeout: 20_000,
   });
-  expect(todayHistory(await serverItem(page, loanId))).toHaveLength(0);
+  expect(addedSince(await serverItem(page, loanId), before)).toEqual([]);
 });
 
 test("signing out warns about unsent work and clears borrower data from the phone", async ({

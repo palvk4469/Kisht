@@ -28,7 +28,7 @@ export async function signInAs(page: Page, email: string, time = "11:00") {
 export async function serverItem(page: Page, loanId: string) {
   const res = await page.request.get(`${BASE}/api/officer/today`);
   const list = (await res.json()) as {
-    items: { loanId: string; state: string; history: { type: string; at: string }[] }[];
+    items: { loanId: string; state: string; history: { id: string; type: string; at: string }[] }[];
   };
   return list.items.find((i) => i.loanId === loanId);
 }
