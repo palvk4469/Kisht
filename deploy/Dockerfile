@@ -8,10 +8,11 @@ COPY . .
 # The API runs its TypeScript through tsx, and also carries the migrate and seed tools.
 FROM base AS api
 # In one step so the deletions really shrink the image. These arrive as optional peers
-# or through the workspace root; nothing in this image runs them.
+# or through the workspace root; nothing in this image runs them. That also means
+# pnpm would try to reinstall here, so run tools directly (see deployment.md).
 RUN pnpm install --frozen-lockfile --filter "@kisht/api..." && pnpm --filter @kisht/db generate \
   && cd /repo/node_modules/.pnpm \
-  && rm -rf next@* @next+swc* @biomejs+cli* @electric-sql+pglite* @prisma+studio-core* \
+  && rm -rf next@* @next+swc* @biomejs+cli* \
   && rm -rf /repo/apps/web /repo/e2e "$(pnpm store path)"
 ENV NODE_ENV=production
 WORKDIR /repo/apps/api

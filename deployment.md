@@ -72,7 +72,7 @@ On the server, in `~/kisht`, place `docker-compose.yml`, `Caddyfile` and a `.env
 
 ```bash
 docker compose up -d db
-docker compose run --rm -T api pnpm --filter @kisht/db migrate:deploy
+docker compose run --rm -T -w /repo/packages/db api node_modules/.bin/prisma migrate deploy
 docker compose up -d
 ```
 
