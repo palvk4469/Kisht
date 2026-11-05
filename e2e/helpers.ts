@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
-const BASE = "http://localhost:3000";
+const BASE = `http://localhost:${process.env.E2E_WEB_PORT ?? "3000"}`;
 const istToday = () => new Date(Date.now() + 5.5 * 3_600_000).toISOString().slice(0, 10);
 
 /** Moves the server's demo clock (D13), working even while the page is offline. */
