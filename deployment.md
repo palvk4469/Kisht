@@ -54,17 +54,24 @@ Internet -> Caddy (HTTPS) -> web (Next.js) -> api (Fastify) -> db (PostgreSQL 16
 
 Only Caddy publishes ports. The API and database have no public route. Memory is capped per container (`deploy/docker-compose.yml`).
 
-The demo data is generated on a developer machine and copied over, because seeding needs more memory than the API container is allowed. Images are built on the VM, which takes a while but needs no upload.
+The demo data is generated on a developer machine and copied over, because seeding needs more memory than the API container is allowed.
 
 ### 1. Build the images
 
+The API image is built on the VM once, and again only when dependencies or the database schema change:
+
 ```bash
 git archive HEAD | ssh <server> 'mkdir -p ~/kisht/src && tar -x -C ~/kisht/src'
-ssh <server>
-cd ~/kisht/src
-docker build -f deploy/Dockerfile --target api -t kisht-api:latest .
-docker build -f deploy/Dockerfile --target web --build-arg NEXT_PUBLIC_DEMO_PASSWORD=<demo password> -t kisht-web:latest .
+ssh <server> 'cd ~/kisht/src && docker build -f deploy/Dockerfile --target api -t kisht-api:latest .'
 ```
+
+The web app is compiled locally and only its output is sent, because `next build` thrashes a server this small for over 15 minutes and slows the live site. This takes under a minute and needs no Docker on the local machine:
+
+```bash
+deploy/ship-web.sh <server> <demo password>
+```
+
+A later API change to code alone goes the same way, with `deploy/ship-api.sh <server>`.
 
 ### 2. Configure and start
 
