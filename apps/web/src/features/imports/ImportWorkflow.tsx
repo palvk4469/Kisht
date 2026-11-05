@@ -128,13 +128,13 @@ export function ImportWorkflow() {
             </label>
             <div>
               <div className="flex flex-col gap-1 sm:flex-row sm:items-baseline sm:justify-between">
-                <span className="text-sm font-medium">{t("import.file")}</span>
-                <span className="flex flex-wrap gap-x-4 gap-y-1">
+                <span className="text-sm font-semibold text-ink">{t("import.file")}</span>
+                <span className="flex flex-wrap gap-2">
                   {DEMO_MODE && (
                     <a
                       href="/api/imports/demo-sample"
                       download
-                      className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-line/70 bg-surface/60 px-2.5 py-1 text-xs font-semibold text-accent transition-colors hover:border-accent/30 hover:bg-accent-soft"
                     >
                       <Download className="size-3.5" aria-hidden />
                       {t("import.sample")}
@@ -143,7 +143,7 @@ export function ImportWorkflow() {
                   <button
                     type="button"
                     onClick={downloadTemplate}
-                    className="inline-flex items-center gap-1 text-sm text-accent hover:underline"
+                    className="inline-flex items-center gap-1.5 rounded-lg border border-line/70 bg-surface/60 px-2.5 py-1 text-xs font-semibold text-muted transition-colors hover:border-accent/30 hover:bg-surface hover:text-ink"
                   >
                     <Download className="size-3.5" aria-hidden />
                     {t("import.template")}
@@ -160,10 +160,12 @@ export function ImportWorkflow() {
                 onDragLeave={() => setDragging(false)}
                 onDrop={onDrop}
                 className={cx(
-                  "mt-1.5 flex min-h-24 w-full flex-col items-center justify-center gap-1 rounded-xl border border-dashed px-4 py-5 text-sm transition-colors",
+                  "mt-2 flex min-h-28 w-full flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-6 text-sm transition-all active:scale-[0.99]",
                   dragging
-                    ? "border-accent bg-accent-soft"
-                    : "border-line hover:border-accent hover:bg-surface",
+                    ? "border-accent bg-accent-soft/80 shadow-xs"
+                    : file
+                      ? "border-accent/40 bg-accent-soft/20 shadow-xs"
+                      : "border-line hover:border-accent hover:bg-surface/60",
                 )}
               >
                 {file ? (

@@ -58,14 +58,14 @@ export function ImportSummaryPanel({ summary }: { summary: ImportSummary }) {
                 key={o.officerId}
                 className="grid grid-cols-[8rem_1fr_2.5rem] items-center gap-3 text-sm"
               >
-                <span className="truncate">{o.name}</span>
-                <span className="h-2 rounded-full bg-surface">
+                <span className="truncate font-medium">{o.name}</span>
+                <span className="h-2 overflow-hidden rounded-full bg-surface">
                   <span
-                    className="block h-2 rounded-full bg-accent"
+                    className="block h-full rounded-full bg-accent transition-all duration-300"
                     style={{ width: `${(o.loans / max) * 100}%` }}
                   />
                 </span>
-                <span className="num text-right text-muted">{o.loans}</span>
+                <span className="num text-right font-medium text-muted">{o.loans}</span>
               </li>
             ))}
           </ul>

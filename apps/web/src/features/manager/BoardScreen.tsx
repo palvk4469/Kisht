@@ -55,24 +55,47 @@ function OfficerList({
   const rest = officer.loans.filter((l) => l.state !== "todo");
   const stake = todo.reduce((sum, l) => sum + (l.expectedLoss ?? 0), 0);
   return (
-    <Card>
-      <div className="border-b border-line px-4 py-3">
+    <Card className="shadow-xs">
+      <div className="border-b border-line px-5 py-4">
         <div className="flex flex-wrap items-baseline justify-between gap-x-4">
-          <h2 className="font-semibold">{officer.name}</h2>
-          <span className="num text-sm text-muted">
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold text-base text-ink tracking-tight">{officer.name}</h2>
+            <span className="num rounded-full border border-line bg-surface px-2 py-0.5 text-xs font-semibold text-muted">
+              {todo.length} / {officer.capacity}
+            </span>
+          </div>
+          <span className="num text-xs font-medium text-muted">
             {t("board.toDo", { n: todo.length, capacity: officer.capacity })} ·{" "}
             {t("today.atStake", { amount: rupeesShort(stake) })}
           </span>
         </div>
-        <p className="num mt-0.5 text-xs text-faint">{officer.pincodes.join(", ")}</p>
+        <div className="mt-2.5 flex items-center gap-3">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface">
+            <div
+              className={cx(
+                "h-full rounded-full transition-all duration-300",
+                todo.length >= officer.capacity ? "bg-warn" : "bg-accent",
+              )}
+              style={{ width: `${Math.min(100, (todo.length / officer.capacity) * 100)}%` }}
+            />
+          </div>
+          <p className="num shrink-0 text-[11px] font-medium text-faint">
+            {officer.pincodes.join(", ")}
+          </p>
+        </div>
       </div>
       {officer.loans.length === 0 ? (
         <EmptyState title={t("board.emptyOfficer")} />
       ) : (
         <ol className="divide-y divide-line" data-testid="officer-list">
           {todo.map((loan, i) => (
-            <li key={loan.loanId} className="flex gap-3 px-4 py-3">
-              <span className="num mt-0.5 w-5 shrink-0 text-sm text-faint">{i + 1}</span>
+            <li
+              key={loan.loanId}
+              className="flex gap-3 px-5 py-3.5 hover:bg-surface/30 transition-colors"
+            >
+              <span className="flex size-6 shrink-0 items-center justify-center rounded-lg border border-line/70 bg-surface text-xs font-bold num text-muted mt-0.5">
+                {i + 1}
+              </span>
               <LoanSummary loan={loan} />
               <div className="flex shrink-0 flex-col items-end gap-1 sm:flex-row sm:items-start">
                 <div className="flex">

@@ -45,35 +45,37 @@ function LoanBody({ loanId }: { loanId: string }) {
   }
   const d = loan.data;
   return (
-    <div className="mt-2 space-y-4 text-sm">
-      <div>
-        <p className="font-medium">{d.borrower.name}</p>
-        <p className="text-muted">
+    <div className="mt-3 space-y-4 text-sm">
+      <div className="rounded-xl border border-line/70 bg-surface/40 p-4 shadow-xs">
+        <p className="text-base font-bold text-ink tracking-tight">{d.borrower.name}</p>
+        <p className="mt-0.5 text-xs text-muted">
           {d.loanNo} · {d.borrower.address}
         </p>
-        <div className="mt-2 flex flex-wrap items-center gap-2">
-          {d.latest && <span className="num font-medium">{rupees(d.latest.outstanding)}</span>}
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          {d.latest && (
+            <span className="num font-bold text-ink">{rupees(d.latest.outstanding)}</span>
+          )}
           {d.latest && <DpdBadge dpd={d.latest.dpd} />}
           <PromiseBadge promise={d.promise} />
         </div>
       </div>
 
-      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-1">
-        <dt className="text-muted">{t("loanView.officer")}</dt>
-        <dd>{d.officer?.name ?? t("board.noOfficer")}</dd>
-        <dt className="text-muted">{t("loanView.phone")}</dt>
+      <dl className="grid grid-cols-[auto_1fr] items-center gap-x-4 gap-y-2 rounded-xl border border-line/60 bg-canvas p-3.5 shadow-2xs">
+        <dt className="text-xs font-medium text-muted">{t("loanView.officer")}</dt>
+        <dd className="font-medium text-ink">{d.officer?.name ?? t("board.noOfficer")}</dd>
+        <dt className="text-xs font-medium text-muted">{t("loanView.phone")}</dt>
         <dd className="num flex flex-wrap items-center gap-2">
           {reveal.data ? (
             <a
               href={`tel:${reveal.data.phone}`}
-              className="inline-flex items-center gap-1 font-medium underline underline-offset-2"
+              className="inline-flex items-center gap-1 font-semibold text-accent underline underline-offset-2"
             >
               <Phone className="size-3.5" aria-hidden />
               {reveal.data.phone}
             </a>
           ) : (
             <>
-              {d.borrower.phoneMasked}
+              <span className="font-mono text-xs">{d.borrower.phoneMasked}</span>
               <Button variant="ghost" busy={reveal.isPending} onClick={() => reveal.mutate()}>
                 {t("loanView.reveal")}
               </Button>

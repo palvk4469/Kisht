@@ -56,17 +56,17 @@ export function DemoClockBar() {
   if (!clock.data?.simulated) return null;
   return (
     <div
-      className="flex items-center justify-between gap-3 bg-accent-soft px-4 py-2 text-sm text-accent"
+      className="flex items-center justify-between gap-3 border-b border-accent/20 bg-accent-soft px-4 py-2 text-xs font-semibold text-accent shadow-xs"
       role="status"
     >
       <span className="flex items-center gap-1.5">
-        <FlaskConical className="size-4 shrink-0" aria-hidden />
+        <FlaskConical className="size-3.5 shrink-0" aria-hidden />
         {t("demo.simulated", { time: time(clock.data.now, locale) })}
       </span>
       <button
         type="button"
         onClick={() => set.mutate(null)}
-        className="min-h-8 shrink-0 font-medium underline underline-offset-2"
+        className="min-h-7 shrink-0 font-bold underline underline-offset-2"
       >
         {t("demo.realTime")}
       </button>

@@ -2,6 +2,7 @@
 
 import type { Locale } from "@kisht/contracts";
 import type { ContactBlockReason } from "@kisht/domain";
+import { MessageSquare } from "lucide-react";
 import { useState } from "react";
 import { Sheet } from "@/components/Sheet";
 import { Badge, Button, cx, ErrorState, Skeleton } from "@/components/ui";
@@ -84,18 +85,23 @@ export function ReminderSheet({ loanId, borrowerName, nextAllowedAt, onClose }: 
         )}
         {draft.error && <ErrorState error={draft.error} onRetry={() => void draft.refetch()} />}
         {draft.data && (
-          <>
-            <Badge tone={draft.data.source === "AI" ? "accent" : "neutral"}>
-              {t(draft.data.source === "AI" ? "reminder.fromAi" : "reminder.fromTemplate")}
-            </Badge>
-            <p
-              lang={draft.data.lang}
-              className="mt-2 rounded-xl bg-surface px-4 py-3 text-base leading-relaxed"
-            >
-              {draft.data.body}
-            </p>
-            <p className="mt-2 text-sm text-muted">{t("reminder.hint")}</p>
-          </>
+          <div className="rounded-2xl border border-line/70 bg-canvas p-4 shadow-xs">
+            <div className="flex items-center justify-between gap-2 border-b border-line/50 pb-2.5">
+              <span className="flex items-center gap-1.5 text-xs font-semibold text-muted">
+                <MessageSquare className="size-3.5 text-accent" aria-hidden />
+                SMS / WhatsApp
+              </span>
+              <Badge tone={draft.data.source === "AI" ? "accent" : "neutral"} dot>
+                {t(draft.data.source === "AI" ? "reminder.fromAi" : "reminder.fromTemplate")}
+              </Badge>
+            </div>
+            <div className="mt-3 rounded-xl border border-line/40 bg-surface/70 p-3.5 shadow-xs">
+              <p lang={draft.data.lang} className="text-base leading-relaxed text-ink">
+                {draft.data.body}
+              </p>
+            </div>
+            <p className="mt-2.5 text-xs leading-relaxed text-muted">{t("reminder.hint")}</p>
+          </div>
         )}
       </div>
 

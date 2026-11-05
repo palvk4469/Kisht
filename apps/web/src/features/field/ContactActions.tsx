@@ -31,7 +31,7 @@ function mapUrl({ lat, lng, address }: Pick<Props, "lat" | "lng" | "address">) {
 }
 
 const target =
-  "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-medium transition-colors";
+  "inline-flex h-12 flex-1 items-center justify-center gap-2 rounded-xl text-base font-semibold shadow-xs transition-all active:scale-[0.98]";
 
 /**
  * Call and Map, the two things an officer does most. Call goes through the same
@@ -54,7 +54,7 @@ export function ContactActions(props: Props) {
 
   return (
     <div>
-      <div className="flex gap-2">
+      <div className="flex gap-2.5">
         {block ? (
           <button
             type="button"
@@ -62,7 +62,7 @@ export function ContactActions(props: Props) {
               void recordAttempt(props, "CALL", true);
               setNotice(blockText);
             }}
-            className={cx(target, "bg-line/60 text-muted")}
+            className={cx(target, "border border-line/70 bg-surface text-muted")}
           >
             <Lock className="size-4" aria-hidden />
             {t("contact.call")}
@@ -71,7 +71,10 @@ export function ContactActions(props: Props) {
           <a
             href={`tel:${props.phone}`}
             onClick={() => void recordAttempt(props, "CALL", false)}
-            className={cx(target, "bg-accent text-on-accent hover:bg-accent-strong")}
+            className={cx(
+              target,
+              "bg-accent text-on-accent hover:bg-accent-strong hover:shadow-sm",
+            )}
           >
             <Phone className="size-4" aria-hidden />
             {t("contact.call")}
@@ -81,7 +84,10 @@ export function ContactActions(props: Props) {
           href={mapUrl(props)}
           target="_blank"
           rel="noreferrer"
-          className={cx(target, "border border-line bg-canvas text-ink hover:border-accent")}
+          className={cx(
+            target,
+            "border border-line bg-canvas text-ink hover:bg-surface hover:border-line/80",
+          )}
         >
           <MapPin className="size-4" aria-hidden />
           {t("contact.map")}
@@ -100,7 +106,7 @@ export function ContactActions(props: Props) {
           }}
           className={cx(
             target,
-            "mt-2 w-full border border-line bg-canvas text-ink hover:border-accent",
+            "mt-2.5 w-full border border-line bg-canvas text-ink hover:bg-surface hover:border-line/80",
           )}
         >
           <MessageSquareText className="size-4" aria-hidden />
@@ -116,9 +122,13 @@ export function ContactActions(props: Props) {
         />
       )}
       {notice && (
-        <p role="status" className="mt-2 text-sm text-warn">
-          {notice}
-        </p>
+        <div
+          role="status"
+          className="mt-2.5 flex items-start gap-2 rounded-xl border border-warn/25 bg-warn-soft p-3 text-xs font-medium text-warn"
+        >
+          <Lock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <span>{notice}</span>
+        </div>
       )}
     </div>
   );

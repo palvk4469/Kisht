@@ -54,11 +54,11 @@ export function OfficerTabs() {
   const due = usePromisesDue();
   const tab = "relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs";
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-line bg-canvas sm:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-line/80 bg-canvas/95 backdrop-blur-md shadow-lg sm:hidden">
       <Link
         href="/today"
         aria-current={!onPromises ? "page" : undefined}
-        className={cx(tab, !onPromises ? "font-medium text-accent" : "text-muted")}
+        className={cx(tab, !onPromises ? "font-bold text-accent" : "text-muted hover:text-ink")}
       >
         <ListChecks className="size-5" aria-hidden />
         {t("tabs.list")}
@@ -66,7 +66,7 @@ export function OfficerTabs() {
       <Link
         href="/today/promises"
         aria-current={onPromises ? "page" : undefined}
-        className={cx(tab, onPromises ? "font-medium text-accent" : "text-muted")}
+        className={cx(tab, onPromises ? "font-bold text-accent" : "text-muted hover:text-ink")}
       >
         <CalendarClock className="size-5" aria-hidden />
         {t("tabs.promises")}

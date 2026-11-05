@@ -68,19 +68,19 @@ export function TodayScreen() {
           {asOfDate && <span className="text-xs text-muted">{day(asOfDate, locale)}</span>}
         </div>
         {workable > 0 && (
-          <>
-            <div className="mt-3 flex items-baseline justify-between text-sm">
-              <span className="num text-muted">
+          <div className="mt-3.5 rounded-2xl border border-line/70 bg-canvas p-4 shadow-xs">
+            <div className="flex items-baseline justify-between text-xs">
+              <span className="font-medium text-muted">
                 {t("today.progress", { done, total: workable })}
               </span>
               {atStake > 0 && (
-                <span className="num text-muted">
+                <span className="num font-semibold text-ink">
                   {t("today.atStake", { amount: rupeesShort(atStake) })}
                 </span>
               )}
             </div>
             <div
-              className="mt-1.5 h-1.5 rounded-full bg-line"
+              className="mt-2.5 h-2 overflow-hidden rounded-full bg-surface"
               role="progressbar"
               aria-label={t("today.progress", { done, total: workable })}
               aria-valuemin={0}
@@ -88,11 +88,11 @@ export function TodayScreen() {
               aria-valuenow={done}
             >
               <div
-                className="h-1.5 rounded-full bg-accent transition-all"
+                className="h-full rounded-full bg-accent transition-all duration-300"
                 style={{ width: `${(done / workable) * 100}%` }}
               />
             </div>
-          </>
+          </div>
         )}
       </section>
 
@@ -104,15 +104,19 @@ export function TodayScreen() {
 
       {!clock.allowed && (
         <div
-          className="mx-4 mt-4 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn"
+          className="mx-4 mt-4 rounded-2xl border border-warn/30 bg-warn-soft p-4 text-sm text-warn shadow-xs"
           role="status"
         >
-          <p className="flex items-start gap-2 font-medium">
-            <Clock className="mt-0.5 size-4 shrink-0" aria-hidden />
-            {t("today.closed", { time: time(clock.nextAllowedAt, locale) })}
-          </p>
-          <p className="mt-1 pl-6">{t("today.closedBody")}</p>
-          <DemoTimeButton />
+          <div className="flex items-start gap-2.5">
+            <Clock className="mt-0.5 size-4.5 shrink-0" aria-hidden />
+            <div>
+              <p className="font-semibold text-warn">
+                {t("today.closed", { time: time(clock.nextAllowedAt, locale) })}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-warn/90">{t("today.closedBody")}</p>
+              <DemoTimeButton />
+            </div>
+          </div>
         </div>
       )}
 

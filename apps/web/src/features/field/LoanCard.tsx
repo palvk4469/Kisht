@@ -2,7 +2,7 @@
 
 import type { TodayItem } from "@kisht/contracts";
 import { istDayOf } from "@kisht/domain";
-import { ChevronRight, HandCoins, History } from "lucide-react";
+import { ChevronRight, HandCoins, History, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Badge, cx } from "@/components/ui";
 import { rupees, shortDay } from "@/lib/format";
@@ -24,7 +24,7 @@ export function dpdTone(dpd: number): "risk" | "warn" | "neutral" {
 export function DpdBadge({ dpd }: { dpd: number }) {
   const { t } = useI18n();
   return (
-    <Badge tone={dpdTone(dpd)}>
+    <Badge tone={dpdTone(dpd)} dot>
       {t("today.dpd", { n: dpd, days: dpd === 1 ? "day" : "days" })}
     </Badge>
   );
@@ -36,12 +36,20 @@ export function PromiseBadge({ promise }: { promise: TodayItem["promise"] }) {
   const date = shortDay(promise.dueDate, locale);
   if (promise.status === "PENDING") {
     return promise.dueDate < istDayOf(new Date()) ? (
-      <Badge tone="warn">{t("promise.overdue", { date })}</Badge>
+      <Badge tone="warn" dot>
+        {t("promise.overdue", { date })}
+      </Badge>
     ) : (
-      <Badge tone="accent">{t("promise.due", { date })}</Badge>
+      <Badge tone="accent" dot>
+        {t("promise.due", { date })}
+      </Badge>
     );
   }
-  return <Badge tone="risk">{t("promise.broken", { date })}</Badge>;
+  return (
+    <Badge tone="risk" dot>
+      {t("promise.broken", { date })}
+    </Badge>
+  );
 }
 
 type Clock = { now: Date; nextAllowedAt: Date };
@@ -51,23 +59,39 @@ export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number;
   const reasonText = useReasonText();
   const topReason = item.priority?.reasons[0];
   return (
-    <li className="rounded-card border border-line bg-canvas">
+    <li className="rounded-card border border-line bg-canvas shadow-xs transition-all hover:border-line/90 hover:shadow-sm">
       <Link href={loanHref(item.loanId)} className="block p-4 pb-3" data-testid="loan-card">
         <div className="flex items-start gap-3">
-          <span className="num mt-0.5 w-5 shrink-0 text-sm text-faint">{rank}</span>
+          <span
+            className={cx(
+              "flex size-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold border",
+              rank === 1
+                ? "border-risk/30 bg-risk-soft text-risk"
+                : rank <= 3
+                  ? "border-accent/25 bg-accent-soft text-accent"
+                  : "border-line/70 bg-surface text-muted",
+            )}
+          >
+            {rank}
+          </span>
           <div className="min-w-0 flex-1">
             <div className="flex items-start justify-between gap-2">
-              <h2 className="font-semibold">{item.borrowerName}</h2>
+              <h2 className="font-semibold text-ink tracking-tight">{item.borrowerName}</h2>
               <ChevronRight className="mt-0.5 size-4 shrink-0 text-faint" aria-hidden />
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-              <span className="num font-medium">{rupees(item.outstanding)}</span>
+              <span className="num font-semibold text-ink">{rupees(item.outstanding)}</span>
               <DpdBadge dpd={item.dpd} />
               <PromiseBadge promise={item.promise} />
             </div>
-            {topReason && <p className="mt-2 text-sm text-muted">{reasonText(topReason)}</p>}
+            {topReason && (
+              <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-line/50 bg-surface/60 px-2.5 py-1.5 text-xs text-muted leading-relaxed">
+                <Sparkles className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
+                <span>{reasonText(topReason)}</span>
+              </div>
+            )}
             {item.managerNote && (
-              <p className="mt-1 text-sm text-accent">
+              <p className="mt-1.5 text-xs font-medium text-accent">
                 {t("loan.managerNote", { note: item.managerNote })}
               </p>
             )}

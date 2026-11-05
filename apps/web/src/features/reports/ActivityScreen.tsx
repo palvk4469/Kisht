@@ -113,25 +113,31 @@ export function ActivityScreen() {
     <div className="space-y-6">
       {header}
 
-      <Card className="p-5">
-        <div className="flex items-start gap-3">
-          <ShieldCheck
+      <Card className="p-5 sm:p-6 shadow-xs">
+        <div className="flex items-start gap-3.5">
+          <span
             className={cx(
-              "mt-0.5 size-6 shrink-0",
-              c.outsideWindowAllowed30 === 0 ? "text-ok" : "text-risk",
+              "flex size-10 shrink-0 items-center justify-center rounded-xl border",
+              c.outsideWindowAllowed30 === 0
+                ? "border-ok/20 bg-ok-soft text-ok"
+                : "border-risk/20 bg-risk-soft text-risk",
             )}
             aria-hidden
-          />
+          >
+            <ShieldCheck className="size-5" />
+          </span>
           <div>
-            <h2 className="font-medium">
+            <h2 className="text-base font-semibold tracking-tight text-ink">
               {c.outsideWindowAllowed30 === 0
                 ? t("activity.complianceGood")
                 : t("activity.complianceBad", { n: number(c.outsideWindowAllowed30) })}
             </h2>
-            <p className="text-sm text-muted">{t("activity.complianceHint")}</p>
+            <p className="mt-0.5 text-xs text-muted leading-relaxed">
+              {t("activity.complianceHint")}
+            </p>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Stat label={t("activity.attempts30")} value={number(c.attempts30)} />
           <Stat
             label={t("activity.blocked30")}
@@ -155,7 +161,7 @@ export function ActivityScreen() {
         </div>
       </Card>
 
-      <Card>
+      <Card className="shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
           <fieldset className="flex flex-wrap gap-1.5">
             <legend className="sr-only">{t("activity.filter")}</legend>
@@ -166,10 +172,10 @@ export function ActivityScreen() {
                 aria-pressed={filter === f.value}
                 onClick={() => setFilter(f.value)}
                 className={cx(
-                  "min-h-10 rounded-lg px-3 text-sm",
+                  "min-h-10 rounded-xl px-3.5 text-xs font-semibold transition-all active:scale-[0.98]",
                   filter === f.value
-                    ? "bg-accent-soft font-medium text-accent"
-                    : "text-muted hover:bg-surface",
+                    ? "border border-accent/20 bg-accent-soft text-accent shadow-xs"
+                    : "text-muted hover:bg-surface hover:text-ink",
                 )}
               >
                 {t(f.label)}
@@ -184,7 +190,7 @@ export function ActivityScreen() {
               id={officerSelect}
               value={officerId}
               onChange={(e) => setOfficerId(e.target.value)}
-              className="h-10 rounded-lg border border-line bg-canvas px-2 text-sm"
+              className="h-10 rounded-xl border border-line bg-canvas px-3 text-xs font-medium outline-none focus:border-accent"
             >
               <option value="">{t("tracker.allOfficers")}</option>
               {officers.map((o) => (

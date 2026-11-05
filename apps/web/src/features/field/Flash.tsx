@@ -40,9 +40,9 @@ export function FlashProvider({ children }: { children: ReactNode }) {
         <div className="pointer-events-none fixed inset-x-0 bottom-20 z-30 sm:bottom-8 flex justify-center px-4">
           <p
             role="status"
-            className="flex max-w-md items-center gap-2 rounded-xl bg-ink px-4 py-3 text-sm font-medium text-canvas shadow-lg"
+            className="flex max-w-md items-center gap-2.5 rounded-2xl border border-line/20 bg-ink/95 px-4 py-3 text-sm font-semibold text-canvas shadow-xl backdrop-blur-sm"
           >
-            <CheckCircle2 className="size-4 shrink-0" aria-hidden />
+            <CheckCircle2 className="size-4 shrink-0 text-ok" aria-hidden />
             {message}
           </p>
         </div>

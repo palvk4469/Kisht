@@ -38,6 +38,7 @@ for (const colorScheme of ["light", "dark"] as const) {
       await signInAs(page, "neha.solanki@kisht.example");
       await noViolations(page, "today");
       await page.getByTestId("loan-card").first().click();
+      await page.waitForURL(/\/today\/loan/);
       await noViolations(page, "loan");
       await page.getByRole("button", { name: "भुगतान का वादा" }).click();
       await noViolations(page, "outcome sheet");

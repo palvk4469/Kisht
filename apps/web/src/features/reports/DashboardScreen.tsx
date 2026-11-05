@@ -1,7 +1,14 @@
 "use client";
 
 import type { BacktestWeek, Dashboard, OfficerRow } from "@kisht/contracts";
-import { BarChart3, Download } from "lucide-react";
+import {
+  AlertTriangle,
+  BarChart3,
+  CalendarClock,
+  CheckCircle2,
+  Download,
+  Percent,
+} from "lucide-react";
 import { useId, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, Stat } from "@/components/ui";
 import { DpdBadge } from "@/features/field/LoanCard";
@@ -468,8 +475,49 @@ export function DashboardScreen() {
         </div>
       </div>
 
-      <Card className="grid grid-cols-2 gap-3 p-3 lg:grid-cols-4">
+      {/* Executive Target & Savings Impact Banner */}
+      <div className="rounded-2xl border border-accent/25 bg-gradient-to-r from-accent-soft/80 via-accent-soft/30 to-canvas p-4 sm:p-5 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="flex size-6 items-center justify-center rounded-lg bg-accent text-on-accent text-xs font-bold shadow-xs">
+                ₹
+              </span>
+              <h3 className="font-bold text-sm tracking-tight text-ink">
+                {locale === "hi"
+                  ? "वार्षिक बचत लक्ष्य (₹1.63 करोड़)"
+                  : "Annual Value Target (₹1.63 Cr)"}
+              </h3>
+              <Badge tone="accent" dot>
+                {locale === "hi" ? "लक्ष्य 16%" : "Target 16%"}
+              </Badge>
+            </div>
+            <p className="mt-1 text-xs text-muted max-w-xl leading-relaxed">
+              {locale === "hi"
+                ? "31-60 DPD रोल रेट को 22% से 16% लाकर 324 डिफ़ॉल्ट/वर्ष रोकें (₹1.134 करोड़) + मैन्युअल रिपोर्टिंग बचत (₹49.5 लाख)."
+                : "Roll rate reduction from 22% to 16% saves 324 loans/yr (₹1.134 Cr) + field reporting automation (₹49.5 L)."}
+            </p>
+          </div>
+          <div className="flex items-center gap-3 text-xs font-medium self-start sm:self-center">
+            <div className="rounded-xl bg-canvas border border-line/60 px-3 py-1.5 shadow-xs">
+              <span className="text-muted block text-[10px] uppercase tracking-wider">
+                {locale === "hi" ? "लोन बुक" : "Loan Book"}
+              </span>
+              <span className="font-bold num text-ink text-sm">₹320 Cr</span>
+            </div>
+            <div className="rounded-xl bg-canvas border border-line/60 px-3 py-1.5 shadow-xs">
+              <span className="text-muted block text-[10px] uppercase tracking-wider">
+                {locale === "hi" ? "फील्ड स्टाफ" : "Field Staff"}
+              </span>
+              <span className="font-bold num text-ink text-sm">55 Officers</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Card className="grid grid-cols-2 gap-3.5 p-3.5 sm:p-4 lg:grid-cols-4 shadow-xs">
         <Stat
+          icon={<Percent className="size-4" />}
           label={t("dash.kpiRoll")}
           value={pct(current)}
           tone={current !== null && current > data.targets.rollRate ? "warn" : "ok"}
@@ -483,12 +531,14 @@ export function DashboardScreen() {
           }
         />
         <Stat
+          icon={<AlertTriangle className="size-4" />}
           label={t("dash.kpiRisk")}
           value={number(data.atRisk.count)}
           tone={data.atRisk.count > 0 ? "risk" : "neutral"}
           hint={t("dash.kpiRiskHint", { amount: rupeesShort(data.atRisk.outstanding) })}
         />
         <Stat
+          icon={<CalendarClock className="size-4" />}
           label={t("dash.kpiBroken")}
           value={number(data.promises.broken30)}
           hint={t("dash.kpiBrokenHint", {
@@ -496,6 +546,7 @@ export function DashboardScreen() {
           })}
         />
         <Stat
+          icon={<CheckCircle2 className="size-4" />}
           label={t("dash.kpiSameDay")}
           value={pct(data.sameDay.rate, 0)}
           tone={belowTarget(data.sameDay.rate, data.targets.sameDay) ? "warn" : "ok"}

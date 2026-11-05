@@ -78,16 +78,16 @@ export default function LoginPage() {
       <div className="flex flex-1 items-start justify-center px-4 pb-12 sm:items-center">
         <div className="w-full max-w-sm">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-2xl bg-accent text-lg font-semibold text-on-accent">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-accent text-2xl font-bold text-on-accent shadow-md">
               क
             </div>
-            <h1 className="text-2xl font-semibold">{t("app.name")}</h1>
-            <p className="mt-1 text-sm text-muted">{t("login.subtitle")}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-ink">{t("app.name")}</h1>
+            <p className="mt-1.5 text-xs text-muted leading-relaxed">{t("login.subtitle")}</p>
           </div>
 
           <form
             onSubmit={onSubmit}
-            className="space-y-4 rounded-card border border-line bg-canvas p-6"
+            className="space-y-4 rounded-card border border-line bg-canvas p-6 shadow-sm"
             noValidate
           >
             <h2 className="sr-only">{t("login.title")}</h2>

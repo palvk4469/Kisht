@@ -1,7 +1,7 @@
 "use client";
 
 import type { OutcomeType } from "@kisht/contracts";
-import { ArrowLeft, Ban, CalendarClock, HandCoins, PhoneOff } from "lucide-react";
+import { ArrowLeft, Ban, CalendarClock, HandCoins, PhoneOff, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Badge, Card, cx, EmptyState, ErrorState, Skeleton } from "@/components/ui";
@@ -100,16 +100,16 @@ export function LoanScreen({ loanId }: { loanId: string }) {
             {t("loan.managerNote", { note: loan.managerNote })}
           </p>
         )}
-        <dl className="mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-xl border border-line bg-canvas px-3 py-2.5">
-            <dt className="text-xs text-muted">{t("loan.outstanding")}</dt>
-            <dd className="num mt-0.5 font-semibold">{rupees(outstanding)}</dd>
+        <dl className="mt-4 grid grid-cols-3 gap-2.5">
+          <div className="rounded-2xl border border-line/70 bg-canvas p-3 shadow-xs">
+            <dt className="text-xs font-medium text-muted">{t("loan.outstanding")}</dt>
+            <dd className="num mt-1 font-bold text-ink">{rupees(outstanding)}</dd>
           </div>
-          <div className="rounded-xl border border-line bg-canvas px-3 py-2.5">
-            <dt className="text-xs text-muted">{t("loan.overdue")}</dt>
+          <div className="rounded-2xl border border-line/70 bg-canvas p-3 shadow-xs">
+            <dt className="text-xs font-medium text-muted">{t("loan.overdue")}</dt>
             <dd
               className={cx(
-                "num mt-0.5 font-semibold",
+                "num mt-1 font-bold",
                 dpdTone(dpd) === "risk" && "text-risk",
                 dpdTone(dpd) === "warn" && "text-warn",
               )}
@@ -117,9 +117,9 @@ export function LoanScreen({ loanId }: { loanId: string }) {
               {dpd}
             </dd>
           </div>
-          <div className="rounded-xl border border-line bg-canvas px-3 py-2.5">
-            <dt className="text-xs text-muted">{t("loan.emi")}</dt>
-            <dd className="num mt-0.5 font-semibold">{rupees(loan.emiAmount)}</dd>
+          <div className="rounded-2xl border border-line/70 bg-canvas p-3 shadow-xs">
+            <dt className="text-xs font-medium text-muted">{t("loan.emi")}</dt>
+            <dd className="num mt-1 font-bold text-ink">{rupees(loan.emiAmount)}</dd>
           </div>
         </dl>
       </section>
@@ -141,50 +141,61 @@ export function LoanScreen({ loanId }: { loanId: string }) {
       </section>
 
       <section className="mt-6 px-4">
-        <h2 className="font-medium">{t("loan.whatHappened")}</h2>
+        <h2 className="font-semibold text-ink tracking-tight">{t("loan.whatHappened")}</h2>
         {loan.contactPaused ? (
-          <p role="status" className="mt-2 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
+          <p
+            role="status"
+            className="mt-2.5 rounded-2xl border border-warn/25 bg-warn-soft p-4 text-sm font-medium text-warn shadow-xs"
+          >
             {t("loan.pausedLog")}
           </p>
         ) : canLog ? (
-          <div className="mt-2 grid grid-cols-2 gap-2">
+          <div className="mt-2.5 grid grid-cols-2 gap-2.5">
             {OUTCOMES.map(({ type, icon: Icon, className }) => (
               <button
                 key={type}
                 type="button"
                 onClick={() => setSheet(type)}
-                className="flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-xl border border-line bg-canvas px-2 font-medium hover:border-accent"
+                className="flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-2xl border border-line bg-canvas p-3 font-semibold shadow-xs transition-all hover:border-accent hover:shadow-sm active:scale-[0.98]"
               >
                 <Icon className={cx("size-6", className)} aria-hidden />
-                {t(`outcome.${type}`)}
+                <span>{t(`outcome.${type}`)}</span>
               </button>
             ))}
           </div>
         ) : (
-          <div role="status" className="mt-2 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
-            <p>{t("loan.closedLog", { time: time(clock.nextAllowedAt, locale) })}</p>
+          <div
+            role="status"
+            className="mt-2.5 rounded-2xl border border-warn/25 bg-warn-soft p-4 text-sm text-warn shadow-xs"
+          >
+            <p className="font-medium">
+              {t("loan.closedLog", { time: time(clock.nextAllowedAt, locale) })}
+            </p>
             <DemoTimeButton />
           </div>
         )}
       </section>
 
       <section className="mt-6 px-4">
-        <Card className="p-4">
-          <h2 className="font-medium">{t("loan.why")}</h2>
+        <Card className="p-5 shadow-xs">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-4 text-accent" aria-hidden />
+            <h2 className="font-semibold text-ink tracking-tight">{t("loan.why")}</h2>
+          </div>
           {score ? (
             <>
-              <ul className="mt-2 space-y-1.5 text-sm">
+              <ul className="mt-3 space-y-2 text-sm">
                 {score.reasons.map((r) => (
-                  <li key={r.code} className="flex gap-2">
-                    <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-accent" />
-                    {reasonText(r)}
+                  <li key={r.code} className="flex items-start gap-2.5">
+                    <span aria-hidden className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
+                    <span className="text-ink leading-relaxed">{reasonText(r)}</span>
                   </li>
                 ))}
               </ul>
               {score.limitedHistory && (
-                <p className="mt-2 text-sm text-muted">{t("today.limitedHistory")}</p>
+                <p className="mt-2 text-xs text-muted">{t("today.limitedHistory")}</p>
               )}
-              <p className="num mt-3 border-t border-line pt-3 text-xs text-muted">
+              <p className="num mt-3.5 border-t border-line/60 pt-3 text-xs text-muted">
                 {t(dpd > 30 ? "loan.mathsPast" : "loan.maths", {
                   chance: percent(dpd > 30 ? 1 - score.probability : score.probability),
                   amount: rupees(outstanding),

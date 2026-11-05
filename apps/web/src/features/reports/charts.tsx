@@ -26,7 +26,7 @@ function Tooltip({ x, width, children }: { x: number; width: number; children: R
   const onRight = x < width / 2;
   return (
     <div
-      className="pointer-events-none absolute top-1 z-10 rounded-lg border border-line bg-canvas px-3 py-2 text-xs shadow-md"
+      className="pointer-events-none absolute top-1 z-20 rounded-xl border border-line/80 bg-canvas/95 px-3.5 py-2.5 text-xs shadow-lg backdrop-blur-sm"
       style={onRight ? { left: x + 12 } : { right: width - x + 12 }}
     >
       {children}
@@ -79,6 +79,15 @@ export function LineChart({
     return d;
   };
 
+  const areaPath = (values: (number | null)[]) => {
+    const linePart = path(values);
+    if (!linePart) return "";
+    const firstIndex = values.findIndex((v) => v !== null);
+    const lastIndex = values.findLastIndex((v) => v !== null);
+    if (firstIndex === -1 || lastIndex === -1) return "";
+    return `${linePart}L${x(lastIndex).toFixed(1)} ${y(0).toFixed(1)}L${x(firstIndex).toFixed(1)} ${y(0).toFixed(1)}Z`;
+  };
+
   function onMove(e: PointerEvent<SVGSVGElement>) {
     const box = e.currentTarget.getBoundingClientRect();
     const position = (e.clientX - box.left - M.left) / innerW;
@@ -109,6 +118,12 @@ export function LineChart({
         onBlur={() => setActive(null)}
         className="block touch-pan-y"
       >
+        <defs>
+          <linearGradient id="rollGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="var(--color-series-1)" stopOpacity="0.22" />
+            <stop offset="100%" stopColor="var(--color-series-1)" stopOpacity="0.0" />
+          </linearGradient>
+        </defs>
         {ticks.map((t) => (
           <g key={t}>
             <line x1={M.left} x2={M.left + innerW} y1={y(t)} y2={y(t)} stroke="var(--color-line)" />
@@ -118,7 +133,7 @@ export function LineChart({
               textAnchor="end"
               fontSize={11}
               fill="var(--color-muted)"
-              className="num"
+              className="num font-medium"
             >
               {format(t)}
             </text>
@@ -134,6 +149,7 @@ export function LineChart({
                 textAnchor="middle"
                 fontSize={11}
                 fill="var(--color-muted)"
+                className="font-medium"
               >
                 {l}
               </text>
@@ -146,15 +162,16 @@ export function LineChart({
               x2={M.left + innerW}
               y1={y(reference.value)}
               y2={y(reference.value)}
-              stroke="var(--color-ink)"
-              strokeWidth={1}
+              stroke="var(--color-risk)"
+              strokeWidth={1.5}
+              strokeDasharray="4 3"
             />
             <text
-              x={M.left + 4}
+              x={M.left + 6}
               y={y(reference.value) + 14}
               fontSize={11}
-              fontWeight={500}
-              fill="var(--color-ink)"
+              fontWeight={600}
+              fill="var(--color-risk)"
               paintOrder="stroke"
               stroke="var(--color-canvas)"
               strokeWidth={3}
@@ -169,9 +186,12 @@ export function LineChart({
             x2={x(active)}
             y1={M.top}
             y2={M.top + innerH}
-            stroke="var(--color-faint)"
+            stroke="var(--color-accent)"
+            strokeWidth={1.5}
+            strokeDasharray="2 2"
           />
         )}
+        {series[0] && <path d={areaPath(series[0].values)} fill="url(#rollGradient)" aria-hidden />}
         {series.map((s) => (
           <path
             key={s.id}

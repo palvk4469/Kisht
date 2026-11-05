@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import { useId, useState } from "react";
 import { Sheet } from "@/components/Sheet";
 import { Button, cx } from "@/components/ui";
-import { day } from "@/lib/format";
+import { day, rupees } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import { useFieldLog } from "./api";
 import { useFlash } from "./Flash";
@@ -77,47 +77,67 @@ export function OutcomeSheet(props: Props) {
       {type === "DISPUTE" && <p className="mt-1 text-sm text-warn">{t("sheet.disputeHint")}</p>}
 
       {showDetails ? (
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 space-y-3.5">
           {(type === "PAID" || type === "PROMISE") && (
             <div>
-              <label htmlFor={amountId} className="text-sm font-medium">
+              <label
+                htmlFor={amountId}
+                className="text-xs font-semibold text-muted uppercase tracking-wider"
+              >
                 {t("sheet.amount")}
               </label>
-              <input
-                id={amountId}
-                inputMode="numeric"
-                maxLength={9}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
-                className={cx(field, "num")}
-              />
+              <div className="relative mt-1">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted font-medium">
+                  ₹
+                </span>
+                <input
+                  id={amountId}
+                  inputMode="numeric"
+                  maxLength={9}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value.replace(/\D/g, ""))}
+                  className={cx(field, "num pl-8 font-semibold text-lg")}
+                />
+              </div>
             </div>
           )}
           <div>
-            <label htmlFor={noteId} className="text-sm font-medium">
+            <label
+              htmlFor={noteId}
+              className="text-xs font-semibold text-muted uppercase tracking-wider"
+            >
               {t("sheet.note")}
             </label>
             <input
               id={noteId}
               value={note}
               maxLength={500}
+              placeholder={locale === "hi" ? "कोई टिप्पणी लिखें..." : "Add an optional note..."}
               onChange={(e) => setNote(e.target.value)}
               className={field}
             />
           </div>
         </div>
       ) : (
-        <button
-          type="button"
-          onClick={() => setShowDetails(true)}
-          className="mt-2 min-h-10 text-sm text-accent underline underline-offset-2"
-        >
-          {t("sheet.details")}
-        </button>
+        <div className="mt-3 flex items-center justify-between rounded-xl border border-line/60 bg-surface/50 px-3.5 py-2 text-xs text-muted">
+          <span>
+            {t("sheet.amount")}:{" "}
+            <strong className="num text-sm text-ink">
+              {rupees(validAmount ? parsedAmount : emiAmount)}
+            </strong>
+          </span>
+          <button
+            type="button"
+            onClick={() => setShowDetails(true)}
+            className="font-medium text-accent underline underline-offset-2"
+          >
+            {t("sheet.details")}
+          </button>
+        </div>
       )}
 
       {type === "PROMISE" ? (
-        <div className="mt-4 grid grid-cols-3 gap-2">
+        <div className="mt-4 grid grid-cols-3 gap-2.5">
           {PROMISE_CHOICES.map((n) => {
             const due = addDays(today, n);
             return (
@@ -126,12 +146,12 @@ export function OutcomeSheet(props: Props) {
                 type="button"
                 disabled={saving || !validAmount}
                 onClick={() => void submit(due)}
-                className="flex min-h-16 flex-col items-center justify-center rounded-xl border border-line px-1 hover:border-accent hover:bg-accent-soft disabled:opacity-50"
+                className="flex min-h-18 flex-col items-center justify-center rounded-2xl border border-line bg-canvas p-2.5 shadow-xs transition-all hover:border-accent hover:bg-accent-soft active:scale-[0.98] disabled:opacity-50"
               >
-                <span className="font-medium">
+                <span className="font-semibold text-sm">
                   {n === 1 ? t("sheet.tomorrow") : t("sheet.inDays", { n })}
                 </span>
-                <span className="text-xs text-muted">{day(due, locale)}</span>
+                <span className="mt-0.5 text-xs text-muted">{day(due, locale)}</span>
               </button>
             );
           })}

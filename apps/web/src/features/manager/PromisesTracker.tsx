@@ -171,7 +171,7 @@ export function PromisesTracker() {
             />
           </Card>
 
-          <Card>
+          <Card className="shadow-xs">
             <div className="flex flex-wrap items-center justify-between gap-3 border-b border-line px-4 py-3">
               <fieldset className="flex flex-wrap gap-1.5">
                 <legend className="sr-only">{t("tracker.col.status")}</legend>
@@ -182,10 +182,10 @@ export function PromisesTracker() {
                     aria-pressed={status === f.value}
                     onClick={() => setStatus(f.value)}
                     className={cx(
-                      "min-h-10 rounded-lg px-3 text-sm",
+                      "min-h-10 rounded-xl px-3.5 text-xs font-semibold transition-all active:scale-[0.98]",
                       status === f.value
-                        ? "bg-accent-soft font-medium text-accent"
-                        : "text-muted hover:bg-surface",
+                        ? "border border-accent/20 bg-accent-soft text-accent shadow-xs"
+                        : "text-muted hover:bg-surface hover:text-ink",
                     )}
                   >
                     {t(f.label)}
@@ -200,7 +200,7 @@ export function PromisesTracker() {
                   id={officerSelect}
                   value={officerId}
                   onChange={(e) => setOfficerId(e.target.value)}
-                  className="h-10 rounded-lg border border-line bg-canvas px-2 text-sm"
+                  className="h-10 rounded-xl border border-line bg-canvas px-3 text-xs font-medium outline-none focus:border-accent"
                 >
                   <option value="">{t("tracker.allOfficers")}</option>
                   {query.data.officers.map((o) => (

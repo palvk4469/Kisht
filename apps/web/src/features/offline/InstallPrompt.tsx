@@ -29,7 +29,7 @@ export function InstallPrompt() {
     setEvent(null);
   };
   return (
-    <div className="flex items-center gap-2 bg-accent-soft px-4 py-2 text-sm text-accent">
+    <div className="flex items-center gap-2 border-b border-accent/20 bg-accent-soft px-4 py-2 text-xs font-semibold text-accent shadow-xs">
       <span className="flex-1">{t("install.prompt")}</span>
       <button
         type="button"

@@ -32,14 +32,15 @@ export function Button({
       disabled={disabled || busy}
       aria-busy={busy || undefined}
       className={cx(
-        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-colors disabled:cursor-not-allowed",
+        "inline-flex items-center justify-center gap-2 rounded-xl font-medium transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:active:scale-100",
         size === "lg" ? "h-12 px-5 text-base" : "h-10 px-4 text-sm",
         variant === "primary" &&
-          "bg-accent text-on-accent hover:bg-accent-strong disabled:bg-accent/40 disabled:hover:bg-accent/40",
+          "bg-accent text-on-accent shadow-xs hover:bg-accent-strong hover:shadow-sm disabled:bg-accent/40 disabled:hover:bg-accent/40 disabled:shadow-none",
         variant === "secondary" &&
-          "border border-line bg-canvas text-ink hover:bg-surface disabled:text-faint disabled:hover:bg-canvas",
+          "border border-line bg-canvas text-ink shadow-xs hover:border-line/80 hover:bg-surface disabled:text-faint disabled:hover:bg-canvas disabled:shadow-none",
         variant === "ghost" && "text-muted hover:bg-surface hover:text-ink disabled:text-faint",
-        variant === "danger" && "bg-risk text-on-accent hover:opacity-90 disabled:bg-risk/40",
+        variant === "danger" &&
+          "bg-risk text-on-accent shadow-xs hover:opacity-90 disabled:bg-risk/40 disabled:shadow-none",
         className,
       )}
     >
@@ -51,7 +52,12 @@ export function Button({
 
 export function Card({ className, children }: { className?: string; children: ReactNode }) {
   return (
-    <section className={cx("rounded-card border border-line bg-canvas", className)}>
+    <section
+      className={cx(
+        "rounded-card border border-line bg-canvas shadow-xs transition-shadow duration-200",
+        className,
+      )}
+    >
       {children}
     </section>
   );
@@ -60,21 +66,45 @@ export function Card({ className, children }: { className?: string; children: Re
 type Tone = "neutral" | "accent" | "risk" | "warn" | "ok";
 
 const toneClass: Record<Tone, string> = {
-  neutral: "bg-line/60 text-muted",
-  accent: "bg-accent-soft text-accent",
-  risk: "bg-risk-soft text-risk",
-  warn: "bg-warn-soft text-warn",
-  ok: "bg-ok-soft text-ok",
+  neutral: "border-line bg-surface text-muted",
+  accent: "border-accent/20 bg-accent-soft text-accent",
+  risk: "border-risk/20 bg-risk-soft text-risk",
+  warn: "border-warn/25 bg-warn-soft text-warn",
+  ok: "border-ok/25 bg-ok-soft text-ok",
 };
 
-export function Badge({ tone = "neutral", children }: { tone?: Tone; children: ReactNode }) {
+export function Badge({
+  tone = "neutral",
+  dot = false,
+  className,
+  children,
+}: {
+  tone?: Tone;
+  dot?: boolean;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
     <span
       className={cx(
-        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-medium tracking-tight",
         toneClass[tone],
+        className,
       )}
     >
+      {dot && (
+        <span
+          className={cx(
+            "size-1.5 shrink-0 rounded-full",
+            tone === "risk" && "bg-risk",
+            tone === "warn" && "bg-warn",
+            tone === "ok" && "bg-ok",
+            tone === "accent" && "bg-accent",
+            tone === "neutral" && "bg-muted",
+          )}
+          aria-hidden
+        />
+      )}
       {children}
     </span>
   );
@@ -85,18 +115,23 @@ export function Stat({
   value,
   tone = "neutral",
   hint,
+  icon,
 }: {
   label: string;
   value: ReactNode;
   tone?: Tone;
   hint?: string;
+  icon?: ReactNode;
 }) {
   return (
-    <div className="rounded-xl bg-surface px-4 py-3">
-      <div className="text-xs text-muted">{label}</div>
+    <div className="rounded-xl border border-line/60 bg-surface/70 p-3.5 transition-colors hover:bg-surface sm:p-4">
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-xs font-medium text-muted">{label}</span>
+        {icon && <span className="text-muted/70">{icon}</span>}
+      </div>
       <div
         className={cx(
-          "num mt-1 text-2xl font-semibold",
+          "num mt-1 text-2xl font-bold tracking-tight sm:text-[1.75rem]",
           tone === "risk" && "text-risk",
           tone === "warn" && "text-warn",
           tone === "ok" && "text-ok",
@@ -105,13 +140,18 @@ export function Stat({
       >
         {value}
       </div>
-      {hint && <div className="mt-0.5 text-xs text-faint">{hint}</div>}
+      {hint && <div className="mt-1 text-xs text-muted leading-relaxed">{hint}</div>}
     </div>
   );
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div aria-hidden className={cx("animate-pulse rounded-lg bg-surface", className)} />;
+  return (
+    <div
+      aria-hidden
+      className={cx("animate-pulse rounded-xl border border-line/40 bg-surface/80", className)}
+    />
+  );
 }
 
 export function EmptyState({

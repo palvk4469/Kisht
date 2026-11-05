@@ -9,18 +9,18 @@
     system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Noto Sans Devanagari", "Nirmala UI",
     "Kohinoor Devanagari", sans-serif;
 
-  --color-ink: #16181d;
-  --color-muted: #5f6470;
-  --color-faint: #6b707c;
-  --color-line: #e7e7e4;
-  --color-surface: #f7f7f5;
+  --color-ink: #11141a;
+  --color-muted: #535864;
+  --color-faint: #545a67;
+  --color-line: #e3e5ea;
+  --color-surface: #f5f6f9;
   --color-canvas: #ffffff;
 
-  --color-accent: #2f3a8f;
+  --color-accent: #27348b;
   /* Text and icons drawn on an accent or status fill. */
   --color-on-accent: #ffffff;
-  --color-accent-strong: #232c70;
-  --color-accent-soft: #eef0fa;
+  --color-accent-strong: #1e276b;
+  --color-accent-soft: #edf0fa;
 
   --color-risk: #b42318;
   --color-risk-soft: #fef3f2;
@@ -30,11 +30,17 @@
   --color-ok-soft: #ecfdf3;
 
   /* Chart series, validated for colour-blind separation on both surfaces. */
-  --color-series-1: #4a58d4;
+  --color-series-1: #3e4ebd;
   --color-series-2: #d9622b;
-  --color-series-muted: #c9cbd3;
+  --color-series-muted: #c4c7d2;
 
-  --radius-card: 14px;
+  --radius-card: 16px;
+
+  --shadow-xs: 0 1px 2px 0 rgb(16 24 40 / 0.05);
+  --shadow-sm: 0 1px 3px 0 rgb(16 24 40 / 0.1), 0 1px 2px -1px rgb(16 24 40 / 0.1);
+  --shadow-md: 0 4px 6px -1px rgb(16 24 40 / 0.1), 0 2px 4px -2px rgb(16 24 40 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(16 24 40 / 0.1), 0 4px 6px -4px rgb(16 24 40 / 0.1);
+  --shadow-xl: 0 20px 25px -5px rgb(16 24 40 / 0.1), 0 8px 10px -6px rgb(16 24 40 / 0.1);
 }
 
 /* Dark theme: same roles, values tuned for contrast on near-black. Every
@@ -42,27 +48,33 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root.dark {
-  --color-ink: #e9eaee;
-  --color-muted: #a3a8b3;
-  --color-faint: #969ba7;
-  --color-line: #2a2d34;
-  --color-surface: #17191e;
-  --color-canvas: #0e1013;
+  --color-ink: #f0f2f6;
+  --color-muted: #a4aab7;
+  --color-faint: #8a92a3;
+  --color-line: #262932;
+  --color-surface: #14161c;
+  --color-canvas: #0c0e12;
 
   --color-accent: #9aa3f5;
   --color-accent-strong: #b6bdf8;
-  --color-accent-soft: #1f2340;
-  --color-on-accent: #0e1013;
+  --color-accent-soft: #1d2138;
+  --color-on-accent: #0c0e12;
   --color-series-1: #6f7ce8;
   --color-series-2: #d95926;
   --color-series-muted: #3b3f49;
 
   --color-risk: #f97970;
-  --color-risk-soft: #2c1513;
+  --color-risk-soft: #281312;
   --color-warn: #f5b546;
-  --color-warn-soft: #2a1f0b;
+  --color-warn-soft: #281c08;
   --color-ok: #4fd18b;
-  --color-ok-soft: #0d2618;
+  --color-ok-soft: #0b2215;
+
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
+  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.6), 0 8px 10px -6px rgb(0 0 0 / 0.6);
 }
 
 :root {
@@ -78,11 +90,12 @@
   }
   body {
     @apply bg-canvas text-ink antialiased;
-    font-feature-settings: "tnum" 0;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
   /* Money and counts line up in columns. */
   .num {
     font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
   }
   :focus-visible {
     outline: 2px solid var(--color-accent);

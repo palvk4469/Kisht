@@ -69,22 +69,31 @@ export function PromisesScreen() {
           ({ key, title, items }) =>
             items.length > 0 && (
               <section key={key} className="mt-5">
-                <h2 className="text-sm font-medium text-muted">
-                  {t(title)} <span className="num">({items.length})</span>
-                </h2>
-                <Card className="mt-2">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">
+                    {t(title)}
+                  </h2>
+                  <span className="num rounded-full border border-line/60 bg-surface px-2 py-0.5 text-[11px] text-muted">
+                    {items.length}
+                  </span>
+                </div>
+                <Card className="mt-2.5 overflow-hidden shadow-xs">
                   <ul className="divide-y divide-line">
                     {items.map((item) => (
                       <li key={item.loanId}>
                         <Link
                           href={loanHref(item.loanId)}
-                          className="flex min-h-16 items-center gap-3 px-4 py-2.5 hover:bg-surface"
+                          className="flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface/80"
                         >
                           <span className="min-w-0 flex-1">
-                            <span className="block font-medium">{item.borrowerName}</span>
-                            <span className="num mt-0.5 block text-sm text-muted">
-                              {rupees(item.promise?.amount ?? 0)} ·{" "}
-                              {shortDay(item.promise?.dueDate ?? today, locale)}
+                            <span className="block font-semibold text-ink tracking-tight">
+                              {item.borrowerName}
+                            </span>
+                            <span className="num mt-0.5 block text-xs text-muted">
+                              <span className="font-medium text-ink">
+                                {rupees(item.promise?.amount ?? 0)}
+                              </span>{" "}
+                              · {shortDay(item.promise?.dueDate ?? today, locale)}
                               {item.unsent && ` · ${t("sync.notSent")}`}
                             </span>
                           </span>

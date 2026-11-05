@@ -23,10 +23,10 @@ export function ImportHistory() {
   const items = query.data ?? [];
   const visible = showAll ? items : items.slice(0, HISTORY_PREVIEW);
   return (
-    <Card>
+    <Card className="shadow-xs">
       <div className="flex items-center gap-2 border-b border-line px-5 py-4">
-        <History className="size-4 text-faint" aria-hidden />
-        <h2 className="font-medium">{t("import.history")}</h2>
+        <History className="size-4 text-accent" aria-hidden />
+        <h2 className="font-semibold text-ink tracking-tight">{t("import.history")}</h2>
       </div>
       {query.isPending ? (
         <div className="space-y-2 p-5">
