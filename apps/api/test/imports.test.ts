@@ -141,7 +141,7 @@ describe("preview", () => {
       newLoans: 3,
       assignment: { new: 2, unassigned: 1 },
     });
-    expect(errors).toEqual([
+    expect(errors).toMatchObject([
       { row: 5, field: "phone", message: "must be a 10-digit Indian mobile number" },
     ]);
     expect(await prisma.loan.count({ where: { loanNo: { in: [L("1"), L("2"), L("3")] } } })).toBe(

@@ -31,10 +31,11 @@ export function usePreviewImport() {
 export function useCommitImport() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) =>
+    mutationFn: ({ id, confirmCured }: { id: string; confirmCured: boolean }) =>
       request(`/api/imports/${encodeURIComponent(id)}/commit`, {
         method: "POST",
         schema: ImportCommitted,
+        body: { confirmCured },
       }),
     onSuccess: () => void queryClient.invalidateQueries({ queryKey: importKeys.all }),
   });

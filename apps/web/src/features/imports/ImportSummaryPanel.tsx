@@ -23,7 +23,7 @@ export function ImportSummaryPanel({ summary }: { summary: ImportSummary }) {
         <Stat
           label={t("import.cured")}
           value={number(summary.cured)}
-          tone={summary.cured > 0 ? "ok" : "neutral"}
+          tone={summary.curedNeedsConfirmation ? "warn" : summary.cured > 0 ? "ok" : "neutral"}
         />
         <Stat label={t("import.payments")} value={number(summary.payments)} />
       </div>

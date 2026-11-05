@@ -6,7 +6,12 @@ export const MAX_IMPORT_CSV_BYTES = 8 * 1024 * 1024;
 export const ImportStatus = z.enum(["PREVIEW", "COMMITTED", "SUPERSEDED", "FAILED"]);
 export type ImportStatus = z.infer<typeof ImportStatus>;
 
-export const RowError = z.object({ row: z.number().int(), field: z.string(), message: z.string() });
+export const RowError = z.object({
+  row: z.number().int(),
+  field: z.string(),
+  message: z.string(),
+  loanNo: z.string().optional(),
+});
 export type RowError = z.infer<typeof RowError>;
 
 const count = z.number().int().nonnegative();
@@ -18,6 +23,10 @@ export const ImportSummary = z.object({
   skippedOtherBranches: count,
   newLoans: count,
   cured: count,
+  /** Loans on the previous list, which the cured count is measured against. */
+  previousList: count,
+  /** So many loans are missing that the file may be incomplete: commit needs a confirmation. */
+  curedNeedsConfirmation: z.boolean(),
   payments: count,
   replacesExisting: z.boolean(),
   assignment: z.object({
@@ -38,6 +47,12 @@ export const ImportPreviewBody = z.object({
   csv: z.string().min(1).max(MAX_IMPORT_CSV_BYTES),
 });
 export type ImportPreviewBody = z.infer<typeof ImportPreviewBody>;
+
+export const ImportCommitBody = z.object({
+  /** "I confirm these loans are no longer overdue." Required when the summary asks for it. */
+  confirmCured: z.boolean(),
+});
+export type ImportCommitBody = z.infer<typeof ImportCommitBody>;
 
 export const ImportPreview = z.object({
   id: z.string(),

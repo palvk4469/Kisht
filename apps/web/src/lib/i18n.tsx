@@ -244,6 +244,9 @@ const en = {
   "import.errors": "Rows with errors",
   "import.newLoans": "New loans",
   "import.cured": "Cured since last import",
+  "import.curedWarning":
+    "{n} of the {total} loans on the last list are missing from this file. They will be treated as paid in full, and their open promises as kept. Check the file is complete.",
+  "import.curedConfirm": "I confirm these {n} loans are no longer overdue",
   "import.payments": "Payments found",
   "import.skipped": "{n} rows for other branches were skipped.",
   "import.assignment": "Assignment",
@@ -613,6 +616,9 @@ const hi: Dictionary = {
   "import.errors": "गलती वाली पंक्तियाँ",
   "import.newLoans": "नए लोन",
   "import.cured": "पिछले इम्पोर्ट के बाद चुकता",
+  "import.curedWarning":
+    "पिछली सूची के {total} में से {n} लोन इस फ़ाइल में नहीं हैं। इन्हें पूरा चुकता माना जाएगा और इनके खुले वादे पूरे माने जाएँगे। जाँच लें कि फ़ाइल पूरी है।",
+  "import.curedConfirm": "मैंने जाँच लिया है: ये {n} लोन अब बकाया नहीं हैं",
   "import.payments": "मिले भुगतान",
   "import.skipped": "दूसरी शाखाओं की {n} पंक्तियाँ छोड़ दी गईं।",
   "import.assignment": "असाइनमेंट",

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { OverdueRow } from "./csv.ts";
-import { planImport } from "./importPlan.ts";
+import {
+  CURED_REVIEW_MIN_LOANS,
+  CURED_REVIEW_SHARE,
+  curedNeedsConfirmation,
+  planImport,
+} from "./importPlan.ts";
 
 const row = (loanNo: string, over: Partial<OverdueRow> = {}): OverdueRow => ({
   row: 2,
@@ -70,5 +75,37 @@ describe("planImport", () => {
     expect(p.newLoans).toEqual(["LN-9"]);
     // A new loan's last payment is recorded once; promise rules ignore old payments.
     expect(p.payments.map((x) => x.loanNo)).toEqual(["LN-9"]);
+  });
+
+  it("doesn't cure a loan whose row was rejected", () => {
+    const plan = planImport({
+      asOfDate: "2026-11-02",
+      rows: [row("LN-1")],
+      previous: new Map(),
+      previousList: new Set(["LN-1", "LN-2", "LN-3"]),
+      knownLoans: new Set(["LN-1", "LN-2", "LN-3"]),
+      rejected: new Set(["LN-2"]),
+    });
+    expect(plan.cured).toEqual(["LN-3"]);
+  });
+});
+
+describe("curedNeedsConfirmation", () => {
+  it.each([
+    ["an ordinary day", 15, 104, false],
+    ["exactly at the share", 20, 100, false],
+    ["just past the share", 21, 100, true],
+    ["half the branch missing", 52, 104, true],
+    ["a whole list missing", 104, 104, true],
+    ["a few real cures on a small list", CURED_REVIEW_MIN_LOANS - 1, 6, false],
+    ["the floor on a small list", CURED_REVIEW_MIN_LOANS, 6, true],
+    ["nothing cured", 0, 0, false],
+    ["the first import ever", 0, 0, false],
+  ])("%s", (_, cured, previous, expected) => {
+    expect(curedNeedsConfirmation(cured, previous)).toBe(expected);
+  });
+
+  it("keeps the measured normal peak below the line", () => {
+    expect(0.135).toBeLessThan(CURED_REVIEW_SHARE);
   });
 });

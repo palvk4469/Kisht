@@ -1,5 +1,6 @@
 import {
   IdParams,
+  ImportCommitBody,
   ImportCommitted,
   ImportHistory,
   ImportPreview,
@@ -44,10 +45,12 @@ export function registerImports(app: FastifyInstance, ctx: AppContext) {
         tags,
         summary: "Apply a previewed import",
         params: IdParams,
+        body: ImportCommitBody.nullish(),
         response: { 200: ImportCommitted },
       },
     },
-    async (request) => commitImport(ctx, currentUser(request), request.params.id),
+    async (request) =>
+      commitImport(ctx, currentUser(request), request.params.id, request.body?.confirmCured),
   );
 
   r.get(

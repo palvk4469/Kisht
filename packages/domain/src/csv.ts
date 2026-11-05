@@ -48,7 +48,13 @@ export type OverdueRow = {
   branchCode: string;
 };
 
-export type RowError = { row: number; field: string; message: string };
+export type RowError = {
+  row: number;
+  field: string;
+  message: string;
+  /** The loan the bad row is about, if it could be read: it isn't missing, just unusable. */
+  loanNo?: string;
+};
 
 export type ParsedImport = {
   rows: OverdueRow[];
@@ -198,14 +204,25 @@ export function parseOverdueCsv(text: string, today: IsoDay): ParsedImport {
     const record = Object.fromEntries(columns.map((c, j) => [c, cells[j] ?? ""]));
     const parsed = RowSchema.safeParse(record);
     if (!parsed.success) {
+      const loanNo = RowSchema.shape.loan_id.safeParse(record.loan_id).data;
       for (const issue of parsed.error.issues) {
-        errors.push({ row: rowNo, field: String(issue.path[0] ?? "row"), message: issue.message });
+        errors.push({
+          row: rowNo,
+          field: String(issue.path[0] ?? "row"),
+          message: issue.message,
+          loanNo,
+        });
       }
       return;
     }
     const r = parsed.data;
     if (r.last_payment_date && r.last_payment_date > today) {
-      errors.push({ row: rowNo, field: "last_payment_date", message: "is in the future" });
+      errors.push({
+        row: rowNo,
+        field: "last_payment_date",
+        message: "is in the future",
+        loanNo: r.loan_id,
+      });
       return;
     }
     if ((r.last_payment_date === null) !== (r.last_payment_amount === null)) {
@@ -213,6 +230,7 @@ export function parseOverdueCsv(text: string, today: IsoDay): ParsedImport {
         row: rowNo,
         field: "last_payment_amount",
         message: "last payment date and amount must both be given or both be empty",
+        loanNo: r.loan_id,
       });
       return;
     }

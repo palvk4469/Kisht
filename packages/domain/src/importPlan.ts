@@ -8,7 +8,8 @@ import { addDays, type IsoDay } from "./dates.ts";
 //    a payment made the day before (the export runs a day behind).
 //  - Cured: the loan was on the previous list and is not on this one. The
 //    overdue export only lists loans with arrears, so dropping off it means
-//    the arrears were cleared.
+//    the arrears were cleared. A row the file got wrong isn't "not on the list":
+//    its loan is left as it was until a corrected file arrives.
 //  - New: first time this loan number has been seen.
 
 export type PreviousState = {
@@ -29,6 +30,19 @@ export type ImportPlan = {
   newLoans: string[];
 };
 
+/**
+ * A file missing many loans is more likely incomplete than a good day: every missing
+ * loan would be treated as paid in full. Normal days peak at 13.5% of a branch's list
+ * on the simulated history, so 20% flags the unusual without crying wolf. The floor
+ * keeps a small list from being flagged over a few real cures (A28).
+ */
+export const CURED_REVIEW_SHARE = 0.2;
+export const CURED_REVIEW_MIN_LOANS = 5;
+
+export function curedNeedsConfirmation(cured: number, previousList: number): boolean {
+  return cured >= CURED_REVIEW_MIN_LOANS && cured / previousList > CURED_REVIEW_SHARE;
+}
+
 export function planImport(input: {
   asOfDate: IsoDay;
   rows: readonly OverdueRow[];
@@ -38,6 +52,8 @@ export function planImport(input: {
   previousList: ReadonlySet<string>;
   /** Loan numbers that already exist in the system. */
   knownLoans: ReadonlySet<string>;
+  /** Loans whose row in this file was rejected. */
+  rejected?: ReadonlySet<string>;
 }): ImportPlan {
   const payments: DetectedPayment[] = [];
   const onList = new Set<string>();
@@ -70,6 +86,8 @@ export function planImport(input: {
     }
   }
 
-  const cured = [...input.previousList].filter((loanNo) => !onList.has(loanNo)).sort();
+  const cured = [...input.previousList]
+    .filter((loanNo) => !onList.has(loanNo) && !input.rejected?.has(loanNo))
+    .sort();
   return { payments, cured, newLoans };
 }

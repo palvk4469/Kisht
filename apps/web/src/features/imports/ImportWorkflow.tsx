@@ -2,7 +2,7 @@
 
 import { MAX_IMPORT_CSV_BYTES } from "@kisht/contracts";
 import { istDayOf, OVERDUE_COLUMNS, OVERDUE_TEMPLATE_ROWS } from "@kisht/domain";
-import { CheckCircle2, Download, FileSpreadsheet, Info, Upload } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Download, FileSpreadsheet, Info, Upload } from "lucide-react";
 import { type DragEvent, useId, useRef, useState } from "react";
 import { Button, Card, cx, ErrorState } from "@/components/ui";
 import { day, number } from "@/lib/format";
@@ -42,10 +42,12 @@ export function ImportWorkflow() {
 
   const preview = usePreviewImport();
   const commit = useCommitImport();
+  const [confirmedCured, setConfirmedCured] = useState(false);
 
   function choose(f: File | undefined) {
     preview.reset();
     commit.reset();
+    setConfirmedCured(false);
     if (!f) return;
     if (!/\.csv$/i.test(f.name) && f.type !== "text/csv") {
       setFile(null);
@@ -76,6 +78,7 @@ export function ImportWorkflow() {
     setFile(null);
     preview.reset();
     commit.reset();
+    setConfirmedCured(false);
     if (fileInput.current) fileInput.current.value = "";
   }
 
@@ -223,6 +226,27 @@ export function ImportWorkflow() {
                 </p>
               )}
 
+              {result.summary.curedNeedsConfirmation && (
+                <div className="mt-4 rounded-xl bg-warn-soft px-4 py-3 text-sm text-warn">
+                  <p className="flex items-start gap-2 font-medium">
+                    <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden />
+                    {t("import.curedWarning", {
+                      n: number(result.summary.cured),
+                      total: number(result.summary.previousList),
+                    })}
+                  </p>
+                  <label className="mt-2 ml-6 flex min-h-12 cursor-pointer items-center gap-3 text-ink">
+                    <input
+                      type="checkbox"
+                      className="size-5 shrink-0 accent-[var(--color-accent)]"
+                      checked={confirmedCured}
+                      onChange={(e) => setConfirmedCured(e.target.checked)}
+                    />
+                    {t("import.curedConfirm", { n: number(result.summary.cured) })}
+                  </label>
+                </div>
+              )}
+
               <ImportSummaryPanel summary={result.summary} />
 
               {result.errors.length > 0 && (
@@ -246,9 +270,12 @@ export function ImportWorkflow() {
                 </Button>
                 <Button
                   size="lg"
-                  onClick={() => commit.mutate(result.id)}
+                  onClick={() => commit.mutate({ id: result.id, confirmCured: confirmedCured })}
                   busy={commit.isPending}
-                  disabled={result.summary.rows === 0}
+                  disabled={
+                    result.summary.rows === 0 ||
+                    (result.summary.curedNeedsConfirmation && !confirmedCured)
+                  }
                 >
                   {commit.isPending ? t("import.committing") : t("import.commit")}
                 </Button>

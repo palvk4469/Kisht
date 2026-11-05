@@ -10,6 +10,7 @@ import { Prisma, type PrismaClient } from "@kisht/db";
 import {
   type AssignmentResult,
   assignLoans,
+  curedNeedsConfirmation,
   fromDbDate,
   type ImportPlan,
   type IsoDay,
@@ -46,6 +47,7 @@ type BranchCodes = ReadonlyMap<string, string>;
 const MAX_ERRORS_RETURNED = 200;
 
 type Prepared = {
+  previousListSize: number;
   rows: OverdueRow[];
   plan: ImportPlan;
   assignment: AssignmentResult;
@@ -84,12 +86,16 @@ async function assertInDateOrder(
   }
 }
 
+const rejectedLoans = (errors: readonly RowError[]) =>
+  new Set(errors.flatMap((e) => e.loanNo ?? []));
+
 /** Builds the plan from the database as it is now. Used by preview and, again, inside commit. */
 async function prepare(
   db: Db,
   scope: ManagerScope,
   asOfDate: IsoDay,
   rows: OverdueRow[],
+  rejected: ReadonlySet<string>,
 ): Promise<Prepared> {
   const known = await db.loan.findMany({
     where: { loanNo: { in: rows.map((r) => r.loanNo) } },
@@ -143,6 +149,7 @@ async function prepare(
     previous,
     previousList,
     knownLoans: new Set(loanIdByNo.keys()),
+    rejected,
   });
 
   // Assignment, exactly as commit will run it.
@@ -177,6 +184,7 @@ async function prepare(
     officerNames: new Map(officers.map((o) => [o.id, o.name])),
     replacesExisting,
     loanIdByNo,
+    previousListSize: previousList.size,
   };
 }
 
@@ -189,6 +197,8 @@ function summarise(asOfDate: IsoDay, p: Prepared, errors: number, skipped: numbe
     skippedOtherBranches: skipped,
     newLoans: p.plan.newLoans.length,
     cured: p.plan.cured.length,
+    previousList: p.previousListSize,
+    curedNeedsConfirmation: curedNeedsConfirmation(p.plan.cured.length, p.previousListSize),
     payments: p.plan.payments.length,
     replacesExisting: p.replacesExisting,
     assignment: {
@@ -233,6 +243,7 @@ export async function previewImport(
         row: row.row,
         field: "branch_code",
         message: `unknown branch "${row.branchCode}"`,
+        loanNo: row.loanNo,
       });
     } else if (!coversBranch(scope, branchId)) {
       skipped++;
@@ -243,7 +254,7 @@ export async function previewImport(
 
   const summary = summarise(
     input.asOfDate,
-    await prepare(prisma, scope, input.asOfDate, rows),
+    await prepare(prisma, scope, input.asOfDate, rows, rejectedLoans(errors)),
     errors.length,
     skipped,
   );
@@ -270,6 +281,7 @@ export async function commitImport(
   ctx: AppContext,
   user: AuthUser,
   batchId: string,
+  confirmCured = false,
 ): Promise<ImportCommitted> {
   const { prisma } = ctx;
   const now = ctx.clock();
@@ -298,7 +310,16 @@ export async function commitImport(
       // The database may have moved on since the preview: check and plan again.
       await assertInDateOrder(tx, scope, asOfDate, batch.id);
       const codes = await branchCodes(tx);
-      const p = await prepare(tx, scope, asOfDate, rows);
+      const rejected = rejectedLoans((batch.errors ?? []) as unknown as RowError[]);
+      const p = await prepare(tx, scope, asOfDate, rows, rejected);
+      // Judged on today's plan, not the preview's: throwing also undoes the claim above.
+      const needsConfirmation = curedNeedsConfirmation(p.plan.cured.length, p.previousListSize);
+      if (needsConfirmation && !confirmCured) {
+        throw new HttpError(
+          409,
+          `${p.plan.cured.length} of ${p.previousListSize} loans are missing from this file. Confirm they are no longer overdue to commit it.`,
+        );
+      }
 
       // 1. Loans and borrowers: create new ones, refresh details of known ones.
       const knownLoans = new Map(
@@ -420,10 +441,14 @@ export async function commitImport(
       const promiseCounts = { kept: 0, partial: 0, broken: 0 };
       const pending = await tx.promiseToPay.findMany({
         where: { status: "PENDING", loan: loanWhere(scope) },
-        include: { loan: { select: { payments: { select: { date: true, amount: true } } } } },
+        include: {
+          loan: { select: { loanNo: true, payments: { select: { date: true, amount: true } } } },
+        },
       });
       const cured = new Set(curedIds);
       for (const promise of pending) {
+        // Today's data on this loan was rejected, so it can't settle anything yet.
+        if (rejected.has(promise.loan.loanNo)) continue;
         const resolution = cured.has(promise.loanId)
           ? { status: "KEPT" as const, paidAmount: promise.amount }
           : resolvePromise(
@@ -465,7 +490,12 @@ export async function commitImport(
         action: "import.commit",
         entity: "import_batch",
         entityId: batch.id,
-        meta: { asOfDate, rows: rows.length },
+        meta: {
+          asOfDate,
+          rows: rows.length,
+          cured: p.plan.cured.length,
+          curedConfirmed: needsConfirmation,
+        },
       });
 
       return { id: batch.id, status: "COMMITTED" as const, summary };
