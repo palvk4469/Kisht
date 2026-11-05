@@ -17,7 +17,15 @@ const EnvSchema = z.object({
   TRUSTED_PROXY_HOPS: z.coerce.number().int().positive().default(1),
   // AI reminder drafts (D31). Without a key, officers get the approved templates.
   OPENROUTER_API_KEY: z.string().optional(),
-  AI_DRAFT_MODEL: z.string().optional(),
+  // Comma-separated OpenRouter models, tried in order.
+  // Docker passes an unset variable as "", which must mean the default, not no models.
+  AI_DRAFT_MODELS: z
+    .string()
+    .optional()
+    .transform((value) => {
+      const models = (value ?? "").split(",").flatMap((model) => model.trim() || []);
+      return models.length > 0 ? models : undefined;
+    }),
 });
 
 export type Env = z.infer<typeof EnvSchema>;

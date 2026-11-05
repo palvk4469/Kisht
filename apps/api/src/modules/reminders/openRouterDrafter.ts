@@ -7,10 +7,18 @@ import type { ReminderDrafter } from "./drafts.js";
 // inject. What comes back is untrusted: drafts.ts checks every reply.
 
 const ENDPOINT = "https://openrouter.ai/api/v1/chat/completions";
-/** Picks whichever free model is available, as individual ones come and go. */
-const DEFAULT_MODEL = "openrouter/free";
+/**
+ * Tried in order when one is unavailable. These two wrote good Hindi quickly when
+ * tested. The free router comes last because it often picks a model that spends
+ * its whole budget thinking and returns nothing, but free models come and go.
+ */
+export const DEFAULT_MODELS = [
+  "liquid/lfm-2.5-2.6b:free",
+  "cohere/north-mini-code:free",
+  "openrouter/free",
+];
 /** An officer is waiting in the field. After this they get the approved template. */
-const TIMEOUT_MS = 10_000;
+const TIMEOUT_MS = 8000;
 
 const SYSTEM = `You reword payment reminders that a lender's field officers in India send to small business owners.
 
@@ -23,10 +31,10 @@ Rules:
 - Use at most 300 characters.
 - Reply with the message only, with no quotes, notes or explanation.`;
 
-type Options = { apiKey: string; model?: string; fetch?: typeof fetch };
+type Options = { apiKey: string; models?: string[]; fetch?: typeof fetch };
 
 export function createOpenRouterDrafter(options: Options): ReminderDrafter {
-  const { apiKey, model = DEFAULT_MODEL, fetch: send = fetch } = options;
+  const { apiKey, models = DEFAULT_MODELS, fetch: send = fetch } = options;
   return async ({ template, lang, situation }) => {
     const response = await send(ENDPOINT, {
       method: "POST",
@@ -36,7 +44,7 @@ export function createOpenRouterDrafter(options: Options): ReminderDrafter {
         "x-title": "Kisht Collections",
       },
       body: JSON.stringify({
-        model,
+        models,
         max_tokens: 1000,
         messages: [
           { role: "system", content: SYSTEM },

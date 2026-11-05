@@ -98,14 +98,14 @@ Names only. Values are never committed; `.env.example` shows the format for loca
 
 **Server (`~/kisht/.env`)**
 
-| Name                 | Required | Purpose                                                   |
-| -------------------- | -------- | --------------------------------------------------------- |
-| `POSTGRES_PASSWORD`  | Yes      | Database password                                         |
-| `BETTER_AUTH_SECRET` | Yes      | Signs sessions, 32 characters or more                     |
-| `BETTER_AUTH_URL`    | Yes      | Public HTTPS address; also the origin check               |
-| `DEMO_PASSWORD`      | Yes      | Password of the seeded accounts                           |
-| `OPENROUTER_API_KEY` | No       | AI drafts; without it officers get the approved templates |
-| `AI_DRAFT_MODEL`     | No       | OpenRouter model; defaults to `openrouter/free`           |
+| Name                 | Required | Purpose                                                                |
+| -------------------- | -------- | ---------------------------------------------------------------------- |
+| `POSTGRES_PASSWORD`  | Yes      | Database password                                                      |
+| `BETTER_AUTH_SECRET` | Yes      | Signs sessions, 32 characters or more                                  |
+| `BETTER_AUTH_URL`    | Yes      | Public HTTPS address; also the origin check                            |
+| `DEMO_PASSWORD`      | Yes      | Password of the seeded accounts                                        |
+| `OPENROUTER_API_KEY` | No       | AI drafts; without it officers get the approved templates              |
+| `AI_DRAFT_MODELS`    | No       | OpenRouter models to try in order, comma-separated; has a free default |
 
 **Set by the compose file:** `DATABASE_URL`, `BETTER_AUTH_URL`, `DEMO_MODE`, `NODE_OPTIONS`, `TZ`.
 

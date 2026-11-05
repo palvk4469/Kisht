@@ -36,7 +36,7 @@ services:
       DEMO_MODE: "true"
       DEMO_PASSWORD: ${DEMO_PASSWORD:?}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
-      AI_DRAFT_MODEL: ${AI_DRAFT_MODEL:-}
+      AI_DRAFT_MODELS: ${AI_DRAFT_MODELS:-}
       TZ: Asia/Kolkata
     healthcheck:
       test:

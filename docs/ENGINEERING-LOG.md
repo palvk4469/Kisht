@@ -160,3 +160,7 @@ The adapter now calls OpenRouter, with its free router as the default model. Bec
 ## Production dry run (2026-11-05)
 
 A clean clone with no `.env`, `NODE_ENV=production` and the commands from `deployment.md` installed, built and served correctly. It also showed that everyone behind a proxy shared one sign-in limit, so about 20 wrong passwords a minute from anyone would have locked out every officer. The limiter trusted a forwarded header only when it held a single address, and a proxy adds more. The API now passes it the address recorded by the nearest trusted proxy, set by `TRUSTED_PROXY_HOPS`. Anything further left can be invented by the client, so it is ignored.
+
+## First real AI drafts (2026-11-05)
+
+English worked at once, but Hindi, the officers' main language, kept falling back. OpenRouter's free router kept picking a model that spent all its tokens thinking and returned nothing. Testing the free models directly found two that write good Hindi in under 4 seconds, so those are now named first, with the router as the last resort. A failed attempt is no longer kept for the day, and the server now gives up well before the phone does. CI's different fonts also showed a browser test was too strict: it demanded a tab be 100% in view when 99.6% is what a user sees.

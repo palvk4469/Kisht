@@ -19,7 +19,7 @@ const app = await buildApp({
   drafter: env.OPENROUTER_API_KEY
     ? createOpenRouterDrafter({
         apiKey: env.OPENROUTER_API_KEY,
-        model: env.AI_DRAFT_MODEL || undefined,
+        models: env.AI_DRAFT_MODELS,
       })
     : null,
   logger: true,

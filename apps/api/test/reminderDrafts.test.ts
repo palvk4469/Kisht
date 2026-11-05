@@ -4,8 +4,12 @@ import { REMINDER_TEMPLATES, toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
+import { loadEnv } from "../src/env.js";
 import type { DraftInput, ReminderDrafter } from "../src/modules/reminders/drafts.js";
-import { createOpenRouterDrafter } from "../src/modules/reminders/openRouterDrafter.js";
+import {
+  createOpenRouterDrafter,
+  DEFAULT_MODELS,
+} from "../src/modules/reminders/openRouterDrafter.js";
 import { createFixture, type Fixture, signIn, TEST_ORIGIN, TEST_SECRET } from "./fixtures.js";
 
 const prisma = createTestPrisma();
@@ -171,6 +175,15 @@ describe("drafting", () => {
     expect(calls).toHaveLength(1);
   });
 
+  it("tries the AI again after a failure", async () => {
+    const loan = await makeLoan();
+    drafter = async () => null;
+    expect((await draft(loan.id)).source).toBe("TEMPLATE");
+    drafter = async () => REWORDED;
+    expect((await draft(loan.id)).source).toBe("AI");
+    expect(calls).toHaveLength(2);
+  });
+
   it("picks the template from the latest promise", async () => {
     const loan = await makeLoan();
     const outcome = await prisma.outcome.create({
@@ -334,10 +347,19 @@ describe("the OpenRouter adapter", () => {
     const drafted = drafterWith(answer("  Namaste {borrowerName}\n"), sent);
     expect(await drafted(input)).toBe("Namaste {borrowerName}");
     const body = JSON.parse(String(sent[0]?.body));
-    expect(body.model).toBe("openrouter/free");
+    expect(body.models).toEqual(DEFAULT_MODELS);
     expect(JSON.stringify(body.messages)).toContain("{borrowerName}");
     expect(JSON.stringify(body.messages)).toContain("Hindi");
     expect(new Headers(sent[0]?.headers).get("authorization")).toBe("Bearer test-key");
+  });
+
+  it("treats an empty model setting as the default, as Docker sends it", () => {
+    const base = { DATABASE_URL: "postgresql://x", BETTER_AUTH_SECRET: "s".repeat(32) };
+    const models = (AI_DRAFT_MODELS?: string) =>
+      loadEnv({ ...base, BETTER_AUTH_URL: TEST_ORIGIN, AI_DRAFT_MODELS }).AI_DRAFT_MODELS;
+    expect(models("")).toBeUndefined();
+    expect(models()).toBeUndefined();
+    expect(models("a/b:free, c/d")).toEqual(["a/b:free", "c/d"]);
   });
 
   it("gives up on a cut-off reply or one with no text", async () => {
@@ -350,17 +372,17 @@ describe("the OpenRouter adapter", () => {
     await expect(drafterWith(reply({}, 429))(input)).rejects.toMatchObject({ status: 429 });
   });
 
-  it("uses the model it's configured with", async () => {
+  it("uses the models it's configured with", async () => {
     const sent: RequestInit[] = [];
     const drafted = createOpenRouterDrafter({
       apiKey: "k",
-      model: "some/model",
+      models: ["some/model"],
       fetch: async (_url, init) => {
         sent.push(init as RequestInit);
         return answer("x");
       },
     });
     await drafted(input);
-    expect(JSON.parse(String(sent[0]?.body)).model).toBe("some/model");
+    expect(JSON.parse(String(sent[0]?.body)).models).toEqual(["some/model"]);
   });
 });

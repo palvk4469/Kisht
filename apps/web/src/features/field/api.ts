@@ -28,8 +28,8 @@ const REFRESH_MS = 60_000;
 const FETCH_TIMEOUT_MS = 8000;
 /** How long logging waits for a GPS fix before sending without one. */
 const GPS_WAIT_MS = 1500;
-/** The server gives the AI 10 seconds before it falls back to the approved wording. */
-const DRAFT_TIMEOUT_MS = 15_000;
+/** Well past the 8 seconds the server gives the AI before using the approved wording. */
+const DRAFT_TIMEOUT_MS = 20_000;
 
 export type LoadedToday = {
   list: TodayList;

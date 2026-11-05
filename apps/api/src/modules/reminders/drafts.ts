@@ -103,9 +103,18 @@ export async function draftReminder(
   const promise = row ? { status: row.status, dueDate: fromDbDate(row.dueDate) } : null;
   const template = chooseDraftTemplate(promise, today);
 
-  // Asked again today, the officer gets the same wording, and the AI isn't called again.
+  // Asked again today, the officer gets the same AI wording without another call.
+  // A fallback isn't kept: free models fail often, and the next try may well work.
   const existing = await ctx.prisma.reminderDraft.findFirst({
-    where: { loanId, officerId: user.id, lang, template, sentAt: null, createdAt: dayRange(today) },
+    where: {
+      loanId,
+      officerId: user.id,
+      lang,
+      template,
+      source: "AI",
+      sentAt: null,
+      createdAt: dayRange(today),
+    },
     orderBy: { createdAt: "desc" },
   });
   if (existing) return toContract(existing);

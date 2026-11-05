@@ -22,18 +22,18 @@ const NAV: { href: string; label: MessageKey }[] = [
 ];
 
 export function ManagerShell({ me, children }: { me: Me; children: ReactNode }) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const pathname = usePathname();
   const signOut = useSignOut(me.id);
   const nav = useRef<HTMLElement>(null);
   // On a phone the tabs scroll sideways; the current one must never be off-screen.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: runs whenever the page changes.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs when the page or tab widths change.
   useEffect(() => {
     nav.current?.querySelector('[aria-current="page"]')?.scrollIntoView({
       block: "nearest",
       inline: "nearest",
     });
-  }, [pathname]);
+  }, [pathname, locale]);
   return (
     <div className="min-h-dvh bg-surface">
       <header className="sticky top-0 z-10 border-b border-line bg-canvas/95 backdrop-blur">

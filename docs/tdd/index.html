@@ -155,7 +155,7 @@
   <li>The reply must pass every check: word filter in English and Hindi, exactly the same placeholders, no invented numbers or links, length and language. Any failure, outage or missing key gives the officer the approved wording instead, labelled as such.</li>
   <li>The officer reads it and taps Send. They cannot edit it, so what passed the checks is what goes out. Sending obeys the contact window and the daily limit, and every try is recorded (A27).</li>
 </ol>
-<p>The call goes through OpenRouter, so the model is an environment variable, defaulting to its free router. Because no personal data is sent, a free model that keeps prompts is acceptable. One AI call per loan, language and day keeps usage bounded, and a slow or rate-limited model only means the officer gets the approved wording.</p>
+<p>The call goes through OpenRouter, with free models tried in order and set by an environment variable. Testing showed why that order matters: the free router often picked a model that returned nothing in Hindi, so two models that wrote good Hindi come first. Because no personal data is sent, a free model that keeps prompts is acceptable. A successful draft is reused for that loan, language and day. A slow or rate-limited model only means the officer gets the approved wording, labelled as such.</p>
 
 <h2>7. The hard parts</h2>
 <h3>Offline logging with sync</h3>
@@ -200,7 +200,7 @@
 <table>
   <tr><th style="width:30%">Layer</th><th style="width:12%">Count</th><th>What it proves</th></tr>
   <tr><td>Business rules</td><td>133</td><td>Boundaries such as 18:59:59 vs 19:00:00 and the 90% promise line; threats in two languages. Coverage of at least 90% is enforced.</td></tr>
-  <tr><td>API integration</td><td>117</td><td>Access per role, CSRF, contracts, import re-uploads, sync retries at the same moment, an AI that misbehaves.</td></tr>
+  <tr><td>API integration</td><td>119</td><td>Access per role, CSRF, contracts, import re-uploads, sync retries at the same moment, an AI that misbehaves.</td></tr>
   <tr><td>Database and seed</td><td>9</td><td>Partial unique indexes; the brief's sample rows exactly; roll rate near 22%.</td></tr>
   <tr><td>Web units</td><td>9</td><td>The offline overlay.</td></tr>
   <tr><td>Browser (phone and desktop)</td><td>74</td><td>Real offline work reaching a manager, three-tap logging, the 7 pm block, and WCAG AA on every screen in both themes.</td></tr>
