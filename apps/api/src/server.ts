@@ -15,6 +15,7 @@ const app = await buildApp({
     docs: env.NODE_ENV !== "production" || env.DEMO_MODE,
     backgroundJobs: true,
     rateLimit: env.NODE_ENV === "production",
+    trustedProxyHops: env.TRUSTED_PROXY_HOPS,
   },
   drafter: env.ANTHROPIC_API_KEY
     ? createClaudeDrafter(new Anthropic({ apiKey: env.ANTHROPIC_API_KEY }), env.AI_DRAFT_MODEL)

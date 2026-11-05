@@ -176,7 +176,7 @@
 
 <h2>8. Security and compliance</h2>
 <ul>
-  <li><strong>Access:</strong> scoped per role in one module and tested per role. Sign-up is closed, and sign-in is rate-limited per IP in Postgres (D29).</li>
+  <li><strong>Access:</strong> scoped per role in one module and tested per role. Sign-up is closed, and sign-in is rate-limited in Postgres, per address as recorded by the nearest trusted proxy (D29).</li>
   <li><strong>DPDP:</strong> managers see masked phone numbers, and revealing one is audited. Officers get full numbers only for loans they hold (D19), because calls often work when data does not. Uncommitted import previews are deleted after 24 hours (A24), and the AI sees no personal data.</li>
   <li><strong>Web:</strong> an origin check on every change, every input validated by contract, and a Content-Security-Policy with nothing loading from elsewhere. It allows inline scripts: nonces would mean rendering every page per request, giving up the static shell that offline opening relies on (D30).</li>
   <li><strong>Repository:</strong> no secrets and no real personal data. Borrowers are placeholders with fake numbers (A14).</li>
@@ -201,7 +201,7 @@
 <table>
   <tr><th style="width:30%">Layer</th><th style="width:12%">Count</th><th>What it proves</th></tr>
   <tr><td>Business rules</td><td>133</td><td>Boundaries such as 18:59:59 vs 19:00:00 and the 90% promise line; threats in two languages. Coverage of at least 90% is enforced.</td></tr>
-  <tr><td>API integration</td><td>114</td><td>Access per role, CSRF, contracts, import re-uploads, sync retries at the same moment, an AI that misbehaves.</td></tr>
+  <tr><td>API integration</td><td>117</td><td>Access per role, CSRF, contracts, import re-uploads, sync retries at the same moment, an AI that misbehaves.</td></tr>
   <tr><td>Database and seed</td><td>9</td><td>Partial unique indexes; the brief's sample rows exactly; roll rate near 22%.</td></tr>
   <tr><td>Web units</td><td>9</td><td>The offline overlay.</td></tr>
   <tr><td>Browser (phone and desktop)</td><td>74</td><td>Real offline work reaching a manager, three-tap logging, the 7 pm block, and WCAG AA on every screen in both themes.</td></tr>

@@ -263,6 +263,49 @@ describe("password guessing", () => {
     await second.close();
   });
 
+  it("counts by the address the proxy saw, so everyone doesn't share one limit", async () => {
+    const limited = await limitedApp();
+    const chain = (forwarded: string) => guess(limited, forwarded);
+    for (let i = 0; i < 20; i++) await chain("203.0.113.7, 10.0.0.1");
+    // By default only the nearest proxy's record is trusted, whoever is further left.
+    expect((await chain("198.51.100.1, 10.0.0.1")).statusCode).toBe(429);
+    await limited.close();
+
+    const twoProxies = await buildApp({
+      prisma,
+      authSecret: TEST_SECRET,
+      config: { baseURL: TEST_ORIGIN, rateLimit: true, trustedProxyHops: 2 },
+    });
+    await prisma.rateLimit.deleteMany();
+    for (let i = 0; i < 20; i++) await guess(twoProxies, "203.0.113.7, 10.0.0.1");
+    expect((await guess(twoProxies, "203.0.113.7, 10.0.0.1")).statusCode).toBe(429);
+    // One person's guessing doesn't lock out someone else behind the same proxies.
+    expect((await guess(twoProxies, "198.51.100.1, 10.0.0.1")).statusCode).toBe(401);
+    await twoProxies.close();
+  });
+
+  it("can't be dodged by inventing addresses", async () => {
+    const limited = await limitedApp();
+    for (let i = 0; i < 20; i++) await guess(limited, `${i}.1.1.1, 203.0.113.7`);
+    expect((await guess(limited, "99.1.1.1, 203.0.113.7")).statusCode).toBe(429);
+    await limited.close();
+  });
+
+  it("uses the connection itself when there is no proxy", async () => {
+    const limited = await limitedApp();
+    const bare = () =>
+      limited.inject({
+        method: "POST",
+        url: "/api/auth/sign-in/email",
+        headers: json,
+        payload: { email: fx.officerA1.email, password: "wrong-password" },
+      });
+    await bare();
+    const [row] = await prisma.rateLimit.findMany();
+    expect(row?.key).not.toContain("no-trusted-ip");
+    await limited.close();
+  });
+
   it("forgets addresses after a day", async () => {
     const now = new Date("2026-11-04T10:00:00Z");
     const row = (key: string, ageMs: number) => ({

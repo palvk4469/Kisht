@@ -13,6 +13,8 @@ const EnvSchema = z.object({
     .enum(["true", "false"])
     .default("false")
     .transform((v) => v === "true"),
+  // Proxies between the internet and this API, for the sign-in limit (D29).
+  TRUSTED_PROXY_HOPS: z.coerce.number().int().positive().default(1),
   // AI reminder drafts (D31). Without a key, officers get the approved templates.
   ANTHROPIC_API_KEY: z.string().optional(),
   AI_DRAFT_MODEL: z.string().optional(),

@@ -156,3 +156,7 @@ The last unbuilt requirement. An officer taps Send reminder on a loan, reads the
 **Browser tests caught a design mistake:** the button was first added to the shared call and map buttons, so it appeared on every card in the list. It now appears only on the loan screen.
 
 **Not tested against the live API:** no key was available, so the adapter is tested against a stand-in client. The first deployment with a key must confirm that drafts show as AI drafts. `reminder_draft.fallbackReason` records why any didn't.
+
+## Production dry run (2026-11-05)
+
+A clean clone with no `.env`, `NODE_ENV=production` and the commands from `deployment.md` installed, built and served correctly. It also showed that everyone behind a proxy shared one sign-in limit, so about 20 wrong passwords a minute from anyone would have locked out every officer. The limiter trusted a forwarded header only when it held a single address, and a proxy adds more. The API now passes it the address recorded by the nearest trusted proxy, set by `TRUSTED_PROXY_HOPS`. Anything further left can be invented by the client, so it is ignored.

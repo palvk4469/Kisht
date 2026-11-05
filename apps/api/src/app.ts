@@ -54,6 +54,7 @@ export async function buildApp(opts: BuildAppOptions): Promise<FastifyInstance> 
     docs: false,
     backgroundJobs: false,
     rateLimit: false,
+    trustedProxyHops: 1,
     ...opts.config,
   };
   const auth = createAuth(opts.prisma, {

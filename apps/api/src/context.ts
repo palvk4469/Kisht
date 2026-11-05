@@ -15,6 +15,8 @@ export type AppConfig = {
   docs: boolean;
   /** Limit password guessing per IP. */
   rateLimit: boolean;
+  /** How many proxies stand between the internet and this API. Sets whose address is trusted. */
+  trustedProxyHops: number;
   /** Run timers such as the reminder dispatcher. Off in tests, which call them directly. */
   backgroundJobs: boolean;
 };

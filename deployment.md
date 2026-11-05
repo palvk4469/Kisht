@@ -73,7 +73,7 @@ Run the checks with `pnpm lint`, `pnpm typecheck` and `pnpm test`. Browser tests
 1. Set `BETTER_AUTH_URL` on the API to the final Vercel URL.
 2. Set `API_URL` on the web app to the Render URL, and redeploy.
 3. Sign in and log an outcome.
-4. Try signing in several times with a few people at once. If one person's failed attempts lock out others, the proxy chain is sending several addresses in `x-forwarded-for`, and Better Auth's `trustedProxies` option needs setting.
+4. Set the sign-in limit's proxy count. Enter a wrong password once, then read the newest `key` in the `rateLimit` table. It should hold your own address. If it holds a proxy's, raise `TRUSTED_PROXY_HOPS` by one and try again. Vercel to Render is expected to need 2 or 3. Then repeat the wrong password with a made-up `x-forwarded-for` header, and confirm the key still shows your real address.
 5. Open a loan and tap Send reminder. If a key is set, the draft should be labelled as an AI draft. If not, check `fallbackReason` in the `reminder_draft` table.
 
 ## Environment variables
@@ -82,16 +82,17 @@ Names only. Values are never committed; `.env.example` shows the format for loca
 
 **API (Render)**
 
-| Name                   | Required | Purpose                                                   |
-| ---------------------- | -------- | --------------------------------------------------------- |
-| `DATABASE_URL`         | Yes      | Postgres connection                                       |
-| `BETTER_AUTH_SECRET`   | Yes      | Signs sessions, 32 characters or more                     |
-| `BETTER_AUTH_URL`      | Yes      | Public web URL; also the origin check                     |
-| `NODE_ENV`             | Yes      | `production` turns on the sign-in rate limit              |
-| `DEMO_MODE`            | No       | Demo clock, sample export and API docs                    |
-| `ANTHROPIC_API_KEY`    | No       | AI drafts; without it officers get the approved templates |
-| `AI_DRAFT_MODEL`       | No       | Overrides the default model                               |
-| `API_HOST`, `API_PORT` | No       | Default `0.0.0.0` and `4000`                              |
+| Name                   | Required | Purpose                                                                              |
+| ---------------------- | -------- | ------------------------------------------------------------------------------------ |
+| `DATABASE_URL`         | Yes      | Postgres connection                                                                  |
+| `BETTER_AUTH_SECRET`   | Yes      | Signs sessions, 32 characters or more                                                |
+| `BETTER_AUTH_URL`      | Yes      | Public web URL; also the origin check                                                |
+| `NODE_ENV`             | Yes      | `production` turns on the sign-in rate limit                                         |
+| `TRUSTED_PROXY_HOPS`   | No       | Proxies in front of the API, for the sign-in limit; default 1. See "After deploying" |
+| `DEMO_MODE`            | No       | Demo clock, sample export and API docs                                               |
+| `ANTHROPIC_API_KEY`    | No       | AI drafts; without it officers get the approved templates                            |
+| `AI_DRAFT_MODEL`       | No       | Overrides the default model                                                          |
+| `API_HOST`, `API_PORT` | No       | Default `0.0.0.0` and `4000`                                                         |
 
 **Web (Vercel)**
 
