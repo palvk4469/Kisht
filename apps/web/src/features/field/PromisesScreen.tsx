@@ -57,7 +57,7 @@ export function PromisesScreen() {
 
   return (
     <div className="px-4 pt-4 pb-8">
-      <h1 className="text-xl font-semibold">{t("promises.title")}</h1>
+      <h1 className="text-xl font-semibold sm:text-2xl">{t("promises.title")}</h1>
       {grouped.every((g) => g.items.length === 0) ? (
         <EmptyState
           icon={<CalendarClock className="size-8" />}

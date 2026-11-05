@@ -109,7 +109,7 @@ test("the promise tracker filters, and shows the reminders", async ({ page }) =>
 
 test("an officer's promises screen groups what to follow up", async ({ page }) => {
   await signInAs(page, "imran.qureshi@kisht.example");
-  await page.locator('a[href="/today/promises"]').click();
+  await page.locator('a[href="/today/promises"]').locator("visible=true").click();
   await expect(page.getByRole("heading", { name: /इस हफ्ते टूटे/ })).toBeVisible();
   await expect(page.locator("li").filter({ hasText: "Company D" })).toContainText("₹9,200");
 });

@@ -11,36 +11,47 @@ import {
 } from "react";
 import { applyTheme, readPreference, THEME_STORAGE_KEY, type ThemePreference } from "./theme";
 
-type Ctx = { preference: ThemePreference; setPreference: (p: ThemePreference) => void };
+type Ctx = { isDark: boolean; toggle: () => void };
 
 const ThemeContext = createContext<Ctx | null>(null);
 
+const DARK_DEVICE = "(prefers-color-scheme: dark)";
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [preference, setState] = useState<ThemePreference>("system");
+  const [preference, setPreference] = useState<ThemePreference>("system");
+  const [deviceDark, setDeviceDark] = useState(false);
 
-  useEffect(() => setState(readPreference()), []);
+  useEffect(() => {
+    setPreference(readPreference());
+    setDeviceDark(window.matchMedia(DARK_DEVICE).matches);
+  }, []);
 
-  // Follow the device while the preference is "system".
+  // Follow the device until the first explicit choice.
   useEffect(() => {
     applyTheme(preference);
     if (preference !== "system") return;
-    const media = window.matchMedia("(prefers-color-scheme: dark)");
-    const onChange = () => applyTheme("system");
+    const media = window.matchMedia(DARK_DEVICE);
+    const onChange = () => {
+      setDeviceDark(media.matches);
+      applyTheme("system");
+    };
     media.addEventListener("change", onChange);
     return () => media.removeEventListener("change", onChange);
   }, [preference]);
 
-  const setPreference = useCallback((p: ThemePreference) => {
+  const isDark = preference === "dark" || (preference === "system" && deviceDark);
+
+  const toggle = useCallback(() => {
+    const next = isDark ? "light" : "dark";
     try {
-      if (p === "system") window.localStorage.removeItem(THEME_STORAGE_KEY);
-      else window.localStorage.setItem(THEME_STORAGE_KEY, p);
+      window.localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Private mode: the choice lasts for this visit only.
     }
-    setState(p);
-  }, []);
+    setPreference(next);
+  }, [isDark]);
 
-  const value = useMemo(() => ({ preference, setPreference }), [preference, setPreference]);
+  const value = useMemo(() => ({ isDark, toggle }), [isDark, toggle]);
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 

@@ -60,7 +60,7 @@ export function Card({ className, children }: { className?: string; children: Re
 type Tone = "neutral" | "accent" | "risk" | "warn" | "ok";
 
 const toneClass: Record<Tone, string> = {
-  neutral: "bg-surface text-muted",
+  neutral: "bg-line/60 text-muted",
   accent: "bg-accent-soft text-accent",
   risk: "bg-risk-soft text-risk",
   warn: "bg-warn-soft text-warn",

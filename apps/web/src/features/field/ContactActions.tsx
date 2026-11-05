@@ -62,7 +62,7 @@ export function ContactActions(props: Props) {
               void recordAttempt(props, "CALL", true);
               setNotice(blockText);
             }}
-            className={cx(target, "bg-surface text-muted")}
+            className={cx(target, "bg-line/60 text-muted")}
           >
             <Lock className="size-4" aria-hidden />
             {t("contact.call")}
@@ -81,7 +81,7 @@ export function ContactActions(props: Props) {
           href={mapUrl(props)}
           target="_blank"
           rel="noreferrer"
-          className={cx(target, "border border-line text-ink hover:bg-surface")}
+          className={cx(target, "border border-line bg-canvas text-ink hover:border-accent")}
         >
           <MapPin className="size-4" aria-hidden />
           {t("contact.map")}
@@ -98,7 +98,10 @@ export function ContactActions(props: Props) {
               setDrafting(true);
             }
           }}
-          className={cx(target, "mt-2 w-full border border-line text-ink hover:bg-surface")}
+          className={cx(
+            target,
+            "mt-2 w-full border border-line bg-canvas text-ink hover:border-accent",
+          )}
         >
           <MessageSquareText className="size-4" aria-hidden />
           {t("contact.remind")}

@@ -155,6 +155,9 @@ export function LineChart({
               fontSize={11}
               fontWeight={500}
               fill="var(--color-ink)"
+              paintOrder="stroke"
+              stroke="var(--color-canvas)"
+              strokeWidth={3}
             >
               {reference.label}
             </text>

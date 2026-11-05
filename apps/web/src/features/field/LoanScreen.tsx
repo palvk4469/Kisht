@@ -87,7 +87,7 @@ export function LoanScreen({ loanId }: { loanId: string }) {
     <div className="pb-8">
       {back}
       <section className="px-4">
-        <h1 className="text-xl font-semibold">{loan.borrowerName}</h1>
+        <h1 className="text-xl font-semibold sm:text-2xl">{loan.borrowerName}</h1>
         <p className="mt-0.5 text-sm text-muted">
           {loan.loanNo} · {loan.address}
         </p>
@@ -101,11 +101,11 @@ export function LoanScreen({ loanId }: { loanId: string }) {
           </p>
         )}
         <dl className="mt-4 grid grid-cols-3 gap-2">
-          <div className="rounded-xl bg-surface px-3 py-2.5">
+          <div className="rounded-xl border border-line bg-canvas px-3 py-2.5">
             <dt className="text-xs text-muted">{t("loan.outstanding")}</dt>
             <dd className="num mt-0.5 font-semibold">{rupees(outstanding)}</dd>
           </div>
-          <div className="rounded-xl bg-surface px-3 py-2.5">
+          <div className="rounded-xl border border-line bg-canvas px-3 py-2.5">
             <dt className="text-xs text-muted">{t("loan.overdue")}</dt>
             <dd
               className={cx(
@@ -117,7 +117,7 @@ export function LoanScreen({ loanId }: { loanId: string }) {
               {dpd}
             </dd>
           </div>
-          <div className="rounded-xl bg-surface px-3 py-2.5">
+          <div className="rounded-xl border border-line bg-canvas px-3 py-2.5">
             <dt className="text-xs text-muted">{t("loan.emi")}</dt>
             <dd className="num mt-0.5 font-semibold">{rupees(loan.emiAmount)}</dd>
           </div>
@@ -153,7 +153,7 @@ export function LoanScreen({ loanId }: { loanId: string }) {
                 key={type}
                 type="button"
                 onClick={() => setSheet(type)}
-                className="flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-xl border border-line px-2 font-medium hover:bg-surface"
+                className="flex min-h-20 flex-col items-center justify-center gap-1.5 rounded-xl border border-line bg-canvas px-2 font-medium hover:border-accent"
               >
                 <Icon className={cx("size-6", className)} aria-hidden />
                 {t(`outcome.${type}`)}

@@ -16,5 +16,11 @@ test.describe("theme", () => {
 
     await page.reload();
     await expect(page.locator("html")).not.toHaveClass(/dark/);
+
+    // Every tap changes what's on screen; there's no state that looks like the last one.
+    await toggle.click();
+    await expect(page.locator("html")).toHaveClass(/dark/);
+    await toggle.click();
+    await expect(page.locator("html")).not.toHaveClass(/dark/);
   });
 });

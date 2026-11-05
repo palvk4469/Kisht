@@ -1,27 +1,26 @@
 "use client";
 
 import type { Me } from "@kisht/contracts";
-import { LogOut } from "lucide-react";
 import { type ReactNode, useState } from "react";
 import { DemoClockBar } from "@/features/demo/DemoClockBar";
 import { FlashProvider } from "@/features/field/Flash";
-import { OfficerTabs } from "@/features/field/OfficerTabs";
+import { OfficerTabs, useOfficerNav } from "@/features/field/OfficerTabs";
 import { InstallPrompt } from "@/features/offline/InstallPrompt";
 import { SyncBar } from "@/features/offline/SyncBar";
 import { SyncProvider } from "@/features/offline/SyncProvider";
 import { countUnsent } from "@/features/offline/signOutCleanup";
 import { useI18n } from "@/lib/i18n";
-import { LanguageToggle } from "./LanguageToggle";
+import { AppHeader } from "./AppHeader";
 import { Sheet } from "./Sheet";
-import { ThemeToggle } from "./ThemeToggle";
 import { Button } from "./ui";
 import { useSignOut } from "./useSignOut";
 
-// Phone-first frame for every officer screen: one column, big targets,
-// nothing on screen that the officer doesn't need in the field.
+// Phone-first frame for every officer screen: one column, big targets, tabs at the
+// thumb on a phone. On a larger screen it has the same header as every other role.
 export function OfficerShell({ me, children }: { me: Me; children: ReactNode }) {
   const { t } = useI18n();
   const signOut = useSignOut(me.id);
+  const nav = useOfficerNav();
   const [unsent, setUnsent] = useState(0);
 
   async function requestSignOut() {
@@ -30,32 +29,15 @@ export function OfficerShell({ me, children }: { me: Me; children: ReactNode }) 
     else await signOut();
   }
   return (
-    <div className="mx-auto min-h-dvh max-w-md bg-canvas">
-      <header className="sticky top-0 z-10 flex items-center justify-between border-b border-line bg-canvas/95 px-4 py-3 backdrop-blur">
-        <div>
-          <div className="text-xs text-muted">{t("role.OFFICER")}</div>
-          <div className="font-semibold">{me.name}</div>
-        </div>
-        <div className="flex">
-          <LanguageToggle />
-          <ThemeToggle />
-          <button
-            type="button"
-            onClick={() => void requestSignOut()}
-            aria-label={t("common.signOut")}
-            className="inline-flex size-12 items-center justify-center rounded-xl text-muted hover:bg-surface"
-          >
-            <LogOut className="size-5" />
-          </button>
-        </div>
-      </header>
+    <div className="min-h-dvh bg-surface">
+      <AppHeader me={me} nav={nav} navOnPhone={false} onSignOut={() => void requestSignOut()} />
       <SyncProvider userId={me.id}>
         <DemoClockBar />
         <SyncBar />
         <InstallPrompt />
         <FlashProvider>
-          {/* Room for the tab bar, so the last card can always be reached. */}
-          <main className="pb-16">{children}</main>
+          {/* Room for the phone's tab bar, so the last card can always be reached. */}
+          <main className="mx-auto max-w-2xl pb-16 sm:py-4">{children}</main>
           <OfficerTabs />
         </FlashProvider>
       </SyncProvider>

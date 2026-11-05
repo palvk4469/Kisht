@@ -64,7 +64,7 @@ export function TodayScreen() {
     <div className="pb-8">
       <section className="px-4 pt-4">
         <div className="flex items-baseline justify-between">
-          <h1 className="text-xl font-semibold">{t("today.title")}</h1>
+          <h1 className="text-xl font-semibold sm:text-2xl">{t("today.title")}</h1>
           {asOfDate && <span className="text-xs text-muted">{day(asOfDate, locale)}</span>}
         </div>
         {workable > 0 && (
@@ -80,7 +80,7 @@ export function TodayScreen() {
               )}
             </div>
             <div
-              className="mt-1.5 h-1.5 rounded-full bg-surface"
+              className="mt-1.5 h-1.5 rounded-full bg-line"
               role="progressbar"
               aria-label={t("today.progress", { done, total: workable })}
               aria-valuemin={0}
