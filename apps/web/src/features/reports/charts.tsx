@@ -1,6 +1,6 @@
 "use client";
 
-import { type KeyboardEvent, type PointerEvent, useEffect, useRef, useState } from "react";
+import { type KeyboardEvent, type PointerEvent, useEffect, useId, useRef, useState } from "react";
 
 // Small hand-written SVG charts: the dashboard needs two forms, and a chart
 // library would outweigh all of our own code. Marks follow one spec: 2px lines,
@@ -58,6 +58,9 @@ export function LineChart({
 }) {
   const { ref, width } = useWidth();
   const [active, setActive] = useState<number | null>(null);
+  // Shade a lone series only: shading one of two would suggest a difference that isn't there.
+  const area = series.length === 1 ? series[0] : undefined;
+  const gradientId = `area-${useId().replace(/[^a-z0-9]/gi, "")}`;
   const innerW = Math.max(width - M.left - M.right, 10);
   const innerH = height - M.top - M.bottom;
   const x = (i: number) => M.left + (labels.length > 1 ? (i / (labels.length - 1)) * innerW : 0);
@@ -118,12 +121,14 @@ export function LineChart({
         onBlur={() => setActive(null)}
         className="block touch-pan-y"
       >
-        <defs>
-          <linearGradient id="rollGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="var(--color-series-1)" stopOpacity="0.22" />
-            <stop offset="100%" stopColor="var(--color-series-1)" stopOpacity="0.0" />
-          </linearGradient>
-        </defs>
+        {area && (
+          <defs>
+            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor={area.color} stopOpacity="0.22" />
+              <stop offset="100%" stopColor={area.color} stopOpacity="0" />
+            </linearGradient>
+          </defs>
+        )}
         {ticks.map((t) => (
           <g key={t}>
             <line x1={M.left} x2={M.left + innerW} y1={y(t)} y2={y(t)} stroke="var(--color-line)" />
@@ -155,31 +160,6 @@ export function LineChart({
               </text>
             ),
         )}
-        {reference && (
-          <g>
-            <line
-              x1={M.left}
-              x2={M.left + innerW}
-              y1={y(reference.value)}
-              y2={y(reference.value)}
-              stroke="var(--color-risk)"
-              strokeWidth={1.5}
-              strokeDasharray="4 3"
-            />
-            <text
-              x={M.left + 6}
-              y={y(reference.value) + 14}
-              fontSize={11}
-              fontWeight={600}
-              fill="var(--color-risk)"
-              paintOrder="stroke"
-              stroke="var(--color-canvas)"
-              strokeWidth={3}
-            >
-              {reference.label}
-            </text>
-          </g>
-        )}
         {active !== null && (
           <line
             x1={x(active)}
@@ -191,7 +171,7 @@ export function LineChart({
             strokeDasharray="2 2"
           />
         )}
-        {series[0] && <path d={areaPath(series[0].values)} fill="url(#rollGradient)" aria-hidden />}
+        {area && <path d={areaPath(area.values)} fill={`url(#${gradientId})`} aria-hidden />}
         {series.map((s) => (
           <path
             key={s.id}
@@ -203,6 +183,31 @@ export function LineChart({
             strokeLinecap="round"
           />
         ))}
+        {reference && (
+          <g>
+            <line
+              x1={M.left}
+              x2={M.left + innerW}
+              y1={y(reference.value)}
+              y2={y(reference.value)}
+              stroke="var(--color-ink)"
+              strokeWidth={1}
+              strokeDasharray="4 3"
+            />
+            <text
+              x={M.left + 6}
+              y={y(reference.value) + 14}
+              fontSize={11}
+              fontWeight={600}
+              fill="var(--color-ink)"
+              paintOrder="stroke"
+              stroke="var(--color-canvas)"
+              strokeWidth={3}
+            >
+              {reference.label}
+            </text>
+          </g>
+        )}
         {series.map((s) => {
           const i = active ?? s.values.findLastIndex((v) => v !== null);
           const v = s.values[i];

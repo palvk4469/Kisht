@@ -65,11 +65,9 @@ export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number;
           <span
             className={cx(
               "flex size-7 shrink-0 items-center justify-center rounded-xl text-xs font-bold border",
-              rank === 1
-                ? "border-risk/30 bg-risk-soft text-risk"
-                : rank <= 3
-                  ? "border-accent/25 bg-accent-soft text-accent"
-                  : "border-line/70 bg-surface text-muted",
+              rank <= 3
+                ? "border-accent/25 bg-accent-soft text-accent"
+                : "border-line/70 bg-surface text-muted",
             )}
           >
             {rank}
@@ -85,7 +83,7 @@ export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number;
               <PromiseBadge promise={item.promise} />
             </div>
             {topReason && (
-              <div className="mt-2.5 flex items-start gap-1.5 rounded-lg border border-line/50 bg-surface/60 px-2.5 py-1.5 text-xs text-muted leading-relaxed">
+              <div className="mt-2 flex items-start gap-1.5 text-sm text-muted">
                 <Sparkles className="mt-0.5 size-3.5 shrink-0 text-accent" aria-hidden />
                 <span>{reasonText(topReason)}</span>
               </div>

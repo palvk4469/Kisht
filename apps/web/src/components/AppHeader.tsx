@@ -47,12 +47,9 @@ export function AppHeader({ me, nav, navOnPhone, onSignOut }: Props) {
           <span className="flex size-8 items-center justify-center rounded-xl bg-accent text-base font-bold text-on-accent shadow-xs">
             क
           </span>
-          <div className="hidden sm:flex sm:flex-col leading-none">
-            <span className="text-sm font-semibold tracking-tight">{t("app.name")}</span>
-            <span className="mt-0.5 text-[10px] text-faint tracking-wider uppercase">
-              Collections
-            </span>
-          </div>
+          <span className="hidden text-sm font-semibold tracking-tight sm:inline">
+            {t("app.name")}
+          </span>
         </Link>
         <div className="min-w-0 text-xs sm:hidden">{who}</div>
         <nav

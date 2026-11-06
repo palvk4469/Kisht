@@ -36,11 +36,6 @@ test("a branch manager previews and commits the daily import", async ({ page }, 
   // The sample contains exactly one bad row, which is reported, not fatal.
   await expect(page.getByText("must be a 10-digit Indian mobile number")).toBeVisible();
 
-  const confirm = page.getByLabel(/I confirm these .* loans are no longer overdue/);
-  if (await confirm.isVisible()) {
-    await confirm.check();
-  }
-
   await page.getByRole("button", { name: "Commit import" }).click();
   await expect(page.getByText("Import committed")).toBeVisible();
   await expect(page.getByText(/Promises resolved/)).toBeVisible();

@@ -68,8 +68,8 @@ export function TodayScreen() {
           {asOfDate && <span className="text-xs text-muted">{day(asOfDate, locale)}</span>}
         </div>
         {workable > 0 && (
-          <div className="mt-3.5 rounded-2xl border border-line/70 bg-canvas p-4 shadow-xs">
-            <div className="flex items-baseline justify-between text-xs">
+          <div className="mt-3">
+            <div className="flex items-baseline justify-between text-sm">
               <span className="font-medium text-muted">
                 {t("today.progress", { done, total: workable })}
               </span>
@@ -80,7 +80,7 @@ export function TodayScreen() {
               )}
             </div>
             <div
-              className="mt-2.5 h-2 overflow-hidden rounded-full bg-surface"
+              className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-line"
               role="progressbar"
               aria-label={t("today.progress", { done, total: workable })}
               aria-valuemin={0}

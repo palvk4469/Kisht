@@ -70,9 +70,7 @@ export function PromisesScreen() {
             items.length > 0 && (
               <section key={key} className="mt-5">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-xs font-semibold text-muted uppercase tracking-wider">
-                    {t(title)}
-                  </h2>
+                  <h2 className="text-xs font-semibold text-muted">{t(title)}</h2>
                   <span className="num rounded-full border border-line/60 bg-surface px-2 py-0.5 text-[11px] text-muted">
                     {items.length}
                   </span>

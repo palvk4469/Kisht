@@ -80,10 +80,7 @@ export function OutcomeSheet(props: Props) {
         <div className="mt-4 space-y-3.5">
           {(type === "PAID" || type === "PROMISE") && (
             <div>
-              <label
-                htmlFor={amountId}
-                className="text-xs font-semibold text-muted uppercase tracking-wider"
-              >
+              <label htmlFor={amountId} className="text-sm font-medium">
                 {t("sheet.amount")}
               </label>
               <div className="relative mt-1">
@@ -102,17 +99,14 @@ export function OutcomeSheet(props: Props) {
             </div>
           )}
           <div>
-            <label
-              htmlFor={noteId}
-              className="text-xs font-semibold text-muted uppercase tracking-wider"
-            >
+            <label htmlFor={noteId} className="text-sm font-medium">
               {t("sheet.note")}
             </label>
             <input
               id={noteId}
               value={note}
               maxLength={500}
-              placeholder={locale === "hi" ? "कोई टिप्पणी लिखें..." : "Add an optional note..."}
+              placeholder={t("sheet.notePlaceholder")}
               onChange={(e) => setNote(e.target.value)}
               className={field}
             />
@@ -129,7 +123,7 @@ export function OutcomeSheet(props: Props) {
           <button
             type="button"
             onClick={() => setShowDetails(true)}
-            className="font-medium text-accent underline underline-offset-2"
+            className="-my-1 -mr-2 inline-flex min-h-12 items-center px-2 text-right font-medium text-accent underline underline-offset-2"
           >
             {t("sheet.details")}
           </button>

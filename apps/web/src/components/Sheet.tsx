@@ -2,6 +2,7 @@
 
 import { X } from "lucide-react";
 import { type ReactNode, useEffect, useRef } from "react";
+import { useI18n } from "@/lib/i18n";
 
 /**
  * A bottom sheet on phones, a centred dialog on desktop. A native <dialog>, so
@@ -16,6 +17,7 @@ export function Sheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const { t } = useI18n();
   const ref = useRef<HTMLDialogElement>(null);
 
   useEffect(() => {
@@ -48,8 +50,8 @@ export function Sheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="-mr-1 -mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            aria-label={t("common.close")}
+            className="-mt-3 -mr-3 inline-flex size-12 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-surface hover:text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
           >
             <X className="size-4" aria-hidden />
           </button>

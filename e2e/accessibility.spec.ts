@@ -7,8 +7,8 @@ import { setClock, signInAs } from "./helpers";
 
 async function noViolations(page: Page, screen: string) {
   await page.waitForLoadState("networkidle");
-  // A fading colour is only ever measured halfway, so let it finish.
-  await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
+  // A fading colour is only ever measured halfway, so let it finish. A cancelled one rejects.
+  await page.evaluate(() => Promise.allSettled(document.getAnimations().map((a) => a.finished)));
   const { violations } = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"])
     .analyze();
