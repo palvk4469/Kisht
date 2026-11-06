@@ -15,7 +15,7 @@ cp -a apps/web/.next/static "$out/static"
 cp -a apps/web/public "$out/public"
 cp deploy/Dockerfile.web-prebuilt "$out/Dockerfile"
 
-tar -C "$out" -czf - . | ssh "$target" '
+tar -C "$out" -czf - . | ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$target" '
   set -e
   dir=$(mktemp -d)
   tar -xzf - -C "$dir"

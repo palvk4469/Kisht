@@ -2,9 +2,9 @@
 
 import { istDayOf } from "@kisht/domain";
 import { CalendarClock, ListChecks } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { NavItem } from "@/components/AppHeader";
+import { BottomTabs } from "@/components/BottomTabs";
 import { cx } from "@/components/ui";
 import { useI18n } from "@/lib/i18n";
 import { useToday } from "./api";
@@ -31,7 +31,7 @@ function usePromisesDue() {
   ).length;
 }
 
-/** The header's tabs, on anything larger than a phone. */
+/** The header's tabs, on a laptop or larger. */
 export function useOfficerNav(): NavItem[] {
   const { t } = useI18n();
   const onPromises = usePathname().startsWith("/today/promises");
@@ -47,31 +47,23 @@ export function useOfficerNav(): NavItem[] {
   ];
 }
 
-/** Within a thumb's reach on a phone: the day's list, and the promises to follow up. */
+/** Within a thumb's reach: the day's list, and the promises to follow up. */
 export function OfficerTabs() {
   const { t } = useI18n();
   const onPromises = usePathname().startsWith("/today/promises");
   const due = usePromisesDue();
-  const tab = "relative flex h-14 flex-1 flex-col items-center justify-center gap-0.5 text-xs";
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 flex border-t border-line/80 bg-canvas/95 backdrop-blur-md shadow-lg sm:hidden">
-      <Link
-        href="/today"
-        aria-current={!onPromises ? "page" : undefined}
-        className={cx(tab, !onPromises ? "font-bold text-accent" : "text-muted hover:text-ink")}
-      >
-        <ListChecks className="size-5" aria-hidden />
-        {t("tabs.list")}
-      </Link>
-      <Link
-        href="/today/promises"
-        aria-current={onPromises ? "page" : undefined}
-        className={cx(tab, onPromises ? "font-bold text-accent" : "text-muted hover:text-ink")}
-      >
-        <CalendarClock className="size-5" aria-hidden />
-        {t("tabs.promises")}
-        <DueBadge count={due} className="absolute top-1.5 left-1/2 ml-2" />
-      </Link>
-    </nav>
+    <BottomTabs
+      tabs={[
+        { href: "/today", label: t("tabs.list"), icon: ListChecks, current: !onPromises },
+        {
+          href: "/today/promises",
+          label: t("tabs.promises"),
+          icon: CalendarClock,
+          current: onPromises,
+          badge: <DueBadge count={due} className="absolute top-1.5 left-1/2 ml-2" />,
+        },
+      ]}
+    />
   );
 }

@@ -30,14 +30,14 @@ export function OfficerShell({ me, children }: { me: Me; children: ReactNode }) 
   }
   return (
     <div className="min-h-dvh bg-surface">
-      <AppHeader me={me} nav={nav} navOnPhone={false} onSignOut={() => void requestSignOut()} />
+      <AppHeader me={me} nav={nav} onSignOut={() => void requestSignOut()} />
       <SyncProvider userId={me.id}>
         <DemoClockBar />
         <SyncBar />
         <InstallPrompt />
         <FlashProvider>
           {/* Room for the phone's tab bar, so the last card can always be reached. */}
-          <main className="mx-auto max-w-2xl pb-16 sm:py-4">{children}</main>
+          <main className="mx-auto max-w-2xl pb-20 sm:pt-4 lg:pb-4">{children}</main>
           <OfficerTabs />
         </FlashProvider>
       </SyncProvider>

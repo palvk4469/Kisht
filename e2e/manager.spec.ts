@@ -101,7 +101,7 @@ test("the promise tracker filters, and shows the reminders", async ({ page }) =>
   await expect(page.getByText("Open").first()).toBeVisible();
   await page.getByRole("button", { name: "Broken" }).click();
   await expect(page.getByText("Broken").nth(1)).toBeVisible();
-  await page.getByLabel("Officer").selectOption({ label: "Neha Solanki" });
+  await page.getByRole("combobox", { name: "Officer" }).selectOption({ label: "Neha Solanki" });
   await expect(
     page.locator("tr:visible, li:visible").filter({ hasText: "Neha Solanki" }).first(),
   ).toBeVisible();
@@ -136,10 +136,16 @@ test("every manager screen fits, with no sideways scrolling", async ({ page }) =
     await fits(page, path);
 });
 
-test("the current tab is on screen, even at the end of the row", async ({ page }) => {
+test("every tab is fully in view, on phones and laptops alike", async ({ page }) => {
   await signInManager(page);
   await page.goto("/manager/import");
-  await expect(page.locator('nav [aria-current="page"]')).toBeInViewport({ ratio: 0.95 });
+  const tabs = page.locator("nav a").locator("visible=true");
+  await expect(tabs).toHaveCount(5);
+  for (const tab of await tabs.all()) await expect(tab).toBeInViewport({ ratio: 0.95 });
+  await expect(page.locator('nav a[aria-current="page"]').locator("visible=true")).toHaveAttribute(
+    "href",
+    "/manager/import",
+  );
 });
 
 test("every officer screen fits, with no sideways scrolling", async ({ page }) => {

@@ -7,7 +7,7 @@ target="$1"
 cd "$(dirname "$0")/.."
 
 tar -czf - --exclude=generated apps/api/src packages/domain/src packages/contracts/src packages/db/src |
-  ssh "$target" '
+  ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 "$target" '
     set -e
     dir=$(mktemp -d)
     tar -xzf - -C "$dir"
