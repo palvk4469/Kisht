@@ -133,9 +133,10 @@ test("a day's work done offline reaches the manager, with the reminder sent afte
   await desk.goto("/manager/promises");
   await expect(desk.getByText(name).locator("visible=true").first()).toBeVisible();
   await desk.goto("/manager/activity");
-  const entries = desk.locator("li").filter({ hasText: name });
-  await expect(entries.getByLabel("Message")).toBeVisible();
-  await expect(entries.getByLabel("Visit")).toBeVisible();
+  // Newest first: the reminder, then the visit. The seed may hold older contacts too.
+  const entries = desk.getByTestId("activity-list").locator("li").filter({ hasText: name });
+  await expect(entries.nth(0).getByLabel("Message")).toBeVisible();
+  await expect(entries.nth(1).getByLabel("Visit")).toBeVisible();
   await office.close();
 });
 
