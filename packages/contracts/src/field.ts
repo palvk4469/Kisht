@@ -56,6 +56,14 @@ export const HistoryEntry = z.object({
 });
 export type HistoryEntry = z.infer<typeof HistoryEntry>;
 
+/** What changed since the previous list (A32). */
+export const ListChanges = z.object({
+  newOverdue: z.boolean(),
+  newToYou: z.enum(["AUTO", "MANUAL"]).nullable(),
+  paid: z.object({ date: IsoDaySchema, amount: z.number().int().nullable() }).nullable(),
+});
+export type ListChanges = z.infer<typeof ListChanges>;
+
 export const TodayItemState = z.enum(["todo", "waiting", "done", "paused"]);
 export type TodayItemState = z.infer<typeof TodayItemState>;
 
@@ -86,6 +94,7 @@ export const TodayItem = z.object({
   openAttemptClientId: z.string().nullable(),
   /** Recent outcomes. In this payload so the loan screen needs no network (D22). */
   history: z.array(HistoryEntry),
+  changes: ListChanges,
 });
 export type TodayItem = z.infer<typeof TodayItem>;
 

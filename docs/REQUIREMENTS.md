@@ -10,7 +10,7 @@ Status: **Done** · **Partial** (what is missing is stated) · **Cut**.
 | ---------------------------------------------------------------- | ------ | ------------------------------------------------------------------------ |
 | Overdue CSV import                                               | Done   | Screen 5, `modules/imports`; preview → commit, row-level errors          |
 | Auto-assignment by pincode and workload                          | Done   | `domain/assignment.ts`; continuity first, then least-loaded (A3)         |
-| Officer priority list                                            | Done   | Screen 2; ordered by the model (A18), capped at 25                       |
+| Officer priority list                                            | Done   | Screen 2; by the model (A18), capped at 25, changes marked (A32)         |
 | Outcome logging: paid, promise, not reachable, dispute, with GPS | Done   | Screen 3; three taps, GPS never blocks logging; works offline            |
 | Promise tracker                                                  | Done   | Screens 4 (officer, works offline) and 7 (manager, with filters)         |
 | Manager roll-rate view                                           | Done   | Screen 8; by branch, by week, against the 16% target, with a table view  |

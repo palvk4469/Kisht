@@ -1,9 +1,9 @@
 "use client";
 
-import type { TodayItem } from "@kisht/contracts";
+import type { ListChanges, TodayItem } from "@kisht/contracts";
 import { istDayOf } from "@kisht/domain";
 import { Badge } from "@/components/ui";
-import { shortDay } from "@/lib/format";
+import { rupees, shortDay } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 
 // Kept apart from the loan card, so manager screens can show them without loading the
@@ -43,5 +43,28 @@ export function PromiseBadge({ promise }: { promise: TodayItem["promise"] }) {
     <Badge tone="risk" dot>
       {t("promise.broken", { date })}
     </Badge>
+  );
+}
+
+/** What changed since the previous list (A32): worth knowing before the first call. */
+export function ChangeBadges({ changes }: { changes: ListChanges | undefined }) {
+  const { t } = useI18n();
+  if (!changes) return null;
+  return (
+    <>
+      {changes.newOverdue && <Badge tone="accent">{t("changes.new")}</Badge>}
+      {changes.newToYou && (
+        <Badge tone="accent">
+          {t(changes.newToYou === "MANUAL" ? "changes.movedToYou" : "changes.newToYou")}
+        </Badge>
+      )}
+      {changes.paid && (
+        <Badge tone="ok">
+          {changes.paid.amount
+            ? t("changes.paid", { amount: rupees(changes.paid.amount) })
+            : t("changes.paidNoAmount")}
+        </Badge>
+      )}
+    </>
   );
 }

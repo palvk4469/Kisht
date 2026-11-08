@@ -5,7 +5,10 @@ import {
   type IsoDay,
   istDayOf,
   istDayStart,
+  listChanges,
   maskPhone,
+  NO_CHANGES,
+  type SnapshotFacts,
   toDbDate,
 } from "@kisht/domain";
 import { compareByPriority } from "@kisht/domain/scoring";
@@ -69,7 +72,13 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
     where: loanWhere(scopeOf(user)),
     include: {
       borrower: true,
-      snapshots: { orderBy: { asOfDate: "desc" }, take: 1 },
+      // The latest two, to say what changed since the previous list (A32).
+      snapshots: { orderBy: { asOfDate: "desc" }, take: 2 },
+      assignments: {
+        where: { endedAt: null },
+        take: 1,
+        select: { startedAt: true, source: true },
+      },
       scores: { orderBy: { asOfDate: "desc" }, take: 1 },
       promises: {
         where: { status: { not: "SUPERSEDED" } },
@@ -106,9 +115,36 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
     },
   });
 
+  const listDays = [
+    ...new Set(loans.flatMap((l) => l.snapshots.map((s) => fromDbDate(s.asOfDate)))),
+  ].sort((a, b) => (a < b ? 1 : -1));
+  const [latestListDay = null, previousListDay = null] = listDays;
+  const facts = (s: {
+    asOfDate: Date;
+    lastPaymentDate: Date | null;
+    lastPaymentAmount: number | null;
+  }): SnapshotFacts => ({
+    asOfDate: fromDbDate(s.asOfDate),
+    lastPaymentDate: s.lastPaymentDate ? fromDbDate(s.lastPaymentDate) : null,
+    lastPaymentAmount: s.lastPaymentAmount,
+  });
+
   const items = loans.flatMap((loan): TodayItem[] => {
     const snapshot = loan.snapshots[0];
     if (!snapshot) return [];
+    const previous = loan.snapshots[1];
+    const assignment = loan.assignments[0];
+    const changes =
+      fromDbDate(snapshot.asOfDate) === latestListDay
+        ? listChanges({
+            latest: facts(snapshot),
+            previous: previous ? facts(previous) : null,
+            previousListDay,
+            assignment: assignment
+              ? { startedOn: istDayOf(assignment.startedAt), source: assignment.source }
+              : null,
+          })
+        : NO_CHANGES;
     const outcome = loan.outcomes[0];
     const promise = loan.promises[0];
     const score = loan.scores[0];
@@ -140,6 +176,7 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
         managerNote: loan.overrides[0]?.reason ?? null,
         openAttemptClientId: loan.contactAttempts[0]?.clientId ?? null,
         history: loan.outcomes.map(toHistory),
+        changes,
       },
     ];
   });
@@ -162,9 +199,8 @@ export async function getTodayList(ctx: AppContext, user: AuthUser): Promise<Tod
     return false;
   });
 
-  const newest = loans.flatMap((l) => l.snapshots).map((s) => fromDbDate(s.asOfDate));
   return {
-    asOfDate: newest.length > 0 ? (newest.sort().at(-1) ?? null) : null,
+    asOfDate: latestListDay,
     serverTime: now.toISOString(),
     beyondCapacity,
     items: visible,

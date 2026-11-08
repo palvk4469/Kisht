@@ -436,6 +436,61 @@ describe("today's list", () => {
   });
 });
 
+describe("what changed since the previous list (A32)", () => {
+  it("marks new, moved and part-paid loans, and leaves the rest alone", async () => {
+    const PREV = "2026-11-03";
+    await prisma.assignment.updateMany({
+      where: { officerId: fx.officerA2.id, endedAt: null },
+      data: { endedAt: now },
+    });
+    const officerId = fx.officerA2.id;
+    // An earlier test lowers this officer's capacity; every loan here must show.
+    await prisma.user.update({ where: { id: officerId }, data: { dailyCapacity: 25 } });
+    const held = async (opts: { source?: "AUTO" | "MANUAL"; startedAt?: Date }) => {
+      const id = await makeLoan({ dpd: 10, expectedLoss: 1000, officerId: fx.officerA1.id });
+      await prisma.assignment.updateMany({
+        where: { loanId: id, endedAt: null },
+        data: { endedAt: now },
+      });
+      await prisma.assignment.create({
+        data: {
+          loanId: id,
+          officerId,
+          source: opts.source ?? "AUTO",
+          startedAt: opts.startedAt ?? ist("2026-10-01T08:00:00"),
+        },
+      });
+      return id;
+    };
+    const yesterday = (loanId: string, over: object = {}) =>
+      prisma.loanSnapshot.create({
+        data: { loanId, asOfDate: toDbDate(PREV), outstanding: 300000, dpd: 9, ...over },
+      });
+
+    const steady = await held({});
+    await yesterday(steady);
+    const fresh = await held({ startedAt: ist(`${DAY}T08:00:00`) });
+    const moved = await held({ source: "MANUAL", startedAt: ist(`${DAY}T09:00:00`) });
+    await yesterday(moved);
+    const partPaid = await held({});
+    await yesterday(partPaid, {
+      lastPaymentDate: toDbDate("2026-09-01"),
+      lastPaymentAmount: 10000,
+    });
+    await prisma.loanSnapshot.update({
+      where: { loanId_asOfDate: { loanId: partPaid, asOfDate: toDbDate(DAY) } },
+      data: { lastPaymentDate: toDbDate(PREV), lastPaymentAmount: 4000 },
+    });
+
+    const list = await today(await signIn(app, fx.officerA2.email));
+    const changes = (id: string) => list.items.find((i) => i.loanId === id)?.changes;
+    expect(changes(steady)).toEqual({ newOverdue: false, newToYou: null, paid: null });
+    expect(changes(fresh)).toEqual({ newOverdue: true, newToYou: null, paid: null });
+    expect(changes(moved)).toEqual({ newOverdue: false, newToYou: "MANUAL", paid: null });
+    expect(changes(partPaid)?.paid).toEqual({ date: PREV, amount: 4000 });
+  });
+});
+
 describe("stateOf", () => {
   const base = { contactPaused: false, today: DAY, lastOutcomeDay: null, pendingDueDate: null };
 

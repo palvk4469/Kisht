@@ -9,7 +9,7 @@ import { dateTime, rupees, time } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import { DemoTimeButton } from "../demo/DemoClockBar";
 import { useToday } from "./api";
-import { DpdBadge, dpdTone, PromiseBadge } from "./badges";
+import { ChangeBadges, DpdBadge, dpdTone, PromiseBadge } from "./badges";
 import { ContactActions } from "./ContactActions";
 import { OutcomeSheet } from "./OutcomeSheet";
 import { useContactWindow } from "./useContactWindow";
@@ -94,6 +94,7 @@ export function LoanScreen({ loanId }: { loanId: string }) {
         <div className="mt-2 flex flex-wrap gap-2">
           <DpdBadge dpd={dpd} />
           <PromiseBadge promise={loan.promise} />
+          <ChangeBadges changes={loan.changes} />
         </div>
         {loan.managerNote && (
           <p className="mt-2 text-sm text-accent">

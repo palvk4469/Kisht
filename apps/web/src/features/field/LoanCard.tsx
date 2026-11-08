@@ -6,7 +6,7 @@ import { cx } from "@/components/ui";
 import { rupees } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import type { FieldItem } from "../offline/overlay";
-import { DpdBadge, PromiseBadge } from "./badges";
+import { ChangeBadges, DpdBadge, PromiseBadge } from "./badges";
 import { ContactActions } from "./ContactActions";
 import { useReasonText } from "./useReasonText";
 
@@ -43,6 +43,7 @@ export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number;
               <span className="num font-semibold text-ink">{rupees(item.outstanding)}</span>
               <DpdBadge dpd={item.dpd} />
               <PromiseBadge promise={item.promise} />
+              <ChangeBadges changes={item.changes} />
             </div>
             {topReason && (
               <div className="mt-2 flex items-start gap-1.5 text-sm text-muted">

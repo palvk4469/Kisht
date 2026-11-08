@@ -26,6 +26,26 @@ test("an officer logs an outcome in three taps", async ({ page }) => {
   expect(href).not.toMatch(/\d{10}/);
 });
 
+test("a loan says what changed since the last list", async ({ page }) => {
+  // The server's rules are unit- and API-tested (A32); this checks the screen, so it
+  // marks the first loan rather than depend on what the seed produced today.
+  await page.route("**/api/officer/today", async (route) => {
+    const res = await route.fetch();
+    const list = await res.json();
+    list.items[0].changes = {
+      newOverdue: false,
+      newToYou: "MANUAL",
+      paid: { date: list.asOfDate, amount: 4000 },
+    };
+    await route.fulfill({ response: res, json: list });
+  });
+  await signInAs(page, "arjun.patidar@kisht.example");
+  const first = page.getByTestId("loan-card").first();
+  await expect(first.getByText("मैनेजर ने आपको दिया")).toBeVisible();
+  await expect(first.getByText("आंशिक भुगतान ₹4,000")).toBeVisible();
+  await expect(page.getByTestId("list-changes")).toContainText("पिछली सूची के बाद:");
+});
+
 test("after 7 pm the list points to the day's summary", async ({ page }) => {
   await signInAs(page, "rahul.chouhan@kisht.example", "20:00");
   await page.getByRole("link", { name: /अपना दिन देखें/ }).click();

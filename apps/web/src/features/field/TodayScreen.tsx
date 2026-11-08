@@ -61,6 +61,17 @@ export function TodayScreen() {
   const done = of("done").length;
   const workable = todo.length + done;
   const atStake = todo.reduce((sum, i) => sum + (i.priority?.expectedLoss ?? 0), 0);
+  // Optional: a list from an older version of the app may not have it yet.
+  const changed = {
+    fresh: items.filter((i) => i.changes?.newOverdue).length,
+    moved: items.filter((i) => i.changes?.newToYou).length,
+    paid: items.filter((i) => i.changes?.paid).length,
+  };
+  const changeParts = [
+    changed.fresh > 0 && t("changes.summaryNew", { n: number(changed.fresh) }),
+    changed.moved > 0 && t("changes.summaryMoved", { n: number(changed.moved) }),
+    changed.paid > 0 && t("changes.summaryPaid", { n: number(changed.paid) }),
+  ].filter(Boolean);
   // Today's import may be late: the officer keeps working, but knows the figures are older (A29).
   const today = istDayOf(new Date(Date.now() + (list.data.clockOffsetMs ?? 0)));
   const oldList = asOfDate !== null && asOfDate < today;
@@ -104,6 +115,13 @@ export function TodayScreen() {
           </div>
         )}
       </section>
+
+      {changeParts.length > 0 && (
+        <p className="mx-4 mt-3 text-sm text-muted" data-testid="list-changes">
+          <span className="font-medium text-ink">{t("changes.summary")}</span>{" "}
+          {changeParts.join(" · ")}
+        </p>
+      )}
 
       {oldList && (
         <p

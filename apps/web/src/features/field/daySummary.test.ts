@@ -44,6 +44,7 @@ const item = (over: Partial<TodayItem> = {}): TodayItem => {
     managerNote: null,
     openAttemptClientId: null,
     history: [],
+    changes: { newOverdue: false, newToYou: null, paid: null },
     ...over,
   };
 };
