@@ -1,7 +1,7 @@
 "use client";
 
 import type { BacktestWeek, Dashboard, OfficerRow } from "@kisht/contracts";
-import { istDayOf } from "@kisht/domain";
+import { istDayOf, toCsv } from "@kisht/domain";
 import {
   AlertTriangle,
   BarChart3,
@@ -288,24 +288,29 @@ function BacktestCard({ weeks }: { weeks: BacktestWeek[] }) {
 }
 
 function downloadOfficersCsv(rows: OfficerRow[], asOf: string | null) {
-  const head =
-    "officer,branch,overdue_loans,contact_attempts_30d,promises_broken_30d,promises_kept_30d,same_day_logging,visits_to_check_30d";
-  const quote = (s: string) => `"${s.replace(/"/g, '""')}"`;
-  const body = rows.map((o) =>
+  const csv = toCsv(
     [
-      quote(o.name),
-      quote(o.branchName),
+      "officer",
+      "branch",
+      "overdue_loans",
+      "contact_attempts_30d",
+      "promises_broken_30d",
+      "promises_kept_30d",
+      "same_day_logging",
+      "visits_to_check_30d",
+    ],
+    rows.map((o) => [
+      o.name,
+      o.branchName,
       o.overdueLoans,
       o.attempts30,
       o.brokenPromises30,
       o.keptPromises30,
       o.sameDayRate === null ? "" : o.sameDayRate.toFixed(3),
       o.visitsToCheck30,
-    ].join(","),
+    ]),
   );
-  const url = URL.createObjectURL(
-    new Blob([`${[head, ...body].join("\n")}\n`], { type: "text/csv" }),
-  );
+  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
   const a = document.createElement("a");
   a.href = url;
   a.download = `officers-${asOf ?? "latest"}.csv`;

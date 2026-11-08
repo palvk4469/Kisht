@@ -189,6 +189,9 @@ const en = {
   "managerDay.contacts": "{n} contacts",
   "managerDay.contactsCol": "Contacts",
   "managerDay.blocked": "{n} blocked",
+  "activity.export": "Download contact log (CSV)",
+  "activity.exportHint":
+    "Showing the newest 60. The download has every attempt from the last 30 days, blocked ones too, with loan numbers but no borrower names or phones.",
   "promises.title": "Promises",
   "promises.due": "Due now",
   "promises.upcoming": "Coming up",
@@ -608,6 +611,9 @@ const hi: Dictionary = {
   "managerDay.contacts": "{n} संपर्क",
   "managerDay.contactsCol": "संपर्क",
   "managerDay.blocked": "{n} रोके गए",
+  "activity.export": "संपर्क रिकॉर्ड डाउनलोड करें (CSV)",
+  "activity.exportHint":
+    "यहाँ सबसे नए 60 दिख रहे हैं। डाउनलोड में पिछले 30 दिनों की हर कोशिश है, रोकी गई भी, लोन नंबर के साथ पर ग्राहक के नाम या फ़ोन के बिना।",
   "promises.title": "वादे",
   "promises.due": "अभी देखने हैं",
   "promises.upcoming": "आने वाले",

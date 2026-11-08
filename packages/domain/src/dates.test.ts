@@ -6,6 +6,7 @@ import {
   isIsoDay,
   istDayOf,
   istDayStart,
+  istTimestamp,
   toDbDate,
 } from "./dates.ts";
 
@@ -56,5 +57,11 @@ describe("day arithmetic", () => {
   it("counts whole days between", () => {
     expect(daysBetween("2026-10-31", "2026-11-02")).toBe(2);
     expect(daysBetween("2026-11-05", "2026-11-02")).toBe(-3);
+  });
+});
+
+describe("istTimestamp", () => {
+  it("writes IST wall-clock time, across midnight UTC", () => {
+    expect(istTimestamp(new Date("2026-11-04T19:45:30Z"))).toBe("2026-11-05 01:15:30");
   });
 });

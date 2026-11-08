@@ -206,6 +206,25 @@ test("the activity log shows the rule was kept, and flags what to check", async 
   ).toBeVisible();
 });
 
+test("the activity page has each officer's day, and the full log for an audit", async ({
+  page,
+}) => {
+  await signInManager(page);
+  await page.getByRole("link", { name: "Activity" }).click();
+  await expect(page.getByRole("heading", { name: "Today by officer" })).toBeVisible();
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("link", { name: "Download contact log (CSV)" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^contact-log-\d{4}-\d{2}-\d{2}-to-/);
+  const body = await (await download.createReadStream()).toArray();
+  const csv = Buffer.concat(body).toString("utf8");
+  expect(csv.split("\n")[0]).toContain("attempt_id,time_ist");
+  expect(csv).toContain("OUTSIDE_CONTACT_WINDOW");
+  expect(csv).not.toMatch(/\b9\d{9}\b/);
+});
+
 test("when the dashboard can't load, it says so and retry works", async ({ page }) => {
   await signInManager(page);
   await page.route("**/api/manager/dashboard", (route) =>

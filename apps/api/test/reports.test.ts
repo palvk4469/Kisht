@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import type { ActivityLog, Dashboard, ManagerDay } from "@kisht/contracts";
 import { createTestPrisma } from "@kisht/db/testing";
-import { addDays, toDbDate } from "@kisht/domain";
+import { addDays, parseCsv, toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
@@ -363,5 +363,82 @@ describe("the day by officer", () => {
     const day = await get<ManagerDay>("/api/manager/day", managerB);
     expect(day.officers.map((o) => o.id)).not.toContain(fx.officerA1.id);
     expect(day.officers.map((o) => o.id)).not.toContain(fx.officerA2.id);
+  });
+});
+
+describe("the contact log export", () => {
+  const download = (q: string, cookie = manager) =>
+    app.inject({ method: "GET", url: `/api/manager/activity/export${q}`, headers: { cookie } });
+
+  it("has every attempt in range, blocked ones too, with no borrower details", async () => {
+    const id = await loan(fx.branchA, [[TODAY, 5]], fx.officerA1.id);
+    const blocked = await attempt(id, {
+      allowed: false,
+      blockReason: "OUTSIDE_CONTACT_WINDOW",
+      correctedAt: ist(`${TODAY}T07:10:00`),
+      deviceAt: ist(`${TODAY}T07:10:00`),
+    });
+    const allowed = await attempt(id);
+    await prisma.outcome.create({
+      data: {
+        clientId: randomUUID(),
+        loanId: id,
+        officerId: fx.officerA1.id,
+        attemptId: allowed.id,
+        type: "NOT_REACHABLE",
+        note: '=HYPERLINK("http://evil.example","open")',
+        deviceAt: ist(`${TODAY}T09:35:00`),
+        correctedAt: ist(`${TODAY}T09:35:00`),
+      },
+    });
+
+    const res = await download(`?from=${TODAY}&to=${TODAY}`);
+    expect(res.statusCode).toBe(200);
+    expect(res.headers["content-type"]).toContain("text/csv");
+    expect(res.headers["content-disposition"]).toContain(`contact-log-${TODAY}-to-${TODAY}.csv`);
+    const rows = parseCsv(res.body);
+    const header = rows[0] ?? [];
+    expect(header.slice(0, 3)).toEqual(["attempt_id", "time_ist", "device_time_ist"]);
+    const row = (attemptId: string) => {
+      const r = rows.find((x) => x[0] === attemptId) ?? [];
+      return Object.fromEntries(header.map((h, i) => [h, r[i]]));
+    };
+    expect(row(blocked.id)).toMatchObject({
+      time_ist: `${TODAY} 07:10:00`,
+      allowed: "false",
+      block_reason: "OUTSIDE_CONTACT_WINDOW",
+    });
+    // A note typed in the field can't run as a formula in a spreadsheet.
+    expect(row(allowed.id)).toMatchObject({
+      outcome: "NOT_REACHABLE",
+      note: `'=HYPERLINK("http://evil.example","open")`,
+      officer: "officer-a1",
+    });
+    expect(res.body).not.toContain("9000012345");
+    expect(res.body).not.toContain("Company R");
+
+    const logged = await prisma.auditLog.findFirst({
+      where: { action: "activity.export", actorId: fx.managerA.id },
+      orderBy: { at: "desc" },
+    });
+    expect(logged?.meta).toMatchObject({ from: TODAY, to: TODAY });
+  });
+
+  it("stays inside the manager's branch", async () => {
+    const managerB = await signIn(app, fx.managerB.email);
+    const res = await download(`?from=${TODAY}&to=${TODAY}`, managerB);
+    expect(res.statusCode).toBe(200);
+    expect(parseCsv(res.body)).toHaveLength(1);
+  });
+
+  it("refuses a range longer than a quarter, or backwards", async () => {
+    expect((await download("?from=2026-01-01&to=2026-11-04")).statusCode).toBe(400);
+    expect((await download("?from=2026-01-01")).statusCode).toBe(400);
+    expect((await download(`?from=${TODAY}&to=2026-11-01`)).statusCode).toBe(400);
+  });
+
+  it("is closed to officers", async () => {
+    const officer = await signIn(app, fx.officerA1.email);
+    expect((await download("", officer)).statusCode).toBe(403);
   });
 });

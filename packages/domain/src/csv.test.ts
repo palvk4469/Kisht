@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { OVERDUE_COLUMNS, OVERDUE_TEMPLATE_ROWS, parseCsv, parseOverdueCsv } from "./csv.ts";
+import {
+  csvCell,
+  OVERDUE_COLUMNS,
+  OVERDUE_TEMPLATE_ROWS,
+  parseCsv,
+  parseOverdueCsv,
+  toCsv,
+} from "./csv.ts";
 
 const TODAY = "2026-11-02";
 const header = OVERDUE_COLUMNS.join(",");
@@ -126,5 +133,37 @@ describe("OVERDUE_TEMPLATE_ROWS", () => {
     const r = parseOverdueCsv([header, ...OVERDUE_TEMPLATE_ROWS].join("\n"), TODAY);
     expect(r.errors).toEqual([]);
     expect(r.rows).toHaveLength(OVERDUE_TEMPLATE_ROWS.length);
+  });
+});
+
+describe("writing CSV", () => {
+  it("quotes only what needs it, and leaves numbers and blanks plain", () => {
+    expect(csvCell("Company A")).toBe("Company A");
+    expect(csvCell('Plot 1, "Main" Road')).toBe('"Plot 1, ""Main"" Road"');
+    expect(csvCell(-1200)).toBe("-1200");
+    expect(csvCell(true)).toBe("true");
+    expect(csvCell(null)).toBe("");
+  });
+
+  it("stops a note running as a formula when the file is opened", () => {
+    expect(csvCell('=HYPERLINK("http://x","click")')).toBe(
+      '"\'=HYPERLINK(""http://x"",""click"")"',
+    );
+    for (const start of ["+", "-", "@", "\t"]) expect(csvCell(`${start}1`)).toBe(`'${start}1`);
+  });
+
+  it("reads back what it writes", () => {
+    const csv = toCsv(
+      ["a", "b"],
+      [
+        ["x, y", 2],
+        ["=1+1", null],
+      ],
+    );
+    expect(parseCsv(csv)).toEqual([
+      ["a", "b"],
+      ["x, y", "2"],
+      ["'=1+1", ""],
+    ]);
   });
 });

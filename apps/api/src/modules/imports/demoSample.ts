@@ -1,5 +1,13 @@
 import { type PrismaClient, SAMPLE_LOAN_NOS } from "@kisht/db";
-import { addDays, daysBetween, fromDbDate, type IsoDay, OVERDUE_COLUMNS } from "@kisht/domain";
+import {
+  addDays,
+  type CsvCell,
+  daysBetween,
+  fromDbDate,
+  type IsoDay,
+  OVERDUE_COLUMNS,
+  toCsv,
+} from "@kisht/domain";
 import { batchesAffecting, loanWhere, type ManagerScope } from "../auth/scope.js";
 
 // Demo mode only (D13): today's overdue export, as the loan system would send it.
@@ -7,11 +15,6 @@ import { batchesAffecting, loanWhere, type ManagerScope } from "../auth/scope.js
 // further behind for every day since. Then it is edited so a reviewer's upload
 // exercises every part of the preview: three loans paid off (cured), two
 // part-payments, one brand-new loan and one bad row.
-
-const quote = (v: string | number | null) => {
-  const s = v === null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
-};
 
 export async function buildDemoSample(
   prisma: PrismaClient,
@@ -23,7 +26,7 @@ export async function buildDemoSample(
     orderBy: { asOfDate: "desc" },
     select: { asOfDate: true },
   });
-  if (!latest) return { fileName: "overdue-sample.csv", csv: `${OVERDUE_COLUMNS.join(",")}\n` };
+  if (!latest) return { fileName: "overdue-sample.csv", csv: toCsv(OVERDUE_COLUMNS, []) };
 
   const asOf = fromDbDate(latest.asOfDate);
   const day = today > asOf ? today : asOf;
@@ -53,50 +56,42 @@ export async function buildDemoSample(
   );
   const badPhone = editable.find((s) => !cured.has(s.loanId) && !partPaid.has(s.loanId))?.loanId;
 
-  const lines = [OVERDUE_COLUMNS.join(",")];
+  const rows: CsvCell[][] = [];
   for (const s of snapshots) {
     if (cured.has(s.loanId)) continue;
     const b = s.loan.borrower;
     const paid = partPaid.has(s.loanId);
-    lines.push(
-      [
-        s.loan.loanNo,
-        b.name,
-        b.businessType,
-        s.loanId === badPhone ? "12345" : b.phone,
-        b.address,
-        b.pincode,
-        paid ? s.outstanding - s.loan.emiAmount : s.outstanding,
-        s.dpd + behind,
-        s.loan.emiAmount,
-        paid ? addDays(day, -1) : s.lastPaymentDate ? fromDbDate(s.lastPaymentDate) : "",
-        paid ? s.loan.emiAmount : (s.lastPaymentAmount ?? ""),
-        s.loan.branch.code,
-      ]
-        .map(quote)
-        .join(","),
-    );
+    rows.push([
+      s.loan.loanNo,
+      b.name,
+      b.businessType,
+      s.loanId === badPhone ? "12345" : b.phone,
+      b.address,
+      b.pincode,
+      paid ? s.outstanding - s.loan.emiAmount : s.outstanding,
+      s.dpd + behind,
+      s.loan.emiAmount,
+      paid ? addDays(day, -1) : s.lastPaymentDate ? fromDbDate(s.lastPaymentDate) : "",
+      paid ? s.loan.emiAmount : (s.lastPaymentAmount ?? ""),
+      s.loan.branch.code,
+    ]);
   }
   const branchCode = snapshots[0]?.loan.branch.code ?? "IND";
   const pincode = snapshots[0]?.loan.borrower.pincode ?? "452001";
-  lines.push(
-    [
-      "LN-19999",
-      "Company ZZ (namkeen manufacturer)",
-      "namkeen manufacturer",
-      "9000099999",
-      `Plot 9, New Industrial Area, ${pincode}`,
-      pincode,
-      185000,
-      3,
-      8200,
-      "",
-      "",
-      branchCode,
-    ]
-      .map(quote)
-      .join(","),
-  );
+  rows.push([
+    "LN-19999",
+    "Company ZZ (namkeen manufacturer)",
+    "namkeen manufacturer",
+    "9000099999",
+    `Plot 9, New Industrial Area, ${pincode}`,
+    pincode,
+    185000,
+    3,
+    8200,
+    "",
+    "",
+    branchCode,
+  ]);
 
-  return { fileName: `overdue-${day}.csv`, csv: `${lines.join("\n")}\n` };
+  return { fileName: `overdue-${day}.csv`, csv: toCsv(OVERDUE_COLUMNS, rows) };
 }

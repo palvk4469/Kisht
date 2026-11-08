@@ -1,4 +1,5 @@
 import {
+  ActivityExportQuery,
   ActivityLog,
   ActivityQuery,
   Dashboard,
@@ -7,9 +8,10 @@ import {
 } from "@kisht/contracts";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
+import { z } from "zod";
 import type { AppContext } from "../../context.js";
 import { currentUser, requireRole } from "../../http/guards.js";
-import { getActivity, getDashboard, getManagerDay } from "./service.js";
+import { exportActivity, getActivity, getDashboard, getManagerDay } from "./service.js";
 
 export function registerReports(app: FastifyInstance, ctx: AppContext) {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -55,5 +57,26 @@ export function registerReports(app: FastifyInstance, ctx: AppContext) {
       },
     },
     async (request) => getManagerDay(ctx, currentUser(request)),
+  );
+
+  r.get(
+    "/api/manager/activity/export",
+    {
+      preHandler,
+      schema: {
+        tags,
+        summary: "Every contact attempt over a range of IST days, as CSV, for an audit",
+        querystring: ActivityExportQuery,
+        response: { 200: z.string() },
+      },
+    },
+    async (request, reply) => {
+      const { fileName, csv } = await exportActivity(ctx, currentUser(request), request.query);
+      return reply
+        .header("content-type", "text/csv; charset=utf-8")
+        .header("content-disposition", `attachment; filename="${fileName}"`)
+        .header("cache-control", "no-store")
+        .send(csv);
+    },
   );
 }

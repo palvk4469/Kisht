@@ -1,29 +1,35 @@
-import type {
-  ActivityEntry,
-  ActivityFilter,
-  ActivityLog,
-  Dashboard,
-  ManagerDay,
-  OfficerDay,
-  OfficerRow,
+import {
+  ACTIVITY_EXPORT_MAX_DAYS,
+  type ActivityEntry,
+  type ActivityExportQuery,
+  type ActivityFilter,
+  type ActivityLog,
+  type Dashboard,
+  type ManagerDay,
+  type OfficerDay,
+  type OfficerRow,
 } from "@kisht/contracts";
 import type { Prisma } from "@kisht/db";
 import {
   addDays,
   CLOCK_SKEW_WARNING_MS,
+  daysBetween,
   distanceMeters,
   fromDbDate,
   type IsoDay,
   isContactAllowed,
   istDayOf,
   istDayStart,
+  istTimestamp,
   rollRate,
+  toCsv,
   toDbDate,
   VISIT_FAR_METERS,
 } from "@kisht/domain";
 import type { AppContext } from "../../context.js";
-import { notFound } from "../../http/errors.js";
+import { HttpError, notFound } from "../../http/errors.js";
 import type { AuthUser } from "../../http/guards.js";
+import { audit } from "../audit/audit.js";
 import {
   loanWhere,
   type ManagerScope,
@@ -306,6 +312,10 @@ function visitNeedsCheck(
   return distanceMeters({ lat, lng }, { lat: borrower.lat, lng: borrower.lng }) > VISIT_FAR_METERS;
 }
 
+/** The phone's clock was over 5 minutes out when this happened. */
+const isSkewed = (a: { deviceAt: Date; correctedAt: Date }) =>
+  Math.abs(a.deviceAt.getTime() - a.correctedAt.getTime()) > CLOCK_SKEW_WARNING_MS;
+
 export async function getActivity(
   ctx: AppContext,
   user: AuthUser,
@@ -339,8 +349,6 @@ export async function getActivity(
         select: { deviceAt: true, correctedAt: true },
       }),
     ]);
-  const isSkewed = (a: { deviceAt: Date; correctedAt: Date }) =>
-    Math.abs(a.deviceAt.getTime() - a.correctedAt.getTime()) > CLOCK_SKEW_WARNING_MS;
 
   const rows = await prisma.contactAttempt.findMany({
     where: {
@@ -490,4 +498,110 @@ export async function getManagerDay(ctx: AppContext, user: AuthUser): Promise<Ma
   }
 
   return { date: today, officers: [...rows.values()] };
+}
+
+const EXPORT_DEFAULT_DAYS = 30;
+
+const EXPORT_COLUMNS = [
+  "attempt_id",
+  "time_ist",
+  "device_time_ist",
+  "received_time_ist",
+  "officer",
+  "loan_no",
+  "channel",
+  "allowed",
+  "block_reason",
+  "outcome",
+  "amount",
+  "note",
+  "lat",
+  "lng",
+  "accuracy_m",
+  "distance_from_address_m",
+  "visit_to_check",
+  "synced_late",
+  "phone_clock_wrong",
+] as const;
+
+/**
+ * Every contact attempt in scope over a range of IST days, blocked ones
+ * included: the record an RBI or internal audit asks for. Loan numbers, not
+ * borrower names or phones (A31). Each download is itself audited.
+ */
+export async function exportActivity(
+  ctx: AppContext,
+  user: AuthUser,
+  query: ActivityExportQuery,
+): Promise<{ fileName: string; csv: string }> {
+  const today = istDayOf(ctx.clock());
+  const to = query.to ?? (query.from && query.from > today ? query.from : today);
+  const from = query.from ?? addDays(to, -(EXPORT_DEFAULT_DAYS - 1));
+  if (daysBetween(from, to) >= ACTIVITY_EXPORT_MAX_DAYS) {
+    throw new HttpError(400, `At most ${ACTIVITY_EXPORT_MAX_DAYS} days at a time`);
+  }
+
+  const rows = await ctx.prisma.contactAttempt.findMany({
+    where: {
+      loan: loanWhere(scopeOf(user)),
+      correctedAt: { gte: istDayStart(from), lt: istDayStart(addDays(to, 1)) },
+      ...(query.officerId ? { officerId: query.officerId } : {}),
+    },
+    orderBy: [{ correctedAt: "asc" }, { id: "asc" }],
+    include: {
+      officer: { select: { name: true } },
+      loan: { select: { loanNo: true, borrower: { select: { lat: true, lng: true } } } },
+      outcomes: { select: { type: true, amount: true, note: true }, take: 1 },
+    },
+  });
+
+  const csv = toCsv(
+    EXPORT_COLUMNS,
+    rows.map((a) => {
+      const { borrower } = a.loan;
+      const outcome = a.outcomes[0];
+      const isVisit = a.channel === "VISIT";
+      const distance =
+        isVisit &&
+        a.lat !== null &&
+        a.lng !== null &&
+        borrower.lat !== null &&
+        borrower.lng !== null
+          ? Math.round(
+              distanceMeters({ lat: a.lat, lng: a.lng }, { lat: borrower.lat, lng: borrower.lng }),
+            )
+          : null;
+      return [
+        a.id,
+        istTimestamp(a.correctedAt),
+        istTimestamp(a.deviceAt),
+        istTimestamp(a.receivedAt),
+        a.officer.name,
+        a.loan.loanNo,
+        a.channel,
+        a.allowed,
+        a.blockReason,
+        outcome?.type,
+        outcome?.amount,
+        outcome?.note,
+        a.lat,
+        a.lng,
+        a.accuracyM,
+        distance,
+        isVisit && a.allowed && visitNeedsCheck(a.lat, a.lng, borrower),
+        istDayOf(a.correctedAt) !== istDayOf(a.receivedAt),
+        isSkewed(a),
+      ];
+    }),
+  );
+
+  await audit(ctx.prisma, {
+    actorId: user.id,
+    action: "activity.export",
+    entity: "contact_attempt",
+    entityId: `${from}..${to}`,
+    meta: { from, to, officerId: query.officerId ?? null, rows: rows.length },
+  });
+
+  return { fileName: `contact-log-${from}-to-${to}.csv`, csv };
 }

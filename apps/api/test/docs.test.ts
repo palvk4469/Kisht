@@ -34,6 +34,7 @@ describe("OpenAPI docs", () => {
       "/api/loans/{id}",
       "/api/loans/{id}/reveal-contact",
       "/api/manager/activity",
+      "/api/manager/activity/export",
       "/api/manager/assignments",
       "/api/manager/board",
       "/api/manager/dashboard",

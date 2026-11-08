@@ -1,4 +1,4 @@
-import { IsoDaySchema } from "@kisht/domain";
+import { daysBetween, IsoDaySchema } from "@kisht/domain";
 import { z } from "zod";
 import { ContactChannel, OutcomeType } from "./field.ts";
 
@@ -89,6 +89,26 @@ export const ActivityQuery = z.object({
   filter: z.enum(["all", "blocked", "check"]).default("all"),
 });
 export type ActivityFilter = z.infer<typeof ActivityQuery>["filter"];
+
+/** The longest contact log one download covers; a quarter, for an audit. */
+export const ACTIVITY_EXPORT_MAX_DAYS = 92;
+
+/** IST days, inclusive. Defaults to the last 30 days. */
+export const ActivityExportQuery = z
+  .object({
+    from: IsoDaySchema.optional(),
+    to: IsoDaySchema.optional(),
+    officerId: z.string().max(128).optional(),
+  })
+  .refine((q) => !q.from || !q.to || q.from <= q.to, {
+    message: "from must be on or before to",
+    path: ["from"],
+  })
+  .refine((q) => !q.from || !q.to || daysBetween(q.from, q.to) < ACTIVITY_EXPORT_MAX_DAYS, {
+    message: `at most ${ACTIVITY_EXPORT_MAX_DAYS} days at a time`,
+    path: ["to"],
+  });
+export type ActivityExportQuery = z.infer<typeof ActivityExportQuery>;
 
 export const ActivityEntry = z.object({
   id: z.string(),

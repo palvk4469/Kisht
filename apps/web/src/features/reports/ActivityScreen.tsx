@@ -1,7 +1,7 @@
 "use client";
 
 import type { ActivityEntry, ActivityFilter, OfficerDay } from "@kisht/contracts";
-import { MapPin, MessageSquareText, Phone, ShieldCheck } from "lucide-react";
+import { Download, MapPin, MessageSquareText, Phone, ShieldCheck } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge, Card, cx, EmptyState, ErrorState, Skeleton, Stat } from "@/components/ui";
 import { LoanLink } from "@/features/manager/LoanView";
@@ -311,7 +311,7 @@ export function ActivityScreen() {
               </button>
             ))}
           </fieldset>
-          <div>
+          <div className="flex flex-wrap items-center gap-2">
             <label htmlFor={officerSelect} className="sr-only">
               {t("board.officer")}
             </label>
@@ -328,8 +328,20 @@ export function ActivityScreen() {
                 </option>
               ))}
             </select>
+            {/* Every attempt, not just the newest shown here: the file for an audit (A31). */}
+            <a
+              href={`/api/manager/activity/export${officerId ? `?officerId=${encodeURIComponent(officerId)}` : ""}`}
+              download
+              className="inline-flex h-10 items-center gap-1.5 rounded-xl border border-line bg-canvas px-3 text-xs font-semibold text-ink shadow-xs hover:bg-surface"
+            >
+              <Download className="size-4" aria-hidden />
+              {t("activity.export")}
+            </a>
           </div>
         </div>
+        <p className="border-b border-line px-4 py-2 text-xs text-muted">
+          {t("activity.exportHint")}
+        </p>
         {entries.length === 0 ? (
           <EmptyState title={t("activity.empty")} />
         ) : (

@@ -259,3 +259,26 @@ export function parseOverdueCsv(text: string, today: IsoDay): ParsedImport {
 
   return { rows, errors, fileErrors: [], totalRows: body.length };
 }
+
+// Writing CSV: every download the app offers goes through here.
+
+export type CsvCell = string | number | boolean | null | undefined;
+
+/** Text a spreadsheet would run as a formula when the file is opened. */
+const FORMULA_START = /^[=+\-@\t\r]/;
+
+/**
+ * One cell. Text that starts like a formula gets a leading apostrophe, so a
+ * note typed in the field can't run in a manager's spreadsheet (CSV injection).
+ */
+export function csvCell(value: CsvCell): string {
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "string") return String(value);
+  const safe = FORMULA_START.test(value) ? `'${value}` : value;
+  return /[",\n\r]/.test(safe) ? `"${safe.replace(/"/g, '""')}"` : safe;
+}
+
+export function toCsv(header: readonly string[], rows: readonly (readonly CsvCell[])[]): string {
+  const lines = [header.map(csvCell).join(","), ...rows.map((r) => r.map(csvCell).join(","))];
+  return `${lines.join("\n")}\n`;
+}

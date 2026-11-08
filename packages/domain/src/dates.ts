@@ -30,6 +30,11 @@ export function istDayOf(instant: Date): IsoDay {
   return new Date(instant.getTime() + IST_OFFSET_MS).toISOString().slice(0, 10);
 }
 
+/** An instant as IST wall-clock time, "YYYY-MM-DD HH:MM:SS", for files people read. */
+export function istTimestamp(instant: Date): string {
+  return new Date(instant.getTime() + IST_OFFSET_MS).toISOString().slice(0, 19).replace("T", " ");
+}
+
 /** The instant IST midnight begins on `day`. Use for "during this day" queries. */
 export function istDayStart(day: IsoDay): Date {
   assertIsoDay(day);
