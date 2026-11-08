@@ -1,6 +1,7 @@
 "use client";
 
 import type { BacktestWeek, Dashboard, OfficerRow } from "@kisht/contracts";
+import { istDayOf } from "@kisht/domain";
 import {
   AlertTriangle,
   BarChart3,
@@ -8,7 +9,9 @@ import {
   CheckCircle2,
   Download,
   Percent,
+  Upload,
 } from "lucide-react";
+import Link from "next/link";
 import { useId, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, Stat } from "@/components/ui";
 import { DpdBadge } from "@/features/field/badges";
@@ -448,10 +451,19 @@ export function DashboardScreen() {
     <div className={`space-y-6 ${query.isFetching ? "opacity-80" : ""}`}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         {header}
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <span className="text-sm text-muted">
             {t("board.asOf", { date: day(data.asOfDate, locale) })}
           </span>
+          {data.asOfDate < istDayOf(new Date()) && (
+            <Link
+              href="/manager/import"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-warn-soft px-3 text-sm font-medium text-warn hover:underline"
+            >
+              <Upload className="size-4" aria-hidden />
+              {t("dash.uploadToday")}
+            </Link>
+          )}
           {data.branches.length > 1 && (
             <div>
               <label htmlFor={branchSelect} className="sr-only">

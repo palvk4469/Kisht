@@ -118,6 +118,7 @@
 <h3>Morning import</h3>
 <ol>
   <li>A manager uploads the CSV and sees what it will change, with errors listed by Excel row number. Nothing is written yet.</li>
+  <li>If today's file is late, officers keep yesterday's list with a note giving its date, and the dashboard asks the manager to upload (A29).</li>
   <li>On commit, a transaction claims the batch, so a double submit does nothing, and plans again from the current database.</li>
   <li>Loans, snapshots, payments, assignments and scores are written, and open promises are resolved as kept, partial or broken.</li>
 </ol>

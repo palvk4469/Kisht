@@ -162,6 +162,9 @@ const en = {
   "board.subtitle":
     "The model suggests the order; you decide. Any change needs a reason, which the officer sees and the audit log keeps.",
   "board.asOf": "List from {date}",
+  "dash.uploadToday": "Upload today's import",
+  "today.oldList":
+    "This is the list from {date}. Today's hasn't been uploaded yet, so days overdue may be behind.",
   "board.lists": "Today's lists",
   "board.officer": "Officer",
   "board.noOfficer": "No officer",
@@ -541,6 +544,9 @@ const hi: Dictionary = {
   "board.subtitle":
     "मॉडल क्रम सुझाता है, फैसला आपका। हर बदलाव का कारण ज़रूरी है, जो ऑफ़िसर को दिखता है और ऑडिट लॉग में रहता है।",
   "board.asOf": "{date} की सूची",
+  "dash.uploadToday": "आज का इम्पोर्ट अपलोड करें",
+  "today.oldList":
+    "यह {date} की सूची है। आज की सूची अभी अपलोड नहीं हुई है, इसलिए बकाया दिन पीछे हो सकते हैं।",
   "board.lists": "आज की सूचियाँ",
   "board.officer": "ऑफ़िसर",
   "board.noOfficer": "कोई ऑफ़िसर नहीं",

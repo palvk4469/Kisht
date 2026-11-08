@@ -1,7 +1,8 @@
 "use client";
 
 import type { TodayItemState } from "@kisht/contracts";
-import { Clock, ListChecks, PartyPopper } from "lucide-react";
+import { istDayOf } from "@kisht/domain";
+import { Clock, Info, ListChecks, PartyPopper } from "lucide-react";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { dateTime, day, number, rupeesShort, time } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
@@ -59,6 +60,9 @@ export function TodayScreen() {
   const done = of("done").length;
   const workable = todo.length + done;
   const atStake = todo.reduce((sum, i) => sum + (i.priority?.expectedLoss ?? 0), 0);
+  // Today's import may be late: the officer keeps working, but knows the figures are older (A29).
+  const today = istDayOf(new Date(Date.now() + (list.data.clockOffsetMs ?? 0)));
+  const oldList = asOfDate !== null && asOfDate < today;
 
   return (
     <div className="pb-8">
@@ -95,6 +99,16 @@ export function TodayScreen() {
           </div>
         )}
       </section>
+
+      {oldList && (
+        <p
+          role="status"
+          className="mx-4 mt-3 flex items-start gap-2 rounded-xl border border-line bg-canvas px-3 py-2.5 text-sm text-muted"
+        >
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+          {t("today.oldList", { date: day(asOfDate, locale) })}
+        </p>
+      )}
 
       {list.data.fromCache && !list.isPlaceholderData && (
         <p className="mx-4 mt-3 text-xs text-muted">

@@ -1,10 +1,12 @@
 import { type PrismaClient, SAMPLE_LOAN_NOS } from "@kisht/db";
-import { addDays, fromDbDate, OVERDUE_COLUMNS } from "@kisht/domain";
+import { addDays, daysBetween, fromDbDate, type IsoDay, OVERDUE_COLUMNS } from "@kisht/domain";
 import { batchesAffecting, loanWhere, type ManagerScope } from "../auth/scope.js";
 
-// Demo mode only (D13): an overdue export for the latest committed day, edited
-// so a reviewer's upload exercises every part of the preview: three loans
-// paid off (cured), two part-payments, one brand-new loan and one bad row.
+// Demo mode only (D13): today's overdue export, as the loan system would send it.
+// The latest list is moved forward to today, so a loan still overdue is a day
+// further behind for every day since. Then it is edited so a reviewer's upload
+// exercises every part of the preview: three loans paid off (cured), two
+// part-payments, one brand-new loan and one bad row.
 
 const quote = (v: string | number | null) => {
   const s = v === null ? "" : String(v);
@@ -14,6 +16,7 @@ const quote = (v: string | number | null) => {
 export async function buildDemoSample(
   prisma: PrismaClient,
   scope: ManagerScope,
+  today: IsoDay,
 ): Promise<{ fileName: string; csv: string }> {
   const latest = await prisma.importBatch.findFirst({
     where: { AND: [batchesAffecting(scope)], status: "COMMITTED" },
@@ -23,6 +26,8 @@ export async function buildDemoSample(
   if (!latest) return { fileName: "overdue-sample.csv", csv: `${OVERDUE_COLUMNS.join(",")}\n` };
 
   const asOf = fromDbDate(latest.asOfDate);
+  const day = today > asOf ? today : asOf;
+  const behind = daysBetween(asOf, day);
   const snapshots = await prisma.loanSnapshot.findMany({
     where: {
       asOfDate: latest.asOfDate,
@@ -32,7 +37,7 @@ export async function buildDemoSample(
     orderBy: { loan: { loanNo: "asc" } },
   });
 
-  // The brief's sample loans stay untouched so the demo story holds.
+  // The brief's sample loans are never paid off here, so the demo story holds.
   const editable = snapshots.filter((s) => !SAMPLE_LOAN_NOS.includes(s.loan.loanNo));
   const cured = new Set(
     editable
@@ -62,9 +67,9 @@ export async function buildDemoSample(
         b.address,
         b.pincode,
         paid ? s.outstanding - s.loan.emiAmount : s.outstanding,
-        s.dpd,
+        s.dpd + behind,
         s.loan.emiAmount,
-        paid ? addDays(asOf, -1) : s.lastPaymentDate ? fromDbDate(s.lastPaymentDate) : "",
+        paid ? addDays(day, -1) : s.lastPaymentDate ? fromDbDate(s.lastPaymentDate) : "",
         paid ? s.loan.emiAmount : (s.lastPaymentAmount ?? ""),
         s.loan.branch.code,
       ]
@@ -93,5 +98,5 @@ export async function buildDemoSample(
       .join(","),
   );
 
-  return { fileName: `overdue-${asOf}.csv`, csv: `${lines.join("\n")}\n` };
+  return { fileName: `overdue-${day}.csv`, csv: `${lines.join("\n")}\n` };
 }

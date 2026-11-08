@@ -1,6 +1,6 @@
 import type { ImportPreview } from "@kisht/contracts";
 import { createTestPrisma } from "@kisht/db/testing";
-import { OVERDUE_COLUMNS, toDbDate } from "@kisht/domain";
+import { OVERDUE_COLUMNS, parseCsv, toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { buildApp } from "../src/app.js";
@@ -157,5 +157,37 @@ describe("a file missing many loans", () => {
     const p = await preview("2026-11-06", csv(next));
     expect(p.summary.curedNeedsConfirmation).toBe(false);
     expect((await commit(p.id)).statusCode).toBe(200);
+  });
+});
+
+describe("the demo sample", () => {
+  it("is today's export, with every loan a day further behind for each day since", async () => {
+    const demo = await buildApp({
+      prisma,
+      authSecret: TEST_SECRET,
+      config: { baseURL: TEST_ORIGIN, demoMode: true },
+      clock: () => now,
+    });
+    try {
+      const all = loanNos(8);
+      // A fresh set of loans: everything earlier counts as cured, which needs a confirmation.
+      const p = await preview("2026-11-17", csv(all.map((loanNo) => ({ loanNo }))));
+      expect((await commit(p.id, { confirmCured: true })).statusCode).toBe(200);
+      const res = await demo.inject({
+        method: "GET",
+        url: "/api/imports/demo-sample",
+        headers: { cookie: await signIn(demo, fx.managerA.email) },
+      });
+      expect(res.statusCode).toBe(200);
+      expect(res.headers["content-disposition"]).toContain("overdue-2026-11-20.csv");
+      const dpd = OVERDUE_COLUMNS.indexOf("dpd");
+      const rows = parseCsv(res.body).slice(1);
+      const listed = rows.filter((r) => all.includes(r[0] as string));
+      expect(listed.length).toBeGreaterThan(0);
+      // Seeded at 10 days overdue on the 17th; three days later, 13.
+      for (const r of listed) expect(r[dpd]).toBe("13");
+    } finally {
+      await demo.close();
+    }
   });
 });

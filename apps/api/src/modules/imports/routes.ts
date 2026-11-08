@@ -7,6 +7,7 @@ import {
   ImportPreviewBody,
   MAX_IMPORT_CSV_BYTES,
 } from "@kisht/contracts";
+import { istDayOf } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import { z } from "zod";
@@ -77,6 +78,7 @@ export function registerImports(app: FastifyInstance, ctx: AppContext) {
         const { fileName, csv } = await buildDemoSample(
           ctx.prisma,
           managerScope(currentUser(request)),
+          istDayOf(ctx.clock()),
         );
         return reply
           .header("content-type", "text/csv; charset=utf-8")
