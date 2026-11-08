@@ -44,13 +44,13 @@ Status: **Done** · **Partial** (what is missing is stated) · **Cut**.
 
 ## Constraints
 
-| Requirement                                          | Status  | Where / note                                                                                                        |
-| ---------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------- |
-| Block contact outside 8 am–7 pm                      | Done    | Blocked and explained in the UI with the next time; server re-checks                                                |
-| Record every contact attempt, including blocked ones | Done    | `ContactAttempt` with `allowed` and `blockReason`; tested                                                           |
-| DPDP: borrower data as personal data                 | Done    | Phones masked for managers, reveals audited, device data cleared on sign-out and expires; reports show no numbers   |
-| Offline on low-end phones, weak signal               | Done    | Service worker + IndexedDB; system fonts; first load 245 KB JS (over the 200 KB target), then served from the phone |
-| Hindi interface                                      | Partial | Every screen in Hindi and English; needs a native read. Server error messages are English only                      |
+| Requirement                                          | Status  | Where / note                                                                                                                   |
+| ---------------------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| Block contact outside 8 am–7 pm                      | Done    | Blocked and explained in the UI with the next time; server re-checks                                                           |
+| Record every contact attempt, including blocked ones | Done    | `ContactAttempt` with `allowed` and `blockReason`; tested                                                                      |
+| DPDP: borrower data as personal data                 | Done    | Phones masked for managers, reveals audited, device data cleared on sign-out and expires; reports show no numbers              |
+| Offline on low-end phones, weak signal               | Done    | Service worker + IndexedDB; system fonts; first load about 290 KB JS gzip (over the 200 KB target), then served from the phone |
+| Hindi interface                                      | Partial | Every screen in Hindi and English; needs a native read. Server error messages are English only                                 |
 
 ## Design
 

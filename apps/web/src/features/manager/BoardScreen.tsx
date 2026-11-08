@@ -4,7 +4,7 @@ import type { BoardLoan, BoardOfficer } from "@kisht/contracts";
 import { ArrowDown, ArrowUp, Pin, Users } from "lucide-react";
 import { useState } from "react";
 import { Badge, Button, Card, cx, EmptyState, ErrorState, Skeleton } from "@/components/ui";
-import { DpdBadge, PromiseBadge } from "@/features/field/LoanCard";
+import { DpdBadge, PromiseBadge } from "@/features/field/badges";
 import { useReasonText } from "@/features/field/useReasonText";
 import { dateTime, day, number, rupees, rupeesShort } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";

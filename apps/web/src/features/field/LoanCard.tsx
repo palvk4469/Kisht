@@ -1,13 +1,12 @@
 "use client";
 
-import type { TodayItem } from "@kisht/contracts";
-import { istDayOf } from "@kisht/domain";
 import { ChevronRight, HandCoins, History, Sparkles } from "lucide-react";
 import Link from "next/link";
-import { Badge, cx } from "@/components/ui";
-import { rupees, shortDay } from "@/lib/format";
+import { cx } from "@/components/ui";
+import { rupees } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
 import type { FieldItem } from "../offline/overlay";
+import { DpdBadge, PromiseBadge } from "./badges";
 import { ContactActions } from "./ContactActions";
 import { useReasonText } from "./useReasonText";
 
@@ -15,43 +14,6 @@ import { useReasonText } from "./useReasonText";
 export const loanHref = (loanId: string) => `/today/loan?id=${encodeURIComponent(loanId)}`;
 
 /** Red at the edge of the roll or past it: the colour says where to look first. */
-export function dpdTone(dpd: number): "risk" | "warn" | "neutral" {
-  if (dpd >= 25) return "risk";
-  if (dpd >= 11) return "warn";
-  return "neutral";
-}
-
-export function DpdBadge({ dpd }: { dpd: number }) {
-  const { t } = useI18n();
-  return (
-    <Badge tone={dpdTone(dpd)} dot>
-      {t("today.dpd", { n: dpd, days: dpd === 1 ? "day" : "days" })}
-    </Badge>
-  );
-}
-
-export function PromiseBadge({ promise }: { promise: TodayItem["promise"] }) {
-  const { t, locale } = useI18n();
-  if (!promise) return null;
-  const date = shortDay(promise.dueDate, locale);
-  if (promise.status === "PENDING") {
-    return promise.dueDate < istDayOf(new Date()) ? (
-      <Badge tone="warn" dot>
-        {t("promise.overdue", { date })}
-      </Badge>
-    ) : (
-      <Badge tone="accent" dot>
-        {t("promise.due", { date })}
-      </Badge>
-    );
-  }
-  return (
-    <Badge tone="risk" dot>
-      {t("promise.broken", { date })}
-    </Badge>
-  );
-}
-
 type Clock = { now: Date; nextAllowedAt: Date };
 
 export function LoanCard({ item, rank, clock }: { item: FieldItem; rank: number; clock: Clock }) {

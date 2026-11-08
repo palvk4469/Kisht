@@ -8,7 +8,8 @@ import { rupees, shortDay } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
 import type { FieldItem } from "../offline/overlay";
 import { useToday } from "./api";
-import { DpdBadge, loanHref } from "./LoanCard";
+import { DpdBadge } from "./badges";
+import { loanHref } from "./LoanCard";
 
 // Read from the day's payload, so it works with no signal (D22).
 

@@ -6,7 +6,7 @@ import { Phone } from "lucide-react";
 import { useState } from "react";
 import { Sheet } from "@/components/Sheet";
 import { Badge, Button, cx, ErrorState, Skeleton } from "@/components/ui";
-import { DpdBadge, PromiseBadge } from "@/features/field/LoanCard";
+import { DpdBadge, PromiseBadge } from "@/features/field/badges";
 import { useReasonText } from "@/features/field/useReasonText";
 import { request } from "@/lib/api";
 import { dateTime, rupees } from "@/lib/format";

@@ -93,7 +93,7 @@ test("the demo button reopens the window when it is closed", async ({ page }) =>
 
 test("the brief's sample loans show their stories", async ({ page }) => {
   await signInAs(page, "imran.qureshi@kisht.example");
-  const broken = page.getByTestId("loan-card").filter({ hasText: "Company D" });
+  const broken = page.getByTestId("loan-card").filter({ hasText: "Company D (printing press)" });
   await expect(broken.getByText(/वादा टूटा/)).toBeVisible();
   await expect(broken.getByText("₹2,20,000")).toBeVisible();
 

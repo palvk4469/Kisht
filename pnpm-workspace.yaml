@@ -5,3 +5,7 @@ allowBuilds:
   "@prisma/engines": true
   esbuild: true
   prisma: true
+
+# Patched transitive versions for advisories in the API docs page (pnpm audit).
+overrides:
+  "@fastify/static": 10.1.10

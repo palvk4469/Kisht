@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@fastify/swagger": "9.9.2",
-    "@fastify/swagger-ui": "6.1.2",
+    "@fastify/swagger-ui": "6.1.3",
     "@kisht/contracts": "workspace:*",
     "@kisht/db": "workspace:*",
     "@kisht/domain": "workspace:*",

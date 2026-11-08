@@ -111,7 +111,9 @@ test("an officer's promises screen groups what to follow up", async ({ page }) =
   await signInAs(page, "imran.qureshi@kisht.example");
   await page.locator('a[href="/today/promises"]').locator("visible=true").click();
   await expect(page.getByRole("heading", { name: /इस हफ्ते टूटे/ })).toBeVisible();
-  await expect(page.locator("li").filter({ hasText: "Company D" })).toContainText("₹9,200");
+  await expect(page.locator("li").filter({ hasText: "Company D (printing press)" })).toContainText(
+    "₹9,200",
+  );
 });
 
 async function fits(page: Page, path: string) {

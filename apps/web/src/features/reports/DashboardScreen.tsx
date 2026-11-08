@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useId, useState } from "react";
 import { Badge, Button, Card, EmptyState, ErrorState, Skeleton, Stat } from "@/components/ui";
-import { DpdBadge } from "@/features/field/LoanCard";
+import { DpdBadge } from "@/features/field/badges";
 import { LoanLink } from "@/features/manager/LoanView";
 import { day, number, rupees, rupeesShort, shortDay } from "@/lib/format";
 import { useI18n } from "@/lib/i18n";
