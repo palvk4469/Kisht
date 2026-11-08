@@ -23,13 +23,14 @@ Status: **Done** · **Partial** (what is missing is stated) · **Cut**.
 
 ## Must have (beyond the core)
 
-| Requirement                                                | Status | Where / note                                                                        |
-| ---------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------- |
-| Call and map buttons                                       | Done   | `tel:` and Maps link (D11)                                                          |
-| Promise-to-pay reminders to borrower and officer           | Done   | Approved templates only; held outside 8 am–7 pm; stop when settled or disputed      |
-| AI-drafted Hindi/English reminders from approved templates | Done   | Loan screen; rewords an approved template and never sees borrower details (D31)     |
-| Manager dashboard: roll rates and broken promises          | Done   | Screen 8; loans about to roll, broken promises by week, officers with CSV download  |
-| Officer activity log with visit locations                  | Done   | Activity screen; each visit checked against the borrower's address, with a map link |
+| Requirement                                                | Status | Where / note                                                                                                                                      |
+| ---------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Call and map buttons                                       | Done   | `tel:` and Maps link (D11)                                                                                                                        |
+| Promise-to-pay reminders to borrower and officer           | Done   | Approved templates only; held outside 8 am–7 pm; stop when settled or disputed                                                                    |
+| AI-drafted Hindi/English reminders from approved templates | Done   | Loan screen; rewords an approved template and never sees borrower details (D31)                                                                   |
+| Manager dashboard: roll rates and broken promises          | Done   | Screen 8; loans about to roll, broken promises by week, officers with CSV download                                                                |
+| Officer activity log with visit locations                  | Done   | Activity screen; each visit checked against the borrower's address, with a map link                                                               |
+| Officers start and end the day on WhatsApp                 | Done   | My day: the day's summary, unsent work included, sent to the branch on WhatsApp as counts only (A30); managers see each officer's day on Activity |
 
 ## When the AI is wrong
 

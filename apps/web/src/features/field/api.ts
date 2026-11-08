@@ -43,7 +43,9 @@ export type LoadedToday = {
 async function readCached(userId: string): Promise<LoadedToday | null> {
   const cached = await db.today.get(userId);
   if (!cached) return null;
-  if (Date.now() - cached.savedAt > CACHE_MAX_AGE_MS) {
+  // Too old, or saved by an earlier version of the app in a different shape:
+  // drop it and let the network refill it.
+  if (Date.now() - cached.savedAt > CACHE_MAX_AGE_MS || !TodayList.safeParse(cached.list).success) {
     await db.today.delete(userId);
     return null;
   }

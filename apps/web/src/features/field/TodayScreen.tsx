@@ -2,7 +2,8 @@
 
 import type { TodayItemState } from "@kisht/contracts";
 import { istDayOf } from "@kisht/domain";
-import { Clock, Info, ListChecks, PartyPopper } from "lucide-react";
+import { ChevronRight, ClipboardCheck, Clock, Info, ListChecks, PartyPopper } from "lucide-react";
+import Link from "next/link";
 import { Card, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { dateTime, day, number, rupeesShort, time } from "@/lib/format";
 import { type MessageKey, useI18n } from "@/lib/i18n";
@@ -63,6 +64,10 @@ export function TodayScreen() {
   // Today's import may be late: the officer keeps working, but knows the figures are older (A29).
   const today = istDayOf(new Date(Date.now() + (list.data.clockOffsetMs ?? 0)));
   const oldList = asOfDate !== null && asOfDate < today;
+  // After 7 pm (contact next opens on a later IST day), or once the list is done,
+  // the next step is the evening round-up.
+  const evening = !clock.allowed && istDayOf(clock.nextAllowedAt) > istDayOf(clock.now);
+  const dayOver = todo.length === 0 || evening;
 
   return (
     <div className="pb-8">
@@ -108,6 +113,20 @@ export function TodayScreen() {
           <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
           {t("today.oldList", { date: day(asOfDate, locale) })}
         </p>
+      )}
+
+      {dayOver && (
+        <Link
+          href="/today/day"
+          className="mx-4 mt-3 flex items-center gap-3 rounded-2xl border border-accent/20 bg-accent-soft px-4 py-3 text-sm text-accent shadow-xs"
+        >
+          <ClipboardCheck className="size-5 shrink-0" aria-hidden />
+          <span className="flex-1">
+            <span className="block font-semibold">{t("day.promptTitle")}</span>
+            <span className="block text-xs text-accent/90">{t("day.promptBody")}</span>
+          </span>
+          <ChevronRight className="size-4 shrink-0" aria-hidden />
+        </Link>
       )}
 
       {list.data.fromCache && !list.isPlaceholderData && (

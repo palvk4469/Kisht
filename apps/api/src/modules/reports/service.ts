@@ -3,6 +3,8 @@ import type {
   ActivityFilter,
   ActivityLog,
   Dashboard,
+  ManagerDay,
+  OfficerDay,
   OfficerRow,
 } from "@kisht/contracts";
 import type { Prisma } from "@kisht/db";
@@ -406,4 +408,86 @@ export async function getActivity(
       ACTIVITY_SHOWN,
     ),
   };
+}
+
+/** Each officer's day so far, by the server's IST day: the evening round-up. */
+export async function getManagerDay(ctx: AppContext, user: AuthUser): Promise<ManagerDay> {
+  const { prisma } = ctx;
+  const scope = managerScope(user);
+  const loans = loanWhere(scope);
+  const today = istDayOf(ctx.clock());
+  const since = istDayStart(today);
+  const until = istDayStart(addDays(today, 1));
+  const window = { gte: since, lt: until };
+
+  const [officerRows, attempts, outcomes] = await Promise.all([
+    prisma.user.findMany({
+      where: officerWhere(scope),
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        branch: { select: { name: true } },
+        _count: { select: { assignments: { where: { endedAt: null } } } },
+      },
+    }),
+    prisma.contactAttempt.findMany({
+      where: { loan: loans, correctedAt: window },
+      select: { officerId: true, allowed: true, receivedAt: true },
+    }),
+    prisma.outcome.findMany({
+      where: { loan: loans, correctedAt: window },
+      select: { officerId: true, loanId: true, type: true, amount: true, receivedAt: true },
+    }),
+  ]);
+
+  const rows = new Map<string, OfficerDay>(
+    officerRows.map((o) => [
+      o.id,
+      {
+        id: o.id,
+        name: o.name,
+        branchName: o.branch?.name ?? "",
+        assigned: o._count.assignments,
+        worked: 0,
+        attempts: 0,
+        blocked: 0,
+        outcomes: { PAID: 0, PROMISE: 0, NOT_REACHABLE: 0, DISPUTE: 0 },
+        promisedRupees: 0,
+        paidReportedRupees: 0,
+        lastSyncAt: null,
+      },
+    ]),
+  );
+  const lastSync = new Map<string, Date>();
+  const seen = (officerId: string, at: Date) => {
+    const before = lastSync.get(officerId);
+    if (!before || at > before) lastSync.set(officerId, at);
+  };
+
+  for (const a of attempts) {
+    const row = rows.get(a.officerId);
+    if (!row) continue;
+    if (a.allowed) row.attempts++;
+    else row.blocked++;
+    seen(a.officerId, a.receivedAt);
+  }
+  const worked = new Map<string, Set<string>>();
+  for (const o of outcomes) {
+    const row = rows.get(o.officerId);
+    if (!row) continue;
+    row.outcomes[o.type]++;
+    if (o.type === "PROMISE") row.promisedRupees += o.amount ?? 0;
+    if (o.type === "PAID") row.paidReportedRupees += o.amount ?? 0;
+    const loansWorked = worked.get(o.officerId) ?? new Set<string>();
+    loansWorked.add(o.loanId);
+    worked.set(o.officerId, loansWorked);
+    seen(o.officerId, o.receivedAt);
+  }
+  for (const row of rows.values()) {
+    row.worked = worked.get(row.id)?.size ?? 0;
+    row.lastSyncAt = lastSync.get(row.id)?.toISOString() ?? null;
+  }
+
+  return { date: today, officers: [...rows.values()] };
 }

@@ -15,6 +15,21 @@ test("an officer logs an outcome in three taps", async ({ page }) => {
   await expect(page).toHaveURL(/\/today$/);
   await expect(page.getByRole("status").filter({ hasText: "सेव हुआ" })).toBeVisible();
   await expect(page.getByRole("heading", { name: /आज पूरे हुए/ })).toBeVisible();
+
+  // The day adds up on the phone, ready for the evening message (A30).
+  await page.getByRole("link", { name: "मेरा दिन" }).first().click();
+  await expect(page.getByRole("heading", { name: "मेरा दिन" })).toBeVisible();
+  const whatsapp = page.getByRole("link", { name: "WhatsApp पर भेजें" });
+  await expect(whatsapp).toHaveAttribute("href", /^https:\/\/wa\.me\/\?text=/);
+  const href = decodeURIComponent((await whatsapp.getAttribute("href")) ?? "");
+  expect(href).toMatch(/संपर्क नहीं हुआ: [1-9]/);
+  expect(href).not.toMatch(/\d{10}/);
+});
+
+test("after 7 pm the list points to the day's summary", async ({ page }) => {
+  await signInAs(page, "rahul.chouhan@kisht.example", "20:00");
+  await page.getByRole("link", { name: /अपना दिन देखें/ }).click();
+  await expect(page).toHaveURL(/\/today\/day$/);
 });
 
 test("a promise is logged by tapping its date", async ({ page }) => {

@@ -129,3 +129,33 @@ export const ActivityLog = z.object({
   entries: z.array(ActivityEntry),
 });
 export type ActivityLog = z.infer<typeof ActivityLog>;
+
+/** One officer's day so far: what replaces the evening WhatsApp round-up. */
+export const OfficerDay = z.object({
+  id: z.string(),
+  name: z.string(),
+  branchName: z.string(),
+  /** Loans assigned to them now. */
+  assigned: count,
+  /** Loans with an outcome logged today. */
+  worked: count,
+  attempts: count,
+  blocked: count,
+  outcomes: z.object({
+    PAID: count,
+    PROMISE: count,
+    NOT_REACHABLE: count,
+    DISPUTE: count,
+  }),
+  promisedRupees: count,
+  paidReportedRupees: count,
+  /** When their phone last sent anything today; null if it hasn't. */
+  lastSyncAt: z.iso.datetime().nullable(),
+});
+export type OfficerDay = z.infer<typeof OfficerDay>;
+
+export const ManagerDay = z.object({
+  date: IsoDaySchema,
+  officers: z.array(OfficerDay),
+});
+export type ManagerDay = z.infer<typeof ManagerDay>;

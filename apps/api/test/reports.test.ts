@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import type { ActivityLog, Dashboard } from "@kisht/contracts";
+import type { ActivityLog, Dashboard, ManagerDay } from "@kisht/contracts";
 import { createTestPrisma } from "@kisht/db/testing";
 import { addDays, toDbDate } from "@kisht/domain";
 import type { FastifyInstance } from "fastify";
@@ -308,5 +308,60 @@ describe("activity and compliance", () => {
     const b = await get<ActivityLog>("/api/manager/activity", managerB);
     expect(b.entries).toEqual([]);
     expect(b.officers.map((o) => o.id)).not.toContain(fx.officerA1.id);
+  });
+});
+
+describe("the day by officer", () => {
+  it("adds up each officer's day, by IST day, with rupees and the last sync", async () => {
+    const officerId = fx.officerA2.id;
+    const one = await loan(fx.branchA, [[TODAY, 5]], officerId);
+    const two = await loan(fx.branchA, [[TODAY, 9]], officerId);
+    const a1 = await attempt(one, { officerId, channel: "CALL" });
+    const a2 = await attempt(two, { officerId, channel: "CALL" });
+    await attempt(two, { officerId, allowed: false, blockReason: "DAILY_ATTEMPT_CAP" });
+    // Yesterday's attempt is not today's work.
+    await attempt(two, {
+      officerId,
+      correctedAt: ist("2026-11-03T12:00:00"),
+      deviceAt: ist("2026-11-03T12:00:00"),
+    });
+    const outcome = (
+      loanId: string,
+      attemptId: string,
+      type: "PROMISE" | "PAID",
+      amount: number,
+    ) => ({
+      clientId: randomUUID(),
+      loanId,
+      officerId,
+      attemptId,
+      type,
+      amount,
+      deviceAt: ist(`${TODAY}T09:40:00`),
+      correctedAt: ist(`${TODAY}T09:40:00`),
+      receivedAt: ist(`${TODAY}T09:45:00`),
+    });
+    await prisma.outcome.createMany({
+      data: [outcome(one, a1.id, "PROMISE", 4000), outcome(two, a2.id, "PAID", 2500)],
+    });
+
+    const day = await get<ManagerDay>("/api/manager/day");
+    expect(day.date).toBe(TODAY);
+    expect(day.officers.find((o) => o.id === officerId)).toMatchObject({
+      worked: 2,
+      attempts: 2,
+      blocked: 1,
+      outcomes: { PAID: 1, PROMISE: 1, NOT_REACHABLE: 0, DISPUTE: 0 },
+      promisedRupees: 4000,
+      paidReportedRupees: 2500,
+      lastSyncAt: ist(`${TODAY}T09:45:00`).toISOString(),
+    });
+  });
+
+  it("shows only the manager's own officers", async () => {
+    const managerB = await signIn(app, fx.managerB.email);
+    const day = await get<ManagerDay>("/api/manager/day", managerB);
+    expect(day.officers.map((o) => o.id)).not.toContain(fx.officerA1.id);
+    expect(day.officers.map((o) => o.id)).not.toContain(fx.officerA2.id);
   });
 });

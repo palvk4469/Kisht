@@ -1,6 +1,6 @@
 "use client";
 
-import { type ActivityFilter, ActivityLog, Dashboard } from "@kisht/contracts";
+import { type ActivityFilter, ActivityLog, Dashboard, ManagerDay } from "@kisht/contracts";
 import { useQuery } from "@tanstack/react-query";
 import { request } from "@/lib/api";
 
@@ -9,6 +9,7 @@ const reportKeys = {
   dashboard: (branchId: string) => [...reportKeys.all, "dashboard", branchId] as const,
   activity: (officerId: string, filter: ActivityFilter) =>
     [...reportKeys.all, "activity", officerId, filter] as const,
+  day: () => [...reportKeys.all, "day"] as const,
 };
 
 export function useDashboard(branchId: string) {
@@ -35,5 +36,16 @@ export function useActivity(officerId: string, filter: ActivityFilter) {
       if (officerId) q.set("officerId", officerId);
       return request(`/api/manager/activity?${q}`, { schema: ActivityLog });
     },
+  });
+}
+
+const DAY_REFRESH_MS = 60_000;
+
+/** Each officer's day so far; refreshed so the evening view keeps up with syncs. */
+export function useManagerDay() {
+  return useQuery({
+    queryKey: reportKeys.day(),
+    refetchInterval: DAY_REFRESH_MS,
+    queryFn: () => request("/api/manager/day", { schema: ManagerDay }),
   });
 }

@@ -1,9 +1,15 @@
-import { ActivityLog, ActivityQuery, Dashboard, DashboardQuery } from "@kisht/contracts";
+import {
+  ActivityLog,
+  ActivityQuery,
+  Dashboard,
+  DashboardQuery,
+  ManagerDay,
+} from "@kisht/contracts";
 import type { FastifyInstance } from "fastify";
 import type { ZodTypeProvider } from "fastify-type-provider-zod";
 import type { AppContext } from "../../context.js";
 import { currentUser, requireRole } from "../../http/guards.js";
-import { getActivity, getDashboard } from "./service.js";
+import { getActivity, getDashboard, getManagerDay } from "./service.js";
 
 export function registerReports(app: FastifyInstance, ctx: AppContext) {
   const r = app.withTypeProvider<ZodTypeProvider>();
@@ -36,5 +42,18 @@ export function registerReports(app: FastifyInstance, ctx: AppContext) {
       },
     },
     async (request) => getActivity(ctx, currentUser(request), request.query),
+  );
+
+  r.get(
+    "/api/manager/day",
+    {
+      preHandler,
+      schema: {
+        tags,
+        summary: "Each officer's day so far: attempts, outcomes, rupees, last sync",
+        response: { 200: ManagerDay },
+      },
+    },
+    async (request) => getManagerDay(ctx, currentUser(request)),
   );
 }

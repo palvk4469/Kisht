@@ -49,6 +49,9 @@ for (const colorScheme of ["light", "dark"] as const) {
       await page.keyboard.press("Escape");
       await page.goto("/today/promises");
       await noViolations(page, "promises");
+      await page.goto("/today/day");
+      await expect(page.getByRole("heading", { name: "मेरा दिन" })).toBeVisible();
+      await noViolations(page, "my day");
     });
 
     test("manager screens meet WCAG AA", async ({ page }) => {
