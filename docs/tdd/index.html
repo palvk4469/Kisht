@@ -57,12 +57,13 @@
 <h2>2. What was built</h2>
 <table>
   <tr><th style="width:34%">Brief</th><th>Built</th></tr>
-  <tr><td>Daily CSV import, auto-assignment</td><td>Preview first, with row-level errors, then commit. Assigned by pincode, then lowest workload, keeping a loan with its officer where possible (A3).</td></tr>
-  <tr><td>Officer list, call and map, outcomes with GPS</td><td>Ranked list with reasons. An outcome takes three taps. GPS is attached if it arrives within 1.5 seconds and never holds up logging.</td></tr>
+  <tr><td>Daily CSV import, auto-assignment</td><td>Preview first, with row-level errors, then commit. Assigned by pincode, then lowest workload, keeping a loan with its officer where possible (A3). If the file is late, officers keep the latest list, marked with its date (A29).</td></tr>
+  <tr><td>Officer list, call and map, outcomes with GPS</td><td>Ranked list with reasons. An outcome takes three taps. GPS is attached if it arrives within 1.5 seconds and never holds up logging. Loans that are new, newly assigned or part-paid since the last list are marked (A32).</td></tr>
   <tr><td>Promise reminders</td><td>To borrower and officer, on approved wording, held outside 8 am–7 pm, stopped once the promise settles or the loan is disputed (A22).</td></tr>
   <tr><td>AI priority score, top three reasons</td><td>A logistic regression. Reasons are real terms of the model's sum (section 6).</td></tr>
   <tr><td>AI-drafted reminders</td><td>A model reached through OpenRouter rewords an approved template and never sees borrower details. Sent only on the officer's tap (section 6).</td></tr>
-  <tr><td>Manager dashboard, activity log</td><td>Roll rate by branch and week, broken promises, weekly back-test, and every attempt with its visit location checked against the borrower's address.</td></tr>
+  <tr><td>Manager dashboard, activity log</td><td>Roll rate by branch and week, broken promises, weekly back-test, and every attempt with its visit location checked against the borrower's address. The full contact log downloads as CSV for an audit (A31).</td></tr>
+  <tr><td>Start and end the day on WhatsApp</td><td>My day sums up the officer's day, unsent work included, and sends it to the branch on WhatsApp as counts only. Managers see each officer's day as phones sync (A30).</td></tr>
   <tr><td>Hard parts</td><td>Offline logging with sync, and the contact block (section 7).</td></tr>
   <tr><td>Hindi, minimal design, one hand</td><td>Every screen in Hindi and English, light and dark themes, 48 px targets, WCAG 2.1 AA checked in CI (section 9).</td></tr>
 </table>
@@ -208,11 +209,11 @@
 <h2>10. Testing</h2>
 <table>
   <tr><th style="width:30%">Layer</th><th style="width:12%">Count</th><th>What it proves</th></tr>
-  <tr><td>Business rules</td><td>149</td><td>Boundaries such as 18:59:59 vs 19:00:00 and the 90% promise line; threats in two languages. Coverage of at least 90% is enforced.</td></tr>
-  <tr><td>API integration</td><td>127</td><td>Access per role, CSRF, contracts, import re-uploads, sync retries at the same moment, an AI that misbehaves.</td></tr>
+  <tr><td>Business rules</td><td>158</td><td>Boundaries such as 18:59:59 vs 19:00:00 and the 90% promise line; threats in two languages. Coverage of at least 90% is enforced.</td></tr>
+  <tr><td>API integration</td><td>136</td><td>Access per role, CSRF, contracts, import re-uploads, sync retries at the same moment, an AI that misbehaves.</td></tr>
   <tr><td>Database and seed</td><td>9</td><td>Partial unique indexes; the brief's sample rows exactly; roll rate near 22%.</td></tr>
-  <tr><td>Web units</td><td>9</td><td>The offline overlay.</td></tr>
-  <tr><td>Browser (phone and desktop)</td><td>78</td><td>Real offline work reaching a manager, three-tap logging, the 7 pm block, and WCAG AA on every screen in both themes.</td></tr>
+  <tr><td>Web units</td><td>12</td><td>The offline overlay and the day summary.</td></tr>
+  <tr><td>Browser (phone and desktop)</td><td>84</td><td>Real offline work reaching a manager, three-tap logging, the 7 pm block, and WCAG AA on every screen in both themes.</td></tr>
 </table>
 <p>CI runs lint, strict types, all of the above and a production build on every push. Lighthouse measured accessibility at 100, and performance at 99 on sign-in and 83 on the officer's list on a slow first visit, after which it opens from the phone.</p>
 
@@ -239,7 +240,6 @@
   <li><strong>The daily contact limit is per loan (A5).</strong> A person with two loans could be contacted six times a day. The export has no borrower ID, so each loan gets its own borrower record, and matching on phone or name could wrongly merge different people. Counting per borrower, across loans and officers, is the next step once the loan system provides that ID.</li>
   <li>Not yet tried on a real low-end Android phone, and the Hindi needs a native speaker's read. Server error messages are in English only.</li>
   <li>The officer's list loads about 290 KB of JavaScript (gzip) the first time, against a 200 KB target; after that the service worker serves it from the phone. Manager pages are about 255 KB, because they no longer load the offline storage they never use. Replacing the storage library would save about 33 KB at the cost of hand-written code in the riskiest part of the app.</li>
-  <li>Two moderate advisories in the API docs page's dependencies wait on a patched release clearing our supply-chain age rule.</li>
 </ul>
 <h3>Next, within the brief's eight weeks</h3>
 <ol>

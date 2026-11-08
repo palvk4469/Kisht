@@ -68,7 +68,7 @@ apps/api/src
     field/          today's list, sync (contact window, attempts, outcomes)
     manager/        officers' lists, pins, reassignment, disputes, promise tracker
     reminders/      promise reminders and AI drafts (sending is mocked)
-    reports/        dashboard, weekly back-test, activity log and contact-rule record
+    reports/        dashboard, weekly back-test, activity log, each officer's day, contact log export
     demo/           demo clock; only registered in demo mode
     health/ me/ loans/ imports/
       routes.ts     HTTP only: guards + contract schemas, then calls the service
