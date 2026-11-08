@@ -297,6 +297,30 @@ describe("activity and compliance", () => {
     expect((await activity()).compliance.outsideWindowAllowed30).toBe(1);
   });
 
+  it("is for managers and the head only: each sees their own scope", async () => {
+    const inA = await attempt(await loan(fx.branchA, [[TODAY, 5]], fx.officerA1.id));
+    const inB = await attempt(await loan(fx.branchB, [[TODAY, 5]]));
+
+    const officer = await signIn(app, fx.officerA1.email);
+    const denied = await app.inject({
+      method: "GET",
+      url: "/api/manager/activity",
+      headers: { cookie: officer },
+    });
+    expect(denied.statusCode).toBe(403);
+
+    const ids = (log: ActivityLog) => log.entries.map((e) => e.id);
+    const mine = await activity();
+    expect(ids(mine)).toContain(inA.id);
+    expect(ids(mine)).not.toContain(inB.id);
+
+    const head = await get<ActivityLog>("/api/manager/activity", await signIn(app, fx.head.email));
+    expect(ids(head)).toEqual(expect.arrayContaining([inA.id, inB.id]));
+    expect(head.officers.map((o) => o.id)).toContain(fx.officerA1.id);
+    // Later tests expect branch B to have no activity.
+    await prisma.contactAttempt.delete({ where: { id: inB.id } });
+  });
+
   it("stays inside the branch, and never exposes a phone number", async () => {
     const res = await app.inject({
       method: "GET",
