@@ -107,3 +107,33 @@
 html:has(dialog[open]) {
   overflow: hidden;
 }
+
+/* A row that swipes sideways on a phone: it snaps, hides the raw scrollbar, and
+   fades only at an edge with more to see (set by data-more-start/end). */
+@utility swipe-rail {
+  @media (width < 64rem) {
+    --fade-start: 0px;
+    --fade-end: 0px;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: 1rem;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    mask-image: linear-gradient(
+      to right,
+      transparent 0,
+      #000 var(--fade-start),
+      #000 calc(100% - var(--fade-end)),
+      transparent 100%
+    );
+    &::-webkit-scrollbar {
+      display: none;
+    }
+    &[data-more-start] {
+      --fade-start: 2rem;
+    }
+    &[data-more-end] {
+      --fade-end: 3rem;
+    }
+  }
+}

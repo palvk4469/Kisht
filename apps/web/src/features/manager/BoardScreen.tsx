@@ -2,7 +2,7 @@
 
 import type { BoardLoan, BoardOfficer } from "@kisht/contracts";
 import { ArrowDown, ArrowUp, Pin, Users } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Badge, Button, Card, cx, EmptyState, ErrorState, Skeleton } from "@/components/ui";
 import { DpdBadge, PromiseBadge } from "@/features/field/badges";
 import { useReasonText } from "@/features/field/useReasonText";
@@ -11,6 +11,28 @@ import { useI18n } from "@/lib/i18n";
 import { ClearDisputeSheet, MoveSheet, ReassignSheet } from "./ActionSheets";
 import { useBoard, useUnpin } from "./api";
 import { LoanLink } from "./LoanView";
+
+const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/** Which ends of a sideways-scrolling row have more to see, so only those fade. */
+function useRailEdges(itemCount: number) {
+  const ref = useRef<HTMLUListElement>(null);
+  const [edges, setEdges] = useState({ start: false, end: false });
+  const update = useCallback(() => {
+    const el = ref.current;
+    if (!el) return;
+    const start = el.scrollLeft > 4;
+    const end = el.scrollLeft + el.clientWidth < el.scrollWidth - 4;
+    setEdges((e) => (e.start === start && e.end === end ? e : { start, end }));
+  }, []);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: re-measure when the chips change
+  useEffect(() => {
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [update, itemCount]);
+  return { ref, edges, update };
+}
 
 type Action =
   | { kind: "move"; loan: BoardLoan; officerId: string; position: number }
@@ -171,6 +193,7 @@ export function BoardScreen() {
   const board = useBoard();
   const [selected, setSelected] = useState<string | null>(null);
   const [action, setAction] = useState<Action | null>(null);
+  const rail = useRailEdges(board.data?.officers.length ?? 0);
 
   const header = (
     <div>
@@ -278,21 +301,35 @@ export function BoardScreen() {
       )}
 
       <section>
-        <h2 className="font-medium">{t("board.lists")}</h2>
+        <h2 className="font-medium">
+          {t("board.lists")} <span className="num text-muted">({officers.length})</span>
+        </h2>
         <div className="mt-2 grid grid-cols-[minmax(0,1fr)] gap-4 lg:grid-cols-[16rem_minmax(0,1fr)]">
           <ul
-            className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
+            ref={rail.ref}
+            onScroll={rail.update}
+            data-more-start={rail.edges.start || undefined}
+            data-more-end={rail.edges.end || undefined}
+            className="swipe-rail -mx-4 flex gap-2 px-4 py-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0"
             aria-label={t("board.officer")}
           >
             {officers.map((o) => {
               const todo = o.loans.filter((l) => l.state === "todo").length;
               const active = o.id === officer?.id;
               return (
-                <li key={o.id} className="shrink-0">
+                <li key={o.id} className="shrink-0 snap-start">
                   <button
                     type="button"
                     aria-pressed={active}
-                    onClick={() => setSelected(o.id)}
+                    onClick={(e) => {
+                      setSelected(o.id);
+                      // On a phone, bring a half-hidden chip fully into view.
+                      e.currentTarget.scrollIntoView({
+                        block: "nearest",
+                        inline: "nearest",
+                        behavior: reducedMotion() ? "auto" : "smooth",
+                      });
+                    }}
                     className={cx(
                       "min-h-12 w-full rounded-xl border px-3 py-2 text-left text-sm",
                       active
