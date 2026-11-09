@@ -56,13 +56,13 @@ Status: **Done** · **Partial** (what is missing is stated) · **Cut**.
 
 ## Design
 
-| Requirement                                                  | Status  | Where / note                                                                                  |
-| ------------------------------------------------------------ | ------- | --------------------------------------------------------------------------------------------- |
-| Minimal: white space, restrained palette, clear type         | Done    | One accent, status colours for meaning only, system fonts (D23)                               |
-| One hand: big tap targets, short list, outcome in three taps | Done    | 48 px targets; covered by a browser test                                                      |
-| Loading, empty and error states                              | Done    | Shared components on every screen                                                             |
-| Layout that works on a phone                                 | Partial | Every screen tested at phone width with no sideways scrolling; not yet tried on a real device |
-| Light and dark themes                                        | Done    | Follows the device, or a remembered choice; no flash                                          |
+| Requirement                                                  | Status | Where / note                                                                                |
+| ------------------------------------------------------------ | ------ | ------------------------------------------------------------------------------------------- |
+| Minimal: white space, restrained palette, clear type         | Done   | One accent, status colours for meaning only, system fonts (D23)                             |
+| One hand: big tap targets, short list, outcome in three taps | Done   | 48 px targets; covered by a browser test                                                    |
+| Loading, empty and error states                              | Done   | Shared components on every screen                                                           |
+| Layout that works on a phone                                 | Done   | Tested at phone width in CI, and by hand on a real phone, offline logging and sync included |
+| Light and dark themes                                        | Done   | Follows the device, or a remembered choice; no flash                                        |
 
 ## Submission rules
 

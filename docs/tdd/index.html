@@ -239,7 +239,7 @@
 <h3>Known limits</h3>
 <ul>
   <li><strong>The daily contact limit is per loan (A5).</strong> A person with two loans could be contacted six times a day. The export has no borrower ID, so each loan gets its own borrower record, and matching on phone or name could wrongly merge different people. Counting per borrower, across loans and officers, is the next step once the loan system provides that ID.</li>
-  <li>Not yet tried on a real low-end Android phone, and the Hindi needs a native speaker's read. Server error messages are in English only.</li>
+  <li>Tested by hand on a real phone, offline logging and sync included; a pilot should still check the lender's own low-end devices. The Hindi needs a native speaker's read, and server error messages are in English only.</li>
   <li>The officer's list loads about 290 KB of JavaScript (gzip) the first time, against a 200 KB target; after that the service worker serves it from the phone. Manager pages are about 255 KB, because they no longer load the offline storage they never use. Replacing the storage library would save about 33 KB at the cost of hand-written code in the riskiest part of the app.</li>
 </ul>
 <h3>Next, within the brief's eight weeks</h3>
