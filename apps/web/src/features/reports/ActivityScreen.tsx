@@ -80,7 +80,19 @@ function LastSync({ at }: { at: string | null }) {
   return at ? (
     <span className="num">{time(at, locale)}</span>
   ) : (
-    <span className="text-warn">{t("managerDay.noSync")}</span>
+    <span className="text-faint">{t("managerDay.noSync")}</span>
+  );
+}
+
+/** A zero recedes, so the cells with something in them stand out. */
+function Count({ n, rupees: amount }: { n: number; rupees?: number }) {
+  return (
+    <>
+      <span className={n === 0 ? "text-faint" : undefined}>{number(n)}</span>
+      {amount !== undefined && amount > 0 && (
+        <span className="block text-xs text-muted">{rupees(amount)}</span>
+      )}
+    </>
   );
 }
 
@@ -100,15 +112,24 @@ function OfficerDayRow({ o }: { o: OfficerDay }) {
         {o.blocked > 0 && ` · ${t("managerDay.blocked", { n: number(o.blocked) })}`}
       </p>
       <div className="mt-1.5 flex flex-wrap gap-1.5">
-        <Badge tone="ok">
-          {t("outcome.PAID")} {number(o.outcomes.PAID)} · {rupees(o.paidReportedRupees)}
-        </Badge>
-        <Badge tone="accent">
-          {t("outcome.PROMISE")} {number(o.outcomes.PROMISE)} · {rupees(o.promisedRupees)}
-        </Badge>
-        <Badge>
-          {t("outcome.NOT_REACHABLE")} {number(o.outcomes.NOT_REACHABLE)}
-        </Badge>
+        {o.worked === 0 && (
+          <span className="text-xs text-faint">{t("managerDay.nothingLogged")}</span>
+        )}
+        {o.outcomes.PAID > 0 && (
+          <Badge tone="ok">
+            {t("outcome.PAID")} {number(o.outcomes.PAID)} · {rupees(o.paidReportedRupees)}
+          </Badge>
+        )}
+        {o.outcomes.PROMISE > 0 && (
+          <Badge tone="accent">
+            {t("outcome.PROMISE")} {number(o.outcomes.PROMISE)} · {rupees(o.promisedRupees)}
+          </Badge>
+        )}
+        {o.outcomes.NOT_REACHABLE > 0 && (
+          <Badge>
+            {t("outcome.NOT_REACHABLE")} {number(o.outcomes.NOT_REACHABLE)}
+          </Badge>
+        )}
         {o.outcomes.DISPUTE > 0 && (
           <Badge tone="risk">
             {t("outcome.DISPUTE")} {number(o.outcomes.DISPUTE)}
@@ -162,14 +183,14 @@ function ManagerDayCard() {
               {officers.map((o) => (
                 <tr key={o.id}>
                   <td className="px-3 py-2.5 font-medium">{o.name}</td>
-                  <td className={td}>
+                  <td className={cx(td, o.worked === 0 && "text-faint")}>
                     {t("managerDay.workedOf", {
                       worked: number(o.worked),
                       total: number(o.assigned),
                     })}
                   </td>
                   <td className={td}>
-                    {number(o.attempts)}
+                    <Count n={o.attempts} />
                     {o.blocked > 0 && (
                       <span className="text-xs text-muted">
                         {" "}
@@ -178,16 +199,16 @@ function ManagerDayCard() {
                     )}
                   </td>
                   <td className={td}>
-                    {number(o.outcomes.PAID)}
-                    <span className="block text-xs text-muted">{rupees(o.paidReportedRupees)}</span>
+                    <Count n={o.outcomes.PAID} rupees={o.paidReportedRupees} />
                   </td>
                   <td className={td}>
-                    {number(o.outcomes.PROMISE)}
-                    <span className="block text-xs text-muted">{rupees(o.promisedRupees)}</span>
+                    <Count n={o.outcomes.PROMISE} rupees={o.promisedRupees} />
                   </td>
-                  <td className={td}>{number(o.outcomes.NOT_REACHABLE)}</td>
+                  <td className={td}>
+                    <Count n={o.outcomes.NOT_REACHABLE} />
+                  </td>
                   <td className={cx(td, o.outcomes.DISPUTE > 0 && "font-semibold text-risk")}>
-                    {number(o.outcomes.DISPUTE)}
+                    <Count n={o.outcomes.DISPUTE} />
                   </td>
                   <td className={td}>
                     <LastSync at={o.lastSyncAt} />

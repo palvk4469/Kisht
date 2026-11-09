@@ -533,7 +533,7 @@ export function DashboardScreen() {
 
       <RollRateCard data={data} />
 
-      <div className="grid grid-cols-[minmax(0,1fr)] items-start gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+      <div className="grid grid-cols-[minmax(0,1fr)] gap-6 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <AtRiskCard data={data} />
         <PromisesCard data={data} />
       </div>
