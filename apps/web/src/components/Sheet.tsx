@@ -37,7 +37,7 @@ export function Sheet({
       // A click on the dialog element itself can only be the backdrop.
       onClick={(e) => e.target === ref.current && onClose()}
       onKeyDown={(e) => e.stopPropagation()}
-      className="m-auto mb-0 max-h-[92dvh] w-full max-w-md overflow-y-auto rounded-t-3xl border-t border-line/50 bg-canvas text-ink shadow-2xl backdrop:bg-ink/50 backdrop:backdrop-blur-xs sm:mb-auto sm:rounded-2xl sm:border sm:border-line"
+      className="m-auto mb-0 max-h-[92dvh] w-full max-w-md overflow-y-auto overscroll-contain rounded-t-3xl border-t border-line/50 bg-canvas text-ink shadow-2xl backdrop:bg-ink/50 backdrop:backdrop-blur-xs sm:mb-auto sm:rounded-2xl sm:border sm:border-line"
     >
       <div className="p-5 pb-6 sm:p-6">
         {/* Mobile drag handle */}

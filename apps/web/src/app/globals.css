@@ -102,3 +102,8 @@
     outline-offset: 2px;
   }
 }
+
+/* While a sheet is open, the page behind it stays still: a swipe moves the sheet only. */
+html:has(dialog[open]) {
+  overflow: hidden;
+}
